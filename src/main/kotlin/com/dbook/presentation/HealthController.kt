@@ -1,4 +1,4 @@
-package com.smartbook.flights
+package com.dbook.presentation
 
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController

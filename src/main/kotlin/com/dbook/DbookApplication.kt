@@ -1,11 +1,11 @@
-package com.smartbook.flights
+package com.dbook
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class SmartbookFlightsApplication
+class DbookApplication
 
 fun main(args: Array<String>) {
-	runApplication<SmartbookFlightsApplication>(*args)
+	runApplication<DbookApplication>(*args)
 }

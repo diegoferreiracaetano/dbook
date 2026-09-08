@@ -1,1 +1,1 @@
-rootProject.name = "smartbook-flights"
+rootProject.name = "dbook"
