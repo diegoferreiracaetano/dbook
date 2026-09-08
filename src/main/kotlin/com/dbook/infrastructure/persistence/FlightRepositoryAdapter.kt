@@ -17,21 +17,7 @@ class FlightRepositoryAdapter(
 	override fun save(flight: Flight): Flight {
 		val originRef = airportJpaRepository.getReferenceById(flight.origin.id!!)
 		val destinationRef = airportJpaRepository.getReferenceById(flight.destination.id!!)
-		val entity = FlightJpaEntity(
-			id = flight.id,
-			title = flight.title,
-			price = flight.price,
-			totalCapacity = flight.totalCapacity,
-			availableCapacity = flight.availableCapacity,
-			active = flight.active,
-			flightNumber = flight.flightNumber,
-			origin = originRef,
-			destination = destinationRef,
-			departureTime = flight.departureTime,
-			arrivalTime = flight.arrivalTime,
-			seatClass = flight.seatClass,
-		)
-		val saved = flightJpaRepository.save(entity)
+		val saved = flightJpaRepository.save(flight.toJpaEntity(originRef, destinationRef))
 		// origin/destination here are proxies (getReferenceById) with only the id set;
 		// reading them outside the transaction throws LazyInitializationException. We
 		// reuse the full domain objects the caller already had, only refreshing the

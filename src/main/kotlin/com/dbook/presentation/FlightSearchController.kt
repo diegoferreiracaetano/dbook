@@ -20,8 +20,12 @@ class FlightSearchController(
 	@Operation(summary = "Searches flights by origin, destination and date")
 	@GetMapping("/search")
 	fun search(
-		@Parameter(example = "GRU") @RequestParam origin: String,
-		@Parameter(example = "GIG") @RequestParam destination: String,
+		@Parameter(example = "GRU")
+		@RequestParam
+		origin: String,
+		@Parameter(example = "GIG")
+		@RequestParam
+		destination: String,
 		@Parameter(example = "2026-10-01")
 		@RequestParam
 		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

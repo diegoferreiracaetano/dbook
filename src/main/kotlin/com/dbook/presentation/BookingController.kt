@@ -32,7 +32,11 @@ class BookingController(
 
 	@Operation(summary = "Cancels a PENDING booking, returning the availability")
 	@PostMapping("/{id}/cancel")
-	fun cancel(@Parameter(example = "1") @PathVariable id: Long): ResponseEntity<BookingResponse> {
+	fun cancel(
+		@Parameter(example = "1")
+		@PathVariable
+		id: Long,
+	): ResponseEntity<BookingResponse> {
 		val booking = cancelBookingUseCase.execute(id)
 		return ResponseEntity.ok(BookingResponse.from(booking))
 	}

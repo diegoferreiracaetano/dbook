@@ -1,9 +1,9 @@
 package com.dbook.application
 
 import com.dbook.domain.AirportNotFoundException
+import com.dbook.domain.AirportRepository
 import com.dbook.domain.Flight
 import com.dbook.domain.FlightRepository
-import com.dbook.domain.AirportRepository
 import com.dbook.domain.SeatClass
 import org.springframework.stereotype.Service
 import java.math.BigDecimal

@@ -16,8 +16,7 @@ class BookableRepositoryAdapter(
 
 	@Transactional
 	override fun decrementAvailability(bookableId: Long): Bookable {
-		val entity = bookableJpaRepository.findById(bookableId)
-			.orElseThrow { BookableNotFoundException(bookableId) }
+		val entity = findEntityOrThrow(bookableId)
 		check(entity.availableCapacity > 0) { "No availability for bookable: $bookableId" }
 		entity.availableCapacity -= 1
 		return bookableJpaRepository.save(entity).toDomain()
@@ -25,9 +24,12 @@ class BookableRepositoryAdapter(
 
 	@Transactional
 	override fun incrementAvailability(bookableId: Long): Bookable {
-		val entity = bookableJpaRepository.findById(bookableId)
-			.orElseThrow { BookableNotFoundException(bookableId) }
+		val entity = findEntityOrThrow(bookableId)
 		entity.availableCapacity += 1
 		return bookableJpaRepository.save(entity).toDomain()
 	}
+
+	private fun findEntityOrThrow(bookableId: Long): BookableJpaEntity =
+		bookableJpaRepository.findById(bookableId)
+			.orElseThrow { BookableNotFoundException(bookableId) }
 }

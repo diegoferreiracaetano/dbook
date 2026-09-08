@@ -41,3 +41,25 @@ fun BookingJpaEntity.toDomain(): Booking = Booking(
 	customerId = customerId,
 	status = status,
 )
+
+fun Flight.toJpaEntity(origin: AirportJpaEntity, destination: AirportJpaEntity): FlightJpaEntity = FlightJpaEntity(
+	id = id,
+	title = title,
+	price = price,
+	totalCapacity = totalCapacity,
+	availableCapacity = availableCapacity,
+	active = active,
+	flightNumber = flightNumber,
+	origin = origin,
+	destination = destination,
+	departureTime = departureTime,
+	arrivalTime = arrivalTime,
+	seatClass = seatClass,
+)
+
+fun Booking.toJpaEntity(bookable: BookableJpaEntity): BookingJpaEntity = BookingJpaEntity(
+	id = id,
+	bookable = bookable,
+	customerId = customerId,
+	status = status,
+)
