@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: smartbook-flights
+server:
+  port: 8080
