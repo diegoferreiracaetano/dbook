@@ -4,6 +4,8 @@ import com.dbook.domain.Airport
 import com.dbook.domain.Bookable
 import com.dbook.domain.Booking
 import com.dbook.domain.Flight
+import com.dbook.domain.RefreshToken
+import com.dbook.domain.User
 
 fun AirportJpaEntity.toDomain(): Airport =
     Airport(
@@ -71,4 +73,38 @@ fun Booking.toJpaEntity(bookable: BookableJpaEntity): BookingJpaEntity =
         bookable = bookable,
         customerId = customerId,
         status = status,
+    )
+
+fun UserJpaEntity.toDomain(): User =
+    User(
+        id = id,
+        email = email,
+        passwordHash = passwordHash,
+        role = role,
+    )
+
+fun User.toJpaEntity(): UserJpaEntity =
+    UserJpaEntity(
+        id = id,
+        email = email,
+        passwordHash = passwordHash,
+        role = role,
+    )
+
+fun RefreshTokenJpaEntity.toDomain(): RefreshToken =
+    RefreshToken(
+        id = id,
+        userId = userId,
+        tokenHash = tokenHash,
+        expiresAt = expiresAt,
+        revoked = revoked,
+    )
+
+fun RefreshToken.toJpaEntity(): RefreshTokenJpaEntity =
+    RefreshTokenJpaEntity(
+        id = id,
+        userId = userId,
+        tokenHash = tokenHash,
+        expiresAt = expiresAt,
+        revoked = revoked,
     )
