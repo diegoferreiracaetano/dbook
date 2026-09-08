@@ -22,8 +22,8 @@ class BookingRepositoryAdapter(
 			status = booking.status,
 		)
 		val saved = bookingJpaRepository.save(entity)
-		// mesmo cuidado do FlightRepositoryAdapter: bookableRef é um proxy só com o id,
-		// reaproveitamos o Bookable de domínio que o chamador já tinha em mãos.
+		// same care as FlightRepositoryAdapter: bookableRef is a proxy with only the id,
+		// so we reuse the domain Bookable the caller already had.
 		return Booking(
 			id = saved.id,
 			bookable = booking.bookable,

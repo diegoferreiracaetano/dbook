@@ -32,9 +32,10 @@ class FlightRepositoryAdapter(
 			seatClass = flight.seatClass,
 		)
 		val saved = flightJpaRepository.save(entity)
-		// origin/destination aqui são proxies (getReferenceById) só com o id preenchido;
-		// lê-los fora da transação dispara LazyInitializationException. Reaproveitamos os
-		// objetos de domínio completos que o chamador já tinha, só atualizando o id gerado.
+		// origin/destination here are proxies (getReferenceById) with only the id set;
+		// reading them outside the transaction throws LazyInitializationException. We
+		// reuse the full domain objects the caller already had, only refreshing the
+		// generated id.
 		return Flight(
 			id = saved.id,
 			title = saved.title,

@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// Testa o lock otimista (item 2.2) contra o Postgres de verdade — precisa do
-// `docker compose up -d` rodando. Testcontainers fica reservado pro M4 (CI),
-// de propósito: não antecipamos essa peça aqui.
+// Exercises the optimistic lock (item 2.2) against a real Postgres — needs
+// `docker compose up -d` running. Testcontainers is deliberately deferred to
+// M4 (CI); we don't pull that piece forward here.
 @SpringBootTest
 class BookingConcurrencyTest {
 
@@ -66,7 +66,7 @@ class BookingConcurrencyTest {
 		done.await(10, TimeUnit.SECONDS)
 		executor.shutdown()
 
-		assertEquals(1, successes.get(), "exatamente uma reserva deveria ter sido bem-sucedida")
-		assertEquals(1, conflicts.get(), "a outra deveria ter falhado por conflito de versão")
+		assertEquals(1, successes.get(), "exactly one booking should have succeeded")
+		assertEquals(1, conflicts.get(), "the other one should have failed with a version conflict")
 	}
 }

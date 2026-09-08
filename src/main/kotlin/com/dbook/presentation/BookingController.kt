@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/bookings")
-@Tag(name = "Bookings", description = "Reserva e cancelamento de itens reserváveis (voos, e futuramente hotéis)")
+@Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
 class BookingController(
 	private val registerBookingUseCase: RegisterBookingUseCase,
 	private val cancelBookingUseCase: CancelBookingUseCase,
 ) {
-	@Operation(summary = "Cria uma reserva (PENDING) para um Bookable, decrementando a disponibilidade")
+	@Operation(summary = "Creates a booking (PENDING) for a Bookable, decrementing its availability")
 	@PostMapping
 	fun register(@RequestBody request: RegisterBookingRequest): ResponseEntity<BookingResponse> {
 		val booking = registerBookingUseCase.execute(
@@ -29,7 +29,7 @@ class BookingController(
 		return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
 	}
 
-	@Operation(summary = "Cancela uma reserva PENDING, devolvendo a disponibilidade")
+	@Operation(summary = "Cancels a PENDING booking, returning the availability")
 	@PostMapping("/{id}/cancel")
 	fun cancel(@PathVariable id: Long): ResponseEntity<BookingResponse> {
 		val booking = cancelBookingUseCase.execute(id)

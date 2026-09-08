@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/admin/flights")
-@Tag(name = "Flights (admin)", description = "Cadastro de voos")
+@Tag(name = "Flights (admin)", description = "Flight registration")
 class FlightAdminController(
 	private val registerFlightUseCase: RegisterFlightUseCase,
 ) {
-	@Operation(summary = "Cadastra um voo, resolvendo origem/destino por código IATA")
+	@Operation(summary = "Registers a flight, resolving origin/destination by IATA code")
 	@PostMapping
 	fun register(@RequestBody request: RegisterFlightRequest): ResponseEntity<FlightResponse> {
 		val flight = registerFlightUseCase.execute(

@@ -12,11 +12,11 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/flights")
-@Tag(name = "Flights (public)", description = "Busca pública de voos")
+@Tag(name = "Flights (public)", description = "Public flight search")
 class FlightSearchController(
 	private val searchFlightsUseCase: SearchFlightsUseCase,
 ) {
-	@Operation(summary = "Busca voos por origem, destino e data")
+	@Operation(summary = "Searches flights by origin, destination and date")
 	@GetMapping("/search")
 	fun search(
 		@RequestParam origin: String,

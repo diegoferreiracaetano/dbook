@@ -28,8 +28,8 @@ fun FlightJpaEntity.toDomain(): Flight = Flight(
 	seatClass = seatClass,
 )
 
-// Bookable é abstrata: quem chega aqui em runtime é sempre uma especialização concreta
-// (hoje só FlightJpaEntity; Accommodation entra no M9 com um novo `is`).
+// Bookable is abstract: whatever arrives here at runtime is always a concrete
+// specialization (today only FlightJpaEntity; Accommodation joins in M9 with a new `is`).
 fun BookableJpaEntity.toDomain(): Bookable = when (this) {
 	is FlightJpaEntity -> this.toDomain()
 	else -> error("Unknown Bookable subtype: ${this::class}")
