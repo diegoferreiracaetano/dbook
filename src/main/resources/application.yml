@@ -1,6 +1,11 @@
 spring:
   application:
     name: dbook
+  # Authentication is 100% JWT-based (see JwtAuthenticationFilter) — there's no
+  # UserDetailsService/form login, so this default auto-config just generates a
+  # useless password and warns on every startup. Excluded to keep the log clean.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     url: jdbc:postgresql://localhost:5432/dbook
     username: dbook
@@ -13,3 +18,9 @@ spring:
     enabled: true
 server:
   port: 8080
+jwt:
+  # Local-dev only secret. Production reads this from AWS Secrets Manager (M6 decision),
+  # never committed as a real secret.
+  secret: baB82M7DHaS9cSjspi0J4hJS05eUKmSLOu0hbOivY0k=
+  access-token-expiration-minutes: 15
+  refresh-token-expiration-days: 7
