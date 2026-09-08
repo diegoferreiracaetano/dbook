@@ -2,6 +2,7 @@ package com.dbook.presentation
 
 import com.dbook.application.SearchFlightsUseCase
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
@@ -19,9 +20,12 @@ class FlightSearchController(
 	@Operation(summary = "Searches flights by origin, destination and date")
 	@GetMapping("/search")
 	fun search(
-		@RequestParam origin: String,
-		@RequestParam destination: String,
-		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
+		@Parameter(example = "GRU") @RequestParam origin: String,
+		@Parameter(example = "GIG") @RequestParam destination: String,
+		@Parameter(example = "2026-10-01")
+		@RequestParam
+		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+		date: LocalDate,
 	): List<FlightResponse> =
 		searchFlightsUseCase.execute(origin, destination, date).map { FlightResponse.from(it) }
 }
