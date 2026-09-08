@@ -102,6 +102,14 @@ curl -X POST localhost:8080/bookings/1/cancel
 
 Retorna `200` com a reserva `CANCELLED`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
 
+## Qualidade de código
+
+```bash
+JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gradlew check
+```
+
+Roda testes + [ktlint](https://github.com/pinterest/ktlint) (estilo/formatação) + [detekt](https://detekt.dev/) (análise estática) juntos. `./gradlew ktlintFormat` corrige formatação automaticamente. Configuração em `.editorconfig` (4 espaços, `max_line_length=120`, precisa bater entre os dois) e `config/detekt/detekt.yml`.
+
 ## Testes
 
 ```bash
