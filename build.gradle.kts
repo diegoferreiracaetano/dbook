@@ -51,6 +51,12 @@ detekt {
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
 }
 
+// detektMain/detektTest use type resolution and catch more (e.g. UnsafeCallOnNullableType)
+// than the plain `detekt` task, which skips type-aware rules for speed.
+tasks.check {
+    dependsOn(tasks.named("detektMain"), tasks.named("detektTest"))
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
 }

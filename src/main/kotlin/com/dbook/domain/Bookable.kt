@@ -2,6 +2,9 @@ package com.dbook.domain
 
 import java.math.BigDecimal
 
+// no abstract member on purpose: Bookable exists only to be extended by Flight/Accommodation,
+// never instantiated on its own — `abstract` enforces that at compile time
+@Suppress("UnnecessaryAbstractClass")
 abstract class Bookable(
     open val id: Long? = null,
     open val title: String,

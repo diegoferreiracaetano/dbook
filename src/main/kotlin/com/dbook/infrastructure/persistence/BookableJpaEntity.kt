@@ -10,6 +10,9 @@ import jakarta.persistence.Table
 import jakarta.persistence.Version
 import java.math.BigDecimal
 
+// no abstract member on purpose: must stay abstract for the JOINED inheritance strategy
+// (root of the hierarchy, never persisted as its own concrete row)
+@Suppress("UnnecessaryAbstractClass")
 @Entity
 @Table(name = "bookable")
 @Inheritance(strategy = InheritanceType.JOINED)

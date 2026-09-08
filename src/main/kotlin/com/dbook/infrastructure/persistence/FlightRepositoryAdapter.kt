@@ -13,8 +13,10 @@ class FlightRepositoryAdapter(
     override fun findById(id: Long): Flight? = flightJpaRepository.findById(id).orElse(null)?.toDomain()
 
     override fun save(flight: Flight): Flight {
-        val originRef = airportJpaRepository.getReferenceById(flight.origin.id!!)
-        val destinationRef = airportJpaRepository.getReferenceById(flight.destination.id!!)
+        val originId = requireNotNull(flight.origin.id) { "Flight.origin must be a persisted Airport" }
+        val destinationId = requireNotNull(flight.destination.id) { "Flight.destination must be a persisted Airport" }
+        val originRef = airportJpaRepository.getReferenceById(originId)
+        val destinationRef = airportJpaRepository.getReferenceById(destinationId)
         val saved = flightJpaRepository.save(flight.toJpaEntity(originRef, destinationRef))
         // origin/destination here are proxies (getReferenceById) with only the id set;
         // reading them outside the transaction throws LazyInitializationException. We

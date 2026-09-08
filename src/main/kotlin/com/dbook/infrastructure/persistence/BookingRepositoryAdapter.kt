@@ -12,7 +12,8 @@ class BookingRepositoryAdapter(
     override fun findById(id: Long): Booking? = bookingJpaRepository.findById(id).orElse(null)?.toDomain()
 
     override fun save(booking: Booking): Booking {
-        val bookableRef = bookableJpaRepository.getReferenceById(booking.bookable.id!!)
+        val bookableId = requireNotNull(booking.bookable.id) { "Booking.bookable must be persisted" }
+        val bookableRef = bookableJpaRepository.getReferenceById(bookableId)
         val saved = bookingJpaRepository.save(booking.toJpaEntity(bookableRef))
         // same care as FlightRepositoryAdapter: bookableRef is a proxy with only the id,
         // so we reuse the domain Bookable the caller already had.

@@ -18,7 +18,9 @@ class CancelBookingUseCase(
             bookingRepository.findById(bookingId)
                 ?: throw BookingNotFoundException(bookingId)
         val cancelled = booking.cancel()
-        bookableRepository.incrementAvailability(booking.bookable.id!!)
+        val bookableId =
+            requireNotNull(booking.bookable.id) { "A persisted Booking must reference a persisted Bookable" }
+        bookableRepository.incrementAvailability(bookableId)
         return bookingRepository.save(cancelled)
     }
 }
