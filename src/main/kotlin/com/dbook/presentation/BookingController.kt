@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -24,20 +25,22 @@ class BookingController(
     @PostMapping
     fun register(
         @RequestBody request: RegisterBookingRequest,
+        authentication: Authentication,
     ): ResponseEntity<BookingResponse> {
         val booking =
             registerBookingUseCase.execute(
-                RegisterBookingCommand(bookableId = request.bookableId, customerId = request.customerId),
+                RegisterBookingCommand(bookableId = request.bookableId, customerId = authentication.currentUserId()),
             )
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
     }
 
-    @Operation(summary = "Cancels a PENDING booking, returning the availability")
+    @Operation(summary = "Cancels a PENDING booking (owner or ADMIN only), returning the availability")
     @PostMapping("/{id}/cancel")
     fun cancel(
         @PathVariable id: Long,
+        authentication: Authentication,
     ): ResponseEntity<BookingResponse> {
-        val booking = cancelBookingUseCase.execute(id)
+        val booking = cancelBookingUseCase.execute(id, authentication.currentUserId(), authentication.currentRole())
         return ResponseEntity.ok(BookingResponse.from(booking))
     }
 }
