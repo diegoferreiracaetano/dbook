@@ -6,12 +6,14 @@ import com.dbook.domain.Airport
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.Flight
 import com.dbook.domain.SeatClass
+import com.dbook.domain.TokenService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.willThrow
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -20,13 +22,23 @@ import org.springframework.test.web.servlet.post
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
+// This slice tests HTTP/business behavior only — security filters are disabled on
+// purpose (addFilters = false), since @WebMvcTest doesn't load the real SecurityConfig
+// anyway. The @PreAuthorize("hasRole('ADMIN')") gate and the unauthenticated/wrong-role
+// cases (item 3.8) are tested in SecurityIntegrationTest against the full application
+// context, where the real filter chain and method-security config are active.
 @WebMvcTest(FlightAdminController::class)
+@AutoConfigureMockMvc(addFilters = false)
 class FlightAdminControllerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @MockBean
     lateinit var registerFlightUseCase: RegisterFlightUseCase
+
+    // see FlightSearchControllerTest for why this is still needed despite addFilters = false
+    @MockBean
+    lateinit var tokenService: TokenService
 
     private val objectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
