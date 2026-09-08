@@ -9,15 +9,16 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CancelBookingUseCase(
-	private val bookingRepository: BookingRepository,
-	private val bookableRepository: BookableRepository,
+    private val bookingRepository: BookingRepository,
+    private val bookableRepository: BookableRepository,
 ) {
-	@Transactional
-	fun execute(bookingId: Long): Booking {
-		val booking = bookingRepository.findById(bookingId)
-			?: throw BookingNotFoundException(bookingId)
-		val cancelled = booking.cancel()
-		bookableRepository.incrementAvailability(booking.bookable.id!!)
-		return bookingRepository.save(cancelled)
-	}
+    @Transactional
+    fun execute(bookingId: Long): Booking {
+        val booking =
+            bookingRepository.findById(bookingId)
+                ?: throw BookingNotFoundException(bookingId)
+        val cancelled = booking.cancel()
+        bookableRepository.incrementAvailability(booking.bookable.id!!)
+        return bookingRepository.save(cancelled)
+    }
 }

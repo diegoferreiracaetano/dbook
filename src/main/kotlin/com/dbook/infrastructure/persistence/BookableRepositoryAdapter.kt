@@ -8,28 +8,26 @@ import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class BookableRepositoryAdapter(
-	private val bookableJpaRepository: BookableJpaRepository,
+    private val bookableJpaRepository: BookableJpaRepository,
 ) : BookableRepository {
+    override fun findById(id: Long): Bookable? = bookableJpaRepository.findById(id).orElse(null)?.toDomain()
 
-	override fun findById(id: Long): Bookable? =
-		bookableJpaRepository.findById(id).orElse(null)?.toDomain()
+    @Transactional
+    override fun decrementAvailability(bookableId: Long): Bookable {
+        val entity = findEntityOrThrow(bookableId)
+        check(entity.availableCapacity > 0) { "No availability for bookable: $bookableId" }
+        entity.availableCapacity -= 1
+        return bookableJpaRepository.save(entity).toDomain()
+    }
 
-	@Transactional
-	override fun decrementAvailability(bookableId: Long): Bookable {
-		val entity = findEntityOrThrow(bookableId)
-		check(entity.availableCapacity > 0) { "No availability for bookable: $bookableId" }
-		entity.availableCapacity -= 1
-		return bookableJpaRepository.save(entity).toDomain()
-	}
+    @Transactional
+    override fun incrementAvailability(bookableId: Long): Bookable {
+        val entity = findEntityOrThrow(bookableId)
+        entity.availableCapacity += 1
+        return bookableJpaRepository.save(entity).toDomain()
+    }
 
-	@Transactional
-	override fun incrementAvailability(bookableId: Long): Bookable {
-		val entity = findEntityOrThrow(bookableId)
-		entity.availableCapacity += 1
-		return bookableJpaRepository.save(entity).toDomain()
-	}
-
-	private fun findEntityOrThrow(bookableId: Long): BookableJpaEntity =
-		bookableJpaRepository.findById(bookableId)
-			.orElseThrow { BookableNotFoundException(bookableId) }
+    private fun findEntityOrThrow(bookableId: Long): BookableJpaEntity =
+        bookableJpaRepository.findById(bookableId)
+            .orElseThrow { BookableNotFoundException(bookableId) }
 }

@@ -15,23 +15,26 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/admin/flights")
 @Tag(name = "Flights (admin)", description = "Flight registration")
 class FlightAdminController(
-	private val registerFlightUseCase: RegisterFlightUseCase,
+    private val registerFlightUseCase: RegisterFlightUseCase,
 ) {
-	@Operation(summary = "Registers a flight, resolving origin/destination by IATA code")
-	@PostMapping
-	fun register(@RequestBody request: RegisterFlightRequest): ResponseEntity<FlightResponse> {
-		val flight = registerFlightUseCase.execute(
-			RegisterFlightCommand(
-				flightNumber = request.flightNumber,
-				originIataCode = request.originIataCode,
-				destinationIataCode = request.destinationIataCode,
-				departureTime = request.departureTime,
-				arrivalTime = request.arrivalTime,
-				seatClass = request.seatClass,
-				price = request.price,
-				totalCapacity = request.totalCapacity,
-			),
-		)
-		return ResponseEntity.status(HttpStatus.CREATED).body(FlightResponse.from(flight))
-	}
+    @Operation(summary = "Registers a flight, resolving origin/destination by IATA code")
+    @PostMapping
+    fun register(
+        @RequestBody request: RegisterFlightRequest,
+    ): ResponseEntity<FlightResponse> {
+        val flight =
+            registerFlightUseCase.execute(
+                RegisterFlightCommand(
+                    flightNumber = request.flightNumber,
+                    originIataCode = request.originIataCode,
+                    destinationIataCode = request.destinationIataCode,
+                    departureTime = request.departureTime,
+                    arrivalTime = request.arrivalTime,
+                    seatClass = request.seatClass,
+                    price = request.price,
+                    totalCapacity = request.totalCapacity,
+                ),
+            )
+        return ResponseEntity.status(HttpStatus.CREATED).body(FlightResponse.from(flight))
+    }
 }

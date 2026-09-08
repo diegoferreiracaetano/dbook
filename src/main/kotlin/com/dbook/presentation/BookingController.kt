@@ -17,22 +17,27 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
 class BookingController(
-	private val registerBookingUseCase: RegisterBookingUseCase,
-	private val cancelBookingUseCase: CancelBookingUseCase,
+    private val registerBookingUseCase: RegisterBookingUseCase,
+    private val cancelBookingUseCase: CancelBookingUseCase,
 ) {
-	@Operation(summary = "Creates a booking (PENDING) for a Bookable, decrementing its availability")
-	@PostMapping
-	fun register(@RequestBody request: RegisterBookingRequest): ResponseEntity<BookingResponse> {
-		val booking = registerBookingUseCase.execute(
-			RegisterBookingCommand(bookableId = request.bookableId, customerId = request.customerId),
-		)
-		return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
-	}
+    @Operation(summary = "Creates a booking (PENDING) for a Bookable, decrementing its availability")
+    @PostMapping
+    fun register(
+        @RequestBody request: RegisterBookingRequest,
+    ): ResponseEntity<BookingResponse> {
+        val booking =
+            registerBookingUseCase.execute(
+                RegisterBookingCommand(bookableId = request.bookableId, customerId = request.customerId),
+            )
+        return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
+    }
 
-	@Operation(summary = "Cancels a PENDING booking, returning the availability")
-	@PostMapping("/{id}/cancel")
-	fun cancel(@PathVariable id: Long): ResponseEntity<BookingResponse> {
-		val booking = cancelBookingUseCase.execute(id)
-		return ResponseEntity.ok(BookingResponse.from(booking))
-	}
+    @Operation(summary = "Cancels a PENDING booking, returning the availability")
+    @PostMapping("/{id}/cancel")
+    fun cancel(
+        @PathVariable id: Long,
+    ): ResponseEntity<BookingResponse> {
+        val booking = cancelBookingUseCase.execute(id)
+        return ResponseEntity.ok(BookingResponse.from(booking))
+    }
 }

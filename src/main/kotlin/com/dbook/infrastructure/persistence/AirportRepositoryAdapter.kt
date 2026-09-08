@@ -6,9 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class AirportRepositoryAdapter(
-	private val airportJpaRepository: AirportJpaRepository,
+    private val airportJpaRepository: AirportJpaRepository,
 ) : AirportRepository {
-
-	override fun findByIataCode(iataCode: String): Airport? =
-		airportJpaRepository.findByIataCode(iataCode)?.toDomain()
+    override fun findByIataCode(iataCode: String): Airport? = airportJpaRepository.findByIataCode(iataCode)?.toDomain()
 }

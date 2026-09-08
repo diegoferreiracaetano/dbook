@@ -14,14 +14,13 @@ import java.time.LocalDate
 @RequestMapping("/flights")
 @Tag(name = "Flights (public)", description = "Public flight search")
 class FlightSearchController(
-	private val searchFlightsUseCase: SearchFlightsUseCase,
+    private val searchFlightsUseCase: SearchFlightsUseCase,
 ) {
-	@Operation(summary = "Searches flights by origin, destination and date")
-	@GetMapping("/search")
-	fun search(
-		@RequestParam origin: String,
-		@RequestParam destination: String,
-		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
-	): List<FlightResponse> =
-		searchFlightsUseCase.execute(origin, destination, date).map { FlightResponse.from(it) }
+    @Operation(summary = "Searches flights by origin, destination and date")
+    @GetMapping("/search")
+    fun search(
+        @RequestParam origin: String,
+        @RequestParam destination: String,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
+    ): List<FlightResponse> = searchFlightsUseCase.execute(origin, destination, date).map { FlightResponse.from(it) }
 }

@@ -1,5 +1,5 @@
 package com.dbook.domain
 
 interface AirportRepository {
-	fun findByIataCode(iataCode: String): Airport?
+    fun findByIataCode(iataCode: String): Airport?
 }

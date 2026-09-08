@@ -14,13 +14,13 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "booking")
 class BookingJpaEntity(
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	var id: Long? = null,
-	@ManyToOne
-	@JoinColumn(name = "bookable_id")
-	var bookable: BookableJpaEntity,
-	var customerId: Long = 0,
-	@Enumerated(EnumType.STRING)
-	var status: BookingStatus = BookingStatus.PENDING,
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    @ManyToOne
+    @JoinColumn(name = "bookable_id")
+    var bookable: BookableJpaEntity,
+    var customerId: Long = 0,
+    @Enumerated(EnumType.STRING)
+    var status: BookingStatus = BookingStatus.PENDING,
 )

@@ -15,21 +15,21 @@ import java.time.LocalDateTime
 @Table(name = "flight")
 @PrimaryKeyJoinColumn(name = "id")
 class FlightJpaEntity(
-	id: Long? = null,
-	title: String = "",
-	price: BigDecimal = BigDecimal.ZERO,
-	totalCapacity: Int = 0,
-	availableCapacity: Int = 0,
-	active: Boolean = true,
-	var flightNumber: String = "",
-	@ManyToOne
-	@JoinColumn(name = "origin_airport_id")
-	var origin: AirportJpaEntity,
-	@ManyToOne
-	@JoinColumn(name = "destination_airport_id")
-	var destination: AirportJpaEntity,
-	var departureTime: LocalDateTime = LocalDateTime.now(),
-	var arrivalTime: LocalDateTime = LocalDateTime.now(),
-	@Enumerated(EnumType.STRING)
-	var seatClass: SeatClass = SeatClass.ECONOMY,
+    id: Long? = null,
+    title: String = "",
+    price: BigDecimal = BigDecimal.ZERO,
+    totalCapacity: Int = 0,
+    availableCapacity: Int = 0,
+    active: Boolean = true,
+    var flightNumber: String = "",
+    @ManyToOne
+    @JoinColumn(name = "origin_airport_id")
+    var origin: AirportJpaEntity,
+    @ManyToOne
+    @JoinColumn(name = "destination_airport_id")
+    var destination: AirportJpaEntity,
+    var departureTime: LocalDateTime = LocalDateTime.now(),
+    var arrivalTime: LocalDateTime = LocalDateTime.now(),
+    @Enumerated(EnumType.STRING)
+    var seatClass: SeatClass = SeatClass.ECONOMY,
 ) : BookableJpaEntity(id, title, price, totalCapacity, availableCapacity, active)
