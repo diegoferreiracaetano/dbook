@@ -41,7 +41,14 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 
 A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 3 aeroportos: `GRU`, `GIG`, `JFK`).
 
-## Endpoints (M1)
+## Documentação da API (Swagger)
+
+Com a aplicação no ar:
+
+- Swagger UI: http://localhost:8080/swagger-ui/index.html
+- OpenAPI JSON: http://localhost:8080/v3/api-docs
+
+## Endpoints
 
 ### `GET /health`
 Confirma que a aplicação está no ar.
@@ -73,20 +80,41 @@ Busca voos por rota e data.
 curl "localhost:8080/flights/search?origin=GRU&destination=GIG&date=2026-10-01"
 ```
 
+### `POST /bookings`
+Reserva um `Bookable` (hoje só `Flight`; qualquer especialização futura funciona sem mudar este endpoint), decrementando a disponibilidade. Cria a reserva como `PENDING`.
+
+```bash
+curl -X POST localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{"bookableId": 1, "customerId": 42}'
+```
+
+Retorna `201` com a reserva criada, `404` se o `bookableId` não existir, ou `409` se não houver disponibilidade (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o último lugar).
+
+### `POST /bookings/{id}/cancel`
+Cancela uma reserva `PENDING`, devolvendo a disponibilidade ao `Bookable`.
+
+```bash
+curl -X POST localhost:8080/bookings/1/cancel
+```
+
+Retorna `200` com a reserva `CANCELLED`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
+
 ## Testes
 
 ```bash
 JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gradlew test
 ```
 
-- **Domínio** (`FlightTest`): invariantes de `Bookable` (preço não-negativo, capacidade disponível entre 0 e o total).
+- **Domínio** (`FlightTest`, `BookingTest`): invariantes de `Bookable` e a máquina de estados de `Booking` (PENDING → CONFIRMED/CANCELLED).
 - **Aplicação** (`RegisterFlightUseCaseTest`): regras do caso de uso com repositórios fake — resolução de aeroporto e erro quando o código IATA não existe.
 - **Apresentação** (`FlightAdminControllerTest`, `FlightSearchControllerTest`): contrato HTTP (status code, shape do JSON, mapeamento de exceção) com o caso de uso mockado via `@WebMvcTest`.
+- **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real — precisa de `docker compose up -d` rodando (Testcontainers fica reservado pro M4).
 
 ## Status do roadmap
 
 - ✅ **M1 — Domínio e persistência** (voos, herança JPA `JOINED`, endpoints de cadastro/busca, testes)
-- ⬜ M2 — Reserva com concorrência real (lock otimista)
+- ✅ **M2 — Reserva com concorrência real** (lock otimista, endpoint de reserva/cancelamento, teste de concorrência real, Swagger)
 - ⬜ M3 — Segurança (JWT)
 - ⬜ M4 — CI
 - ⬜ M5 — Tempo real (WebSocket + Redis)

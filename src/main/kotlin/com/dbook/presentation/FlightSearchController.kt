@@ -1,6 +1,8 @@
 package com.dbook.presentation
 
 import com.dbook.application.SearchFlightsUseCase
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -10,9 +12,11 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/flights")
+@Tag(name = "Flights (public)", description = "Busca pública de voos")
 class FlightSearchController(
 	private val searchFlightsUseCase: SearchFlightsUseCase,
 ) {
+	@Operation(summary = "Busca voos por origem, destino e data")
 	@GetMapping("/search")
 	fun search(
 		@RequestParam origin: String,
