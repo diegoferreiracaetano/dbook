@@ -4,7 +4,6 @@ import com.dbook.application.CancelBookingUseCase
 import com.dbook.application.RegisterBookingCommand
 import com.dbook.application.RegisterBookingUseCase
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -32,11 +31,7 @@ class BookingController(
 
 	@Operation(summary = "Cancels a PENDING booking, returning the availability")
 	@PostMapping("/{id}/cancel")
-	fun cancel(
-		@Parameter(example = "1")
-		@PathVariable
-		id: Long,
-	): ResponseEntity<BookingResponse> {
+	fun cancel(@PathVariable id: Long): ResponseEntity<BookingResponse> {
 		val booking = cancelBookingUseCase.execute(id)
 		return ResponseEntity.ok(BookingResponse.from(booking))
 	}

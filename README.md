@@ -91,6 +91,8 @@ curl -X POST localhost:8080/bookings \
 
 Retorna `201` com a reserva criada, `404` se o `bookableId` não existir, ou `409` se não houver disponibilidade (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o último lugar).
 
+> `customerId` é um placeholder até o M3 introduzir autenticação (JWT) de verdade — qualquer `Long` é aceito por enquanto, não existe entidade `User` ainda.
+
 ### `POST /bookings/{id}/cancel`
 Cancela uma reserva `PENDING`, devolvendo a disponibilidade ao `Bookable`.
 
