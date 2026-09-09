@@ -84,6 +84,14 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 
 A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 3 aeroportos: `GRU`, `GIG`, `JFK`).
 
+Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à sugestão por IA do M7):
+
+```bash
+./scripts/seed-flights.sh 30   # cria 30 voos; padrão é 30 se omitido
+```
+
+Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com rotas/preços/datas variados entre os 3 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
+
 ## Documentação da API (Swagger)
 
 Com a aplicação no ar:

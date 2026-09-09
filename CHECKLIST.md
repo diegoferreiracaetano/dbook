@@ -148,7 +148,7 @@ Decisão original: aqui o `Bookable` paga a dívida de design do M1 — `Accommo
 
 ## Ideias futuras (fora da numeração M1-M9)
 
-- **Script de seed de dados**: popular o banco com voos/rotas realistas — hoje só existem os 3 aeroportos seedados (V2), o resto é criado manualmente em testes. Resolveria o banco vazio pra demos e pra dar contexto de verdade à sugestão por IA (M7).
+- [x] **Script de seed de dados** ✅ (2026-09-09) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão 30) com rotas/preços/datas variados entre os 3 aeroportos seedados, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
 - **Integração com API real de voos**: buscar voos de um provedor externo (AviationStack, Amadeus, OpenSky...) em vez de dados só cadastrados via `/admin/flights`. Maior escopo — exige escolher provedor, lidar com API key/rate limit/custo, mapear o schema deles pro domínio, decidir estratégia de sincronização.
 
 ## Checklist de fechamento de módulo
