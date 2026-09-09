@@ -8,12 +8,15 @@ Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas e 
 
 - Kotlin 2.0.21 + Spring Boot 3.3.4 (JDK 21 LTS)
 - PostgreSQL 16 + Flyway (migrations versionadas)
+- Redis (Pub/Sub pra disponibilidade em tempo real)
 - Spring Security + JWT ([jjwt](https://github.com/jwtk/jjwt)) com refresh rotativo
+- WebSocket/STOMP (disponibilidade em tempo real)
 - Gradle Kotlin DSL (wrapper incluso)
-- Docker Compose (Postgres local)
+- Docker Compose (Postgres/Redis/LocalStack local)
 - ktlint + detekt (`./gradlew check`)
+- Terraform (VPC, ECR, RDS, ElastiCache, Secrets Manager, ECS Fargate) + GitHub Actions
 
-Planejado para os próximos marcos: Redis (WebSocket Pub/Sub), AWS Bedrock (IA), Terraform + AWS ECS Fargate, GitHub Actions.
+Planejado para os próximos marcos: AWS Bedrock (IA), CI/CD completo, hotéis + microsserviços (M9).
 
 ## Arquitetura
 
@@ -154,6 +157,38 @@ Quando uma reserva é criada ou cancelada, a disponibilidade atualizada do `Book
 
 Pré-requisito local: Redis também sobe pelo `docker compose up -d` (serviço `redis`, porta `6379`).
 
+## Nuvem (Terraform + AWS)
+
+Infraestrutura como código em `terraform/`, organizada em módulos reutilizáveis (`terraform/modules/{vpc,ecr,rds,redis,secrets,ecs}`) amarrados pelo módulo raiz (`terraform/`). `terraform/bootstrap` cria o bucket S3 + tabela DynamoDB usados como backend de state remoto — aplicado uma vez, separado do resto (não dá pra guardar o state de quem cria o lugar de guardar o state).
+
+**Decisão central: LocalStack por padrão, AWS real só sob demanda.** Toda a stack roda de graça contra um [LocalStack](https://www.localstack.cloud/) local (sobe junto no `docker compose up -d`, serviço `localstack`) — é o alvo padrão (`use_localstack = true`). Apontar pra uma conta AWS real exige a flag explícita:
+
+```bash
+cd terraform
+terraform init -reconfigure -backend-config=backend-aws.hcl
+terraform plan -var="use_localstack=false"
+terraform apply -var="use_localstack=false"
+```
+
+> **Nota:** a LocalStack **community** (gratuita) só emula de verdade S3, DynamoDB, EC2 (VPC/security groups), IAM e Secrets Manager. ECR, ECS, RDS, CloudWatch Logs e ElastiCache são recursos **Pro-only** — contra a community, esses módulos só validam via `terraform plan` (sintaxe e grafo de dependências), não `apply`. A validação de comportamento real desses módulos foi feita uma vez contra um AWS Academy Learner Lab (ver `CHECKLIST.md` pra detalhes e descobertas do processo).
+
+**O que a infraestrutura provisiona:**
+- VPC com 2 subnets públicas + 2 privadas (2 AZs), 1 NAT Gateway
+- ECR (repositório de imagem, tags imutáveis)
+- RDS Postgres + ElastiCache Redis, ambos em subnet privada, só alcançáveis pelo security group da aplicação
+- Secrets Manager (senha do banco + segredo JWT — nunca hardcoded, gerados via `random_password`)
+- ECS Fargate (cluster + task definition + service), sem Application Load Balancer neste marco (task recebe IP público direto)
+
+```bash
+docker build -t dbook:latest .
+# depois de `terraform apply` criar o repositório ECR:
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+docker tag dbook:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/dbook:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/dbook:latest
+```
+
+**Não esquecer:** `terraform destroy -var="use_localstack=false"` ao terminar de usar a AWS real — NAT Gateway e RDS cobram por hora rodando, mesmo em contas de estudo.
+
 ## Qualidade de código
 
 ```bash
@@ -186,7 +221,7 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M3 — Segurança** (User + BCrypt, JWT com refresh rotativo, filtro de autenticação, rotas públicas/protegidas, roles + `@PreAuthorize`, testes de segurança)
 - ✅ **M4 — CI** (GitHub Actions rodando `./gradlew check`, Testcontainers pros testes de integração, badge no README)
 - ✅ **M5 — Tempo real** (WebSocket/STOMP, autenticação no `CONNECT`, broadcast pós-commit, fan-out entre instâncias via Redis Pub/Sub)
-- ⬜ M6 — Nuvem (Terraform + AWS)
+- ✅ **M6 — Nuvem** (Terraform: VPC/ECR/RDS/ElastiCache/Secrets Manager/ECS Fargate, LocalStack por padrão, validado contra AWS real)
 - ⬜ M7 — IA (Bedrock)
 - ⬜ M8 — CI/CD completo
 - ⬜ M9 — Hotéis + microsserviços + Kubernetes

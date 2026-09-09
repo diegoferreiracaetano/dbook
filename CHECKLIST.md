@@ -88,6 +88,8 @@ Decisão extra (2026-09-09, fora do checklist original): adicionado um módulo d
 - A role recém-criada precisou de uma policy própria pra `secretsmanager:GetSecretValue` — a policy gerenciada `AmazonECSTaskExecutionRolePolicy` cobre só ECR pull + CloudWatch Logs, não Secrets Manager.
 - Depois desses dois ajustes, o deploy funcionou de ponta a ponta: Flyway migrou o schema real no RDS (6 migrations), JWT assinado com o segredo do Secrets Manager funcionou (`/auth/register` + `/auth/login` retornaram 200/201), busca pública no RDS respondeu 200.
 
+**Sessão do AWS Academy Lab encerrada em pleno `terraform destroy` (2026-09-09):** metade dos recursos (~15 de 36) foi destruída com sucesso antes da sessão do lab expirar — nesse ponto toda chamada de API real (inclusive leituras como `ecs:DescribeServices`) passou a ser negada por uma policy chamada literalmente `voc-cancel-cred`, claramente algo que a própria Vocareum/AWS Academy anexa quando a sessão termina. Não é bug nosso, não tem mais nada pra tentar por Terraform quando isso acontece. Sem risco de custo — é sandbox educacional sem cartão pessoal; a própria AWS Academy recicla a conta no ritmo dela, independente do que sobrou de pé. Uma sessão de lab futura seria uma conta nova (não dá pra "continuar" destruindo essa). **Lição pra próxima vez:** rodar o `destroy` bem antes do fim previsto da sessão do lab, não só depois de terminar os testes.
+
 - [x] 6.1 AWS CLI + bucket S3/DynamoDB pro state remoto
 - [x] 6.2 Módulo Terraform: VPC
 - [x] 6.3 Módulo Terraform: repositório ECR (aplicado de verdade — imagem publicada com sucesso)
