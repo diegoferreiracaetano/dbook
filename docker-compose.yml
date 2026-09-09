@@ -15,5 +15,18 @@ services:
     ports:
       - "6379:6379"
 
+  # Emulates AWS services locally (S3, DynamoDB, ECR, Secrets Manager, IAM, VPC...) so
+  # Terraform can be developed and applied against a free, local target by default (M6
+  # decision: real AWS only opt-in via the `use_localstack=false` variable).
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,dynamodb,ecr,ecs,ec2,iam,rds,secretsmanager,sts
+    volumes:
+      - dbook_localstack_data:/var/lib/localstack
+
 volumes:
   dbook_pgdata:
+  dbook_localstack_data:

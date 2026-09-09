@@ -8,3 +8,16 @@ out/
 .vscode/
 
 .DS_Store
+
+# Terraform local artifacts — state/cache/plan output, never committed.
+# .terraform.lock.hcl IS committed (pins provider versions), do not ignore it.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
