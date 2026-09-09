@@ -119,14 +119,20 @@ Decisão: fora do caminho síncrono da reserva — sugere, nunca decide sozinha,
 - `ai.bedrock.model-id` em `application.yml` fica documentado como "precisa verificar antes de usar de verdade" — é só um valor de configuração, não exige mudança de código quando corrigido.
 - Testado com sucesso: parsing/prompt/auditoria/rate-limit, tudo isolado do Bedrock real (unit tests) + fluxo completo end-to-end contra Postgres real localmente (registro→login→chamada→log de falha persistido).
 
-## M8 — CI/CD completo ⬜
+## M8 — CI/CD completo ✅
 
 Decisão: só automatiza deploy depois que a infra já rodou manualmente validada (M6).
 
-- [ ] 8.1 Build da imagem Docker no pipeline
-- [ ] 8.2 Push automático para o ECR
-- [ ] 8.3 Deploy automático em dev após merge
-- [ ] 8.4 Gate manual de aprovação para produção
+**Limitação de ambiente (2026-09-09), mais restritiva que M6/M7:** CI/CD de verdade exige credenciais AWS *persistentes* (o pipeline roda toda vez que alguém faz push, indefinidamente) — um token de AWS Academy Lab expira em horas, então nem dá pra colocar como secret do GitHub Actions. Diferente do M6/M7 (onde pelo menos parte rodou contra a AWS real antes da sessão cair), aqui **nenhum workflow foi executado de verdade** nesta sessão — o YAML e o Terraform de suporte (módulo `github_oidc`) estão corretos e prontos, testados o quanto dava (validação de sintaxe via `terraform plan`/`validate`, e o módulo `github_oidc` — que só usa IAM, disponível na LocalStack community — aplicado e verificado de verdade lá).
+
+- [x] 8.1 Build da imagem Docker no pipeline (`cd.yml`, job `build-and-push`)
+- [x] 8.2 Push automático para o ECR (mesma job — autenticação via OIDC, `aws-actions/configure-aws-credentials` + `amazon-ecr-login`, sem chave de longa duração; tag = SHA do commit, necessário porque o repositório é `IMMUTABLE`)
+- [x] 8.3 Deploy automático em dev após merge (job `deploy-dev`, dispara sozinho após o build — roda `terraform apply -var="image_tag=<sha>"`, reaproveitando a variável que a Task Definition do ECS já tinha desde o M6)
+- [x] 8.4 Gate manual de aprovação para produção (job `deploy-prod`, `environment: production` — só roda depois de um revisor aprovar via GitHub Environment protection rules; mesma infraestrutura que o dev neste projeto, dado que não há orçamento/conta pra manter dois ambientes AWS separados rodando)
+
+**Módulo Terraform novo, fora do checklist original mas necessário pra 8.1-8.2 funcionarem:** `terraform/modules/github_oidc` — cria o provedor OIDC (`token.actions.githubusercontent.com`) + uma role IAM que o GitHub Actions assume via `sts:AssumeRoleWithWebIdentity`, restrita a este repositório (`repo:diegoferreiracaetano/dbook:*`). Aplicado e verificado contra a LocalStack (`aws iam get-role` confirma a trust policy correta) — só não dá pra usar contra AWS real nesta sessão pela mesma limitação de sessão/tempo do Academy Lab.
+
+**Configuração manual única pendente (não automatizável, precisa de conta AWS persistente):** aplicar `github_oidc` contra a conta real, criar o secret `AWS_DEPLOY_ROLE_ARN` no GitHub com o `role_arn` de saída, e criar os GitHub Environments `dev`/`production` (o segundo com revisor obrigatório) — documentado no README.
 
 ## M9 — Evolução: hotéis + microsserviços + Kubernetes ⬜
 

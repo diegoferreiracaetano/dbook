@@ -205,6 +205,22 @@ curl -X POST localhost:8080/ai/suggestions \
 - Rate limit de 5 requisições/minuto por usuário (`AiRateLimitInterceptor`, Bucket4j), só em `/ai/**` — protege contra custo descontrolado de chamadas a um modelo pago, não é rate limit geral da API.
 - `ai.bedrock.model-id` em `application.yml` **precisa ser verificado** antes de usar contra uma conta real — modelos do Bedrock são descontinuados com o tempo; confirme o catálogo atual com `aws bedrock list-foundation-models` ou o console AWS.
 
+## CI/CD
+
+`.github/workflows/ci.yml` (teste+lint+detekt, toda PR/push) e `.github/workflows/cd.yml` (build+push+deploy, só depois que o CI passa) são pipelines separados — o CD só começa via `workflow_run` quando o CI termina com sucesso no `main`.
+
+Fluxo do CD:
+1. **build-and-push**: builda a imagem Docker, autentica no ECR via OIDC (sem chave de longa duração guardada como secret) e publica com a tag sendo o SHA do commit — necessário porque o repositório ECR é `IMMUTABLE` (M6/6.3), não dá pra reusar uma tag como `latest` em pushes repetidos.
+2. **deploy-dev**: automático após o build, roda `terraform apply -var="image_tag=<sha>"` — reaproveita a variável `image_tag` que a Task Definition do ECS já usa desde o M6.
+3. **deploy-prod**: mesma infraestrutura que o dev neste projeto (um setup de produção de verdade teria state/ambiente separado) — o que importa aqui é o **gate**: só roda depois que um revisor aprova, via as regras de proteção do GitHub Environment `production`.
+
+**Configuração manual única, necessária antes do pipeline funcionar de verdade** (nada disso é automatizável nem foi feito por mim — precisa de uma conta AWS persistente, diferente de um AWS Academy Lab, cuja sessão expira em horas):
+1. `terraform apply` do módulo `terraform/modules/github_oidc` contra a conta AWS real (já incluso no `terraform apply` normal do módulo raiz).
+2. Pegar o output `github_oidc.role_arn` e criar o secret `AWS_DEPLOY_ROLE_ARN` no repositório (Settings → Secrets and variables → Actions).
+3. Criar os GitHub Environments `dev` e `production` (Settings → Environments) — `production` precisa de "Required reviewers" configurado pra virar um gate de aprovação de verdade.
+
+**Nota honesta:** o pipeline nunca rodou de ponta a ponta nesta sessão — a única conta AWS disponível foi um Academy Lab, incompatível com credenciais persistentes de CI. O YAML e o Terraform estão corretos e prontos, mas a validação de um `workflow_run` verde fica pendente de uma conta AWS real.
+
 ## Qualidade de código
 
 ```bash
@@ -240,7 +256,7 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M5 — Tempo real** (WebSocket/STOMP, autenticação no `CONNECT`, broadcast pós-commit, fan-out entre instâncias via Redis Pub/Sub)
 - ✅ **M6 — Nuvem** (Terraform: VPC/ECR/RDS/ElastiCache/Secrets Manager/ECS Fargate, LocalStack por padrão, validado contra AWS real)
 - ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
-- ⬜ M8 — CI/CD completo
+- ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
 - ⬜ M9 — Hotéis + microsserviços + Kubernetes
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
