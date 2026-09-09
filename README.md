@@ -171,7 +171,7 @@ Esses dois últimos usam [Testcontainers](https://testcontainers.com/) (`Abstrac
 - ✅ **M1 — Domínio e persistência** (voos, herança JPA `JOINED`, endpoints de cadastro/busca, testes)
 - ✅ **M2 — Reserva com concorrência real** (lock otimista, endpoint de reserva/cancelamento, teste de concorrência real, Swagger)
 - ✅ **M3 — Segurança** (User + BCrypt, JWT com refresh rotativo, filtro de autenticação, rotas públicas/protegidas, roles + `@PreAuthorize`, testes de segurança)
-- ⬜ M4 — CI
+- ✅ **M4 — CI** (GitHub Actions rodando `./gradlew check`, Testcontainers pros testes de integração, badge no README)
 - ⬜ M5 — Tempo real (WebSocket + Redis)
 - ⬜ M6 — Nuvem (Terraform + AWS)
 - ⬜ M7 — IA (Bedrock)

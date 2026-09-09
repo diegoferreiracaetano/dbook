@@ -42,14 +42,14 @@ Decisão: entra só agora, porque proteger endpoints inexistentes é teatro. JWT
 - [x] 3.7 Refresh com rotação
 - [x] 3.8 Testes de segurança (token ausente, role errada)
 
-## M4 — CI ⬜
+## M4 — CI ✅
 
-Decisão: entra assim que existe algo testável de verdade — não deixa pro final. ktlint/detekt já existem no build desde o M2/M3; falta só conectar no pipeline.
+Decisão: entra assim que existe algo testável de verdade — não deixa pro final. ktlint/detekt já existem no build desde o M2/M3; faltava só conectar no pipeline.
 
-- [ ] 4.1 Workflow GitHub Actions (build)
-- [ ] 4.2 Rodar testes no pipeline (incluindo Testcontainers)
-- [ ] 4.3 `./gradlew check` (ktlint + detekt) no pipeline
-- [ ] 4.4 Badge de status no README
+- [x] 4.1 Workflow GitHub Actions (build)
+- [x] 4.2 Rodar testes no pipeline (incluindo Testcontainers)
+- [x] 4.3 `./gradlew check` (ktlint + detekt) no pipeline
+- [x] 4.4 Badge de status no README
 
 ## M5 — Tempo real ⬜
 
