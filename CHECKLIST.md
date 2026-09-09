@@ -72,7 +72,7 @@ Checklist de fechamento:
 - [x] README.md atualizado
 - [x] Swagger/OpenAPI — não se aplica (nenhum endpoint REST novo neste módulo; WebSocket/STOMP não é descrito por OpenAPI)
 
-## M6 — Nuvem (Terraform + AWS) ⬜
+## M6 — Nuvem (Terraform + AWS) ✅
 
 Decisão: ECS Fargate, não EKS ainda — Kubernetes só compensa com múltiplos serviços de verdade (isso é M9).
 
@@ -82,17 +82,23 @@ Descoberta importante (2026-09-09): a LocalStack **community** (gratuita) só em
 
 Decisão extra (2026-09-09, fora do checklist original): adicionado um módulo de **ElastiCache Redis**, porque o M5 depende de Redis pra funcionar — sem isso, toda reserva/cancelamento quebraria com 500 em produção assim que o evento de disponibilidade tentasse publicar.
 
+**Descobertas reais do apply contra o AWS Academy Lab (2026-09-09), não previstas no design inicial:**
+- Essa conta não tem uma role `LabRole` (comum em outros templates do Academy) — só `voclabs`, `vocareum` e roles de serviço. Pior: `iam:GetRole` é explicitamente negado, então nem dava pra descobrir a role certa via `data` source em runtime.
+- Mesmo assim, `iam:CreateRole` **funciona** nessa conta (a suposição inicial de que Academy Lab sempre bloqueia isso estava errada) — o módulo ECS passou a criar sua própria role de execução, igual faria numa conta AWS normal, sem branch condicional por ambiente.
+- A role recém-criada precisou de uma policy própria pra `secretsmanager:GetSecretValue` — a policy gerenciada `AmazonECSTaskExecutionRolePolicy` cobre só ECR pull + CloudWatch Logs, não Secrets Manager.
+- Depois desses dois ajustes, o deploy funcionou de ponta a ponta: Flyway migrou o schema real no RDS (6 migrations), JWT assinado com o segredo do Secrets Manager funcionou (`/auth/register` + `/auth/login` retornaram 200/201), busca pública no RDS respondeu 200.
+
 - [x] 6.1 AWS CLI + bucket S3/DynamoDB pro state remoto
 - [x] 6.2 Módulo Terraform: VPC
-- [x] 6.3 Módulo Terraform: repositório ECR (código pronto, validado por `plan`; Pro-only na LocalStack, apply real pendente no 6.9)
+- [x] 6.3 Módulo Terraform: repositório ECR (aplicado de verdade — imagem publicada com sucesso)
 - [x] 6.4 Dockerfile multi-stage da aplicação (testado de ponta a ponta: build local + `docker run` contra Postgres/Redis reais + `/health` 200)
-- [ ] 6.5 Build local da imagem + push manual pro ECR (build validado no 6.4; push depende de ECR real, pendente no 6.9)
-- [x] 6.6 Módulo Terraform: RDS (código pronto, validado por `plan`; apply real pendente no 6.9)
-- [x] 6.6b Módulo Terraform: ElastiCache Redis (extra, não estava no checklist original — ver decisão acima; código pronto, validado por `plan`; apply real pendente no 6.9)
-- [x] 6.7 Módulo Terraform: Secrets Manager (aplicado e verificado de verdade contra a LocalStack)
-- [x] 6.8 Módulo Terraform: ECS Fargate (com `container_image` real; código pronto, validado por `plan`; apply real pendente no 6.9)
-- [ ] 6.9 `terraform plan` revisado + `apply`
-- [ ] 6.10 Validar deploy no console AWS
+- [x] 6.5 Build local da imagem + push manual pro ECR (`docker push` confirmado via `aws ecr describe-images`)
+- [x] 6.6 Módulo Terraform: RDS (aplicado de verdade — Flyway migrou 6 migrations no Postgres real)
+- [x] 6.6b Módulo Terraform: ElastiCache Redis (extra, não estava no checklist original — ver decisão acima; aplicado de verdade contra a conta real)
+- [x] 6.7 Módulo Terraform: Secrets Manager (aplicado de verdade — JWT assinado com o segredo real funcionou em `/auth/login`)
+- [x] 6.8 Módulo Terraform: ECS Fargate (aplicado de verdade — task rodando, `has reached a steady state`)
+- [x] 6.9 `terraform plan` revisado + `apply` (contra a conta real do AWS Academy Lab, 2 correções de IAM no caminho — ver descobertas acima)
+- [x] 6.10 Validar deploy no console AWS (validado via CLI + HTTP real: `/health` 200, registro/login/busca funcionando contra RDS+Secrets Manager reais)
 
 ## M7 — IA ⬜
 

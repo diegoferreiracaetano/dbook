@@ -7,19 +7,13 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = 7
 }
 
-# AWS Academy Learner Lab blocks both iam:CreateRole and iam:GetRole — real deployments
-# there must reuse a pre-provisioned role, and its ARN has to be built directly (account
-# ID from STS, which IS allowed) rather than looked up via the IAM API. The role name
-# varies by lab template (this one has no "LabRole" at all, only "voclabs") — hence the
-# variable instead of a hardcoded name. LocalStack's IAM has no such restriction, so a
-# real execution role is created there instead, mirroring a normal AWS account.
-data "aws_caller_identity" "current" {
-  count = var.use_localstack ? 0 : 1
-}
-
+# The pre-existing roles in this AWS Academy Lab account ("voclabs") aren't trusted by
+# ecs-tasks.amazonaws.com — ECS rejects the task with "unable to assume the role" even
+# though the ARN itself resolves fine. Creating a dedicated role turned out to work in
+# this lab despite IAM being locked down for reads (iam:GetRole is denied) — so this is
+# the same path for LocalStack and real AWS, no environment-specific branching needed.
 resource "aws_iam_role" "ecs_execution_role" {
-  count = var.use_localstack ? 1 : 0
-  name  = "${var.name}-ecs-execution-role"
+  name = "${var.name}-ecs-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -32,9 +26,25 @@ resource "aws_iam_role" "ecs_execution_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
-  count      = var.use_localstack ? 1 : 0
-  role       = aws_iam_role.ecs_execution_role[0].name
+  role       = aws_iam_role.ecs_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# AmazonECSTaskExecutionRolePolicy only covers ECR pull + CloudWatch Logs — it does NOT
+# include Secrets Manager, so the execution role needs this explicitly to fetch the
+# `secrets` block values (db password, JWT secret) at container start.
+resource "aws_iam_role_policy" "ecs_execution_role_secrets" {
+  name = "${var.name}-ecs-secrets-access"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "secretsmanager:GetSecretValue"
+      Resource = [var.db_password_secret_arn, var.jwt_secret_arn]
+    }]
+  })
 }
 
 locals {
@@ -42,11 +52,7 @@ locals {
   # (the application itself) roles — the app doesn't call any AWS API yet, so it doesn't
   # need permissions beyond what the execution role already has. Revisit once M7 (Bedrock)
   # gives the application its own AWS calls to make.
-  role_arn = (
-    var.use_localstack
-    ? aws_iam_role.ecs_execution_role[0].arn
-    : "arn:aws:iam::${data.aws_caller_identity.current[0].account_id}:role/${var.lab_role_name}"
-  )
+  role_arn = aws_iam_role.ecs_execution_role.arn
 }
 
 resource "aws_ecs_task_definition" "this" {

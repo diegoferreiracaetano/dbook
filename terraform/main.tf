@@ -80,7 +80,6 @@ module "ecs" {
   source = "./modules/ecs"
 
   name               = var.project_name
-  use_localstack     = var.use_localstack
   public_subnet_ids  = module.vpc.public_subnet_ids
   security_group_id  = aws_security_group.app.id
   ecr_repository_url = module.ecr.repository_url
