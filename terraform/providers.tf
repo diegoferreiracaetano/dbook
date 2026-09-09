@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 
   backend "s3" {}
@@ -38,6 +42,10 @@ provider "aws" {
       rds            = "http://localhost:4566"
       secretsmanager = "http://localhost:4566"
       sts            = "http://localhost:4566"
+      logs           = "http://localhost:4566"
+      # elasticache is LocalStack Pro-only — kept here for consistency, has no effect
+      # against the free/community image this project uses.
+      elasticache = "http://localhost:4566"
     }
   }
 }

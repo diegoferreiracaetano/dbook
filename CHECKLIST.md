@@ -76,14 +76,21 @@ Checklist de fechamento:
 
 Decisão: ECS Fargate, não EKS ainda — Kubernetes só compensa com múltiplos serviços de verdade (isso é M9).
 
+Decisão (2026-09-09): todo o Terraform deste marco roda contra **LocalStack** por padrão (`use_localstack = true`), zero custo — real AWS só com `-var="use_localstack=false"` explícito. Conta real disponível é um **AWS Academy Learner Lab** (token temporário, sem risco de cartão, mas sem permissão pra criar roles IAM novas — usa a `LabRole` pré-existente).
+
+Descoberta importante (2026-09-09): a LocalStack **community** (gratuita) só emula de verdade S3, DynamoDB, EC2 (VPC/security groups), IAM e Secrets Manager. **ECR, ECS, RDS, CloudWatch Logs e ElastiCache são recursos Pro-only** (erro 501 "not yet implemented or pro feature" ao aplicar) — esses módulos são validados só por `terraform plan` localmente; o `apply` de verdade acontece contra o Academy Lab no 6.9.
+
+Decisão extra (2026-09-09, fora do checklist original): adicionado um módulo de **ElastiCache Redis**, porque o M5 depende de Redis pra funcionar — sem isso, toda reserva/cancelamento quebraria com 500 em produção assim que o evento de disponibilidade tentasse publicar.
+
 - [x] 6.1 AWS CLI + bucket S3/DynamoDB pro state remoto
 - [x] 6.2 Módulo Terraform: VPC
-- [ ] 6.3 Módulo Terraform: repositório ECR (isolado, provisiona antes do resto)
-- [ ] 6.4 Dockerfile multi-stage da aplicação (build + runtime enxuto)
-- [ ] 6.5 Build local da imagem + push manual pro ECR
-- [ ] 6.6 Módulo Terraform: RDS
-- [ ] 6.7 Módulo Terraform: Secrets Manager
-- [ ] 6.8 Módulo Terraform: ECS Fargate (com `container_image` real)
+- [x] 6.3 Módulo Terraform: repositório ECR (código pronto, validado por `plan`; Pro-only na LocalStack, apply real pendente no 6.9)
+- [x] 6.4 Dockerfile multi-stage da aplicação (testado de ponta a ponta: build local + `docker run` contra Postgres/Redis reais + `/health` 200)
+- [ ] 6.5 Build local da imagem + push manual pro ECR (build validado no 6.4; push depende de ECR real, pendente no 6.9)
+- [x] 6.6 Módulo Terraform: RDS (código pronto, validado por `plan`; apply real pendente no 6.9)
+- [x] 6.6b Módulo Terraform: ElastiCache Redis (extra, não estava no checklist original — ver decisão acima; código pronto, validado por `plan`; apply real pendente no 6.9)
+- [x] 6.7 Módulo Terraform: Secrets Manager (aplicado e verificado de verdade contra a LocalStack)
+- [x] 6.8 Módulo Terraform: ECS Fargate (com `container_image` real; código pronto, validado por `plan`; apply real pendente no 6.9)
 - [ ] 6.9 `terraform plan` revisado + `apply`
 - [ ] 6.10 Validar deploy no console AWS
 
