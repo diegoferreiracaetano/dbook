@@ -7,6 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    jacoco
 }
 
 group = "com.dbook"
@@ -71,6 +72,51 @@ detekt {
 // than the plain `detekt` task, which skips type-aware rules for speed.
 tasks.check {
     dependsOn(tasks.named("detektMain"), tasks.named("detektTest"))
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+// JPA entities and DTOs are plain data holders (no branching logic of their own — their
+// behavior is exercised indirectly through the adapters/controllers that use them); the
+// main() entrypoint is framework bootstrap, not application logic. Excluding them keeps
+// the coverage number meaningful instead of diluted by classes with nothing to branch on.
+val coverageExclusions =
+    listOf(
+        "com/dbook/DbookApplicationKt*",
+        "**/*JpaEntity*",
+        "**/presentation/*Request*",
+        "**/presentation/*Response*",
+    )
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    classDirectories.setFrom(
+        classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } },
+    )
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    classDirectories.setFrom(
+        classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } },
+    )
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<Test> {
