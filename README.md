@@ -171,3 +171,5 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 - ⬜ M7 — IA (Bedrock)
 - ⬜ M8 — CI/CD completo
 - ⬜ M9 — Hotéis + microsserviços + Kubernetes
+
+Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
