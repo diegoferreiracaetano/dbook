@@ -11,4 +11,6 @@ interface FlightJpaRepository : JpaRepository<FlightJpaEntity, Long> {
         start: LocalDateTime,
         end: LocalDateTime,
     ): List<FlightJpaEntity>
+
+    fun findTop50ByActiveTrueOrderByDepartureTimeAsc(): List<FlightJpaEntity>
 }

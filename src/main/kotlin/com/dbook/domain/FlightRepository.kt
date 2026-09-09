@@ -12,4 +12,8 @@ interface FlightRepository {
         destinationIataCode: String,
         date: LocalDate,
     ): List<Flight>
+
+    // Candidate pool for AI suggestions — bounding/ordering (soonest departures first)
+    // is an adapter concern, kept out of this port.
+    fun findActive(): List<Flight>
 }

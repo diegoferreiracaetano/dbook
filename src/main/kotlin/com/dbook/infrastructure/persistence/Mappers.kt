@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.persistence
 
+import com.dbook.domain.AiSuggestionLog
 import com.dbook.domain.Airport
 import com.dbook.domain.Bookable
 import com.dbook.domain.Booking
@@ -107,4 +108,22 @@ fun RefreshToken.toJpaEntity(): RefreshTokenJpaEntity =
         tokenHash = tokenHash,
         expiresAt = expiresAt,
         revoked = revoked,
+    )
+
+fun AiSuggestionLogJpaEntity.toDomain(): AiSuggestionLog =
+    AiSuggestionLog(
+        id = id,
+        userId = userId,
+        query = query,
+        rawResponse = rawResponse,
+        createdAt = createdAt,
+    )
+
+fun AiSuggestionLog.toJpaEntity(): AiSuggestionLogJpaEntity =
+    AiSuggestionLogJpaEntity(
+        id = id,
+        userId = userId,
+        query = query,
+        rawResponse = rawResponse,
+        createdAt = createdAt,
     )

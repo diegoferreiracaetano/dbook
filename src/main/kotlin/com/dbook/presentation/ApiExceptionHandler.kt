@@ -1,5 +1,7 @@
 package com.dbook.presentation
 
+import com.dbook.domain.AiResponseParsingException
+import com.dbook.domain.AiServiceUnavailableException
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookingNotFoundException
@@ -46,4 +48,17 @@ class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun handleForbidden(ex: NotBookingOwnerException): Map<String, String> =
         mapOf("error" to (ex.message ?: "Forbidden"))
+
+    // The AI model is an external dependency we don't control the output of — a
+    // malformed/unparseable completion is treated as "we (the gateway) messed up", not
+    // the caller's fault, hence 502 rather than 400.
+    @ExceptionHandler(AiResponseParsingException::class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    fun handleAiResponseParsing(ex: AiResponseParsingException): Map<String, String> =
+        mapOf("error" to (ex.message ?: "AI response could not be parsed"))
+
+    @ExceptionHandler(AiServiceUnavailableException::class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    fun handleAiServiceUnavailable(ex: AiServiceUnavailableException): Map<String, String> =
+        mapOf("error" to (ex.message ?: "AI service unavailable"))
 }

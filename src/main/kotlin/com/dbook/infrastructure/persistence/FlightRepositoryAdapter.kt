@@ -54,4 +54,7 @@ class FlightRepositoryAdapter(
             )
             .map { it.toDomain() }
     }
+
+    override fun findActive(): List<Flight> =
+        flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc().map { it.toDomain() }
 }

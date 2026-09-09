@@ -32,6 +32,8 @@ private class FakeFlightRepository : FlightRepository {
         destinationIataCode: String,
         date: LocalDate,
     ): List<Flight> = emptyList()
+
+    override fun findActive(): List<Flight> = saved.filter { it.active }
 }
 
 class RegisterFlightUseCaseTest {
