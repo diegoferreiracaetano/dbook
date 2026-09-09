@@ -1,5 +1,6 @@
 package com.dbook.application
 
+import com.dbook.domain.AvailabilityBroadcaster
 import com.dbook.domain.BookableRepository
 import com.dbook.domain.Booking
 import com.dbook.domain.BookingNotFoundException
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional
 class CancelBookingUseCase(
     private val bookingRepository: BookingRepository,
     private val bookableRepository: BookableRepository,
+    private val availabilityBroadcaster: AvailabilityBroadcaster,
 ) {
     // A CLIENT may only cancel their own booking; ADMIN can cancel any booking.
     // Without this check, authentication alone wouldn't actually protect a booking
@@ -32,7 +34,10 @@ class CancelBookingUseCase(
         val cancelled = booking.cancel()
         val bookableId =
             requireNotNull(booking.bookable.id) { "A persisted Booking must reference a persisted Bookable" }
-        bookableRepository.incrementAvailability(bookableId)
-        return bookingRepository.save(cancelled)
+        val updatedBookable = bookableRepository.incrementAvailability(bookableId)
+        val saved = bookingRepository.save(cancelled)
+
+        afterCommit { availabilityBroadcaster.broadcast(bookableId, updatedBookable.availableCapacity) }
+        return saved
     }
 }

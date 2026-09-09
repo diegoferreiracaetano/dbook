@@ -1,5 +1,6 @@
 package com.dbook.application
 
+import com.dbook.domain.AvailabilityBroadcaster
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookableRepository
 import com.dbook.domain.Booking
@@ -17,6 +18,7 @@ data class RegisterBookingCommand(
 class RegisterBookingUseCase(
     private val bookableRepository: BookableRepository,
     private val bookingRepository: BookingRepository,
+    private val availabilityBroadcaster: AvailabilityBroadcaster,
 ) {
     @Transactional
     fun execute(command: RegisterBookingCommand): Booking {
@@ -33,6 +35,11 @@ class RegisterBookingUseCase(
                 bookable = updatedBookable,
                 customerId = command.customerId,
             )
-        return bookingRepository.save(booking)
+        val saved = bookingRepository.save(booking)
+
+        // only after the transaction actually commits — a rollback past this point
+        // shouldn't leave WebSocket subscribers believing a decrement that never happened
+        afterCommit { availabilityBroadcaster.broadcast(command.bookableId, updatedBookable.availableCapacity) }
+        return saved
     }
 }
