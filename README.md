@@ -15,8 +15,9 @@ Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas e 
 - Docker Compose (Postgres/Redis/LocalStack local)
 - ktlint + detekt (`./gradlew check`)
 - Terraform (VPC, ECR, RDS, ElastiCache, Secrets Manager, ECS Fargate) + GitHub Actions
+- AWS Bedrock (sugestões de voo por IA) + Bucket4j (rate limiting)
 
-Planejado para os próximos marcos: AWS Bedrock (IA), CI/CD completo, hotéis + microsserviços (M9).
+Planejado para os próximos marcos: CI/CD completo, hotéis + microsserviços (M9).
 
 ## Arquitetura
 
@@ -189,6 +190,21 @@ docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/dbook:latest
 
 **Não esquecer:** `terraform destroy -var="use_localstack=false"` ao terminar de usar a AWS real — NAT Gateway e RDS cobram por hora rodando, mesmo em contas de estudo.
 
+## IA (sugestões de voo via AWS Bedrock)
+
+`POST /ai/suggestions` (autenticado) recebe um pedido em linguagem natural e devolve voos sugeridos, sempre a partir dos voos realmente ativos no banco — a IA **nunca** cria, altera ou confirma uma reserva sozinha, só sugere.
+
+```bash
+curl -X POST localhost:8080/ai/suggestions \
+  -H "Content-Type: application/json" -H "Authorization: Bearer <accessToken>" \
+  -d '{"query": "voos baratos pra o Rio mês que vem"}'
+```
+
+- O prompt inclui até 50 voos ativos (`FlightRepository.findActive()`, mais próximos primeiro) — o modelo é instruído a nunca inventar um `flightId` fora dessa lista.
+- Cada chamada é auditada em `ai_suggestion_log` (sucesso **ou** falha — decisão fechada do M7 é "sempre auditada").
+- Rate limit de 5 requisições/minuto por usuário (`AiRateLimitInterceptor`, Bucket4j), só em `/ai/**` — protege contra custo descontrolado de chamadas a um modelo pago, não é rate limit geral da API.
+- `ai.bedrock.model-id` em `application.yml` **precisa ser verificado** antes de usar contra uma conta real — modelos do Bedrock são descontinuados com o tempo; confirme o catálogo atual com `aws bedrock list-foundation-models` ou o console AWS.
+
 ## Qualidade de código
 
 ```bash
@@ -209,6 +225,7 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 - **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real.
 - **Segurança** (`SecurityIntegrationTest`): `@SpringBootTest` completo — rota admin sem token (401) e com role errada (403), reserva exige autenticação, dono vs. não-dono de reserva vs. ADMIN, rotação de refresh token (reuso rejeitado), busca pública sem token.
 - **Tempo real** (`AvailabilityBroadcastTest`): cliente STOMP real (não mock) conecta autenticado, assina o tópico de disponibilidade, dispara uma reserva e recebe o evento publicado via Redis Pub/Sub; e um `CONNECT` sem token válido é rejeitado.
+- **IA** (`SuggestFlightsUseCaseTest`, `BedrockAiSuggestionServiceTest`, `AiRateLimitInterceptorTest`): caso de uso com fakes (inclui o log sendo salvo tanto no sucesso quanto na falha), construção do prompt/parse da resposta do Bedrock isolados de qualquer chamada de rede, e o rate limiter (5/min, escopo por usuário) exercitado diretamente — nada disso depende de credencial AWS real pra rodar.
 
 Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractIntegrationTest`) — sobem Postgres e Redis descartáveis sozinhos, não precisam mais de `docker compose up -d` manual. Só exigem Docker instalado e rodando.
 
@@ -222,7 +239,7 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M4 — CI** (GitHub Actions rodando `./gradlew check`, Testcontainers pros testes de integração, badge no README)
 - ✅ **M5 — Tempo real** (WebSocket/STOMP, autenticação no `CONNECT`, broadcast pós-commit, fan-out entre instâncias via Redis Pub/Sub)
 - ✅ **M6 — Nuvem** (Terraform: VPC/ECR/RDS/ElastiCache/Secrets Manager/ECS Fargate, LocalStack por padrão, validado contra AWS real)
-- ⬜ M7 — IA (Bedrock)
+- ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
 - ⬜ M8 — CI/CD completo
 - ⬜ M9 — Hotéis + microsserviços + Kubernetes
 

@@ -102,16 +102,22 @@ Decisão extra (2026-09-09, fora do checklist original): adicionado um módulo d
 - [x] 6.9 `terraform plan` revisado + `apply` (contra a conta real do AWS Academy Lab, 2 correções de IAM no caminho — ver descobertas acima)
 - [x] 6.10 Validar deploy no console AWS (validado via CLI + HTTP real: `/health` 200, registro/login/busca funcionando contra RDS+Secrets Manager reais)
 
-## M7 — IA ⬜
+## M7 — IA ✅
 
-Decisão: fora do caminho síncrono da reserva — sugere, nunca decide sozinha, sempre auditada.
+Decisão: fora do caminho síncrono da reserva — sugere, nunca decide sozinha, sempre auditada. `POST /ai/suggestions` (autenticado, `SuggestFlightsUseCase`) pega até 50 voos ativos (`FlightRepository.findActive()`, mais próximos primeiro), monta um prompt e chama o Bedrock via `AiSuggestionService` (porta em `domain`, implementada por `BedrockAiSuggestionService`).
 
-- [ ] 7.1 Acesso ao Bedrock configurado
-- [ ] 7.2 Endpoint de sugestão por linguagem natural
-- [ ] 7.3 Prompt com contexto real (voos do banco)
-- [ ] 7.4 Parse da resposta estruturada (JSON)
-- [ ] 7.5 `AiSuggestionLog` (auditoria)
-- [ ] 7.6 Rate limiting no endpoint de IA (Bucket4j)
+- [x] 7.1 Acesso ao Bedrock configurado (`BedrockConfig`, `software.amazon.awssdk:bedrockruntime`, credenciais via provider chain padrão — nunca hardcoded, mesmo princípio de todo segredo deste projeto)
+- [x] 7.2 Endpoint de sugestão por linguagem natural (`POST /ai/suggestions`, `AiSuggestionController`)
+- [x] 7.3 Prompt com contexto real (voos do banco) (`BedrockAiSuggestionService.buildPrompt`, testado isoladamente)
+- [x] 7.4 Parse da resposta estruturada (JSON) (`parseSuggestions`/`extractText`, testados com respostas válidas e malformadas — `AiResponseParsingException` → 502)
+- [x] 7.5 `AiSuggestionLog` (auditoria) — **corrigido durante teste ao vivo:** a primeira versão só logava em caso de sucesso; a decisão fechada é "sempre auditada", então `SuggestFlightsUseCase` agora loga sucesso E falha (`runCatching`), confirmado gravando no Postgres real mesmo com o Bedrock retornando erro
+- [x] 7.6 Rate limiting no endpoint de IA (Bucket4j) — `AiRateLimitInterceptor`, 5 requisições/minuto por usuário, escopado só a `/ai/**`; testado ao vivo (6ª tentativa retornou 429) e com teste automatizado
+
+**Validação real contra o AWS Academy Lab (2026-09-09) — o que funcionou de verdade e o que ficou pendente:**
+- O cliente Bedrock conectou de verdade (credenciais/região resolvidas, corpo da requisição aceito estruturalmente) e nosso tratamento de erro (`AiServiceUnavailableException` → 503) funcionou corretamente contra um erro real da AWS.
+- **Não foi possível confirmar um `model-id` válido nessa sessão**: todo model ID de Claude 3.x testado (`claude-3-5-sonnet-20241022-v2:0`, `claude-3-haiku-20240307-v1:0`, `claude-3-sonnet-20240229-v1:0`) retornou "reached the end of its life", e `bedrock:ListFoundationModels` é negado pela política restritiva desse lab — sem como consultar o catálogo atual de dentro dessa sessão. Um dos testes também já bateu na mesma política `voc-cancel-cred` do M6, confirmando que o acesso desse lab específico segue instável/em processo de revogação.
+- `ai.bedrock.model-id` em `application.yml` fica documentado como "precisa verificar antes de usar de verdade" — é só um valor de configuração, não exige mudança de código quando corrigido.
+- Testado com sucesso: parsing/prompt/auditoria/rate-limit, tudo isolado do Bedrock real (unit tests) + fluxo completo end-to-end contra Postgres real localmente (registro→login→chamada→log de falha persistido).
 
 ## M8 — CI/CD completo ⬜
 
