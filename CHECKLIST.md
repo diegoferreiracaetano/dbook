@@ -134,15 +134,22 @@ Decisão: só automatiza deploy depois que a infra já rodou manualmente validad
 
 **Configuração manual única pendente (não automatizável, precisa de conta AWS persistente):** aplicar `github_oidc` contra a conta real, criar o secret `AWS_DEPLOY_ROLE_ARN` no GitHub com o `role_arn` de saída, e criar os GitHub Environments `dev`/`production` (o segundo com revisor obrigatório) — documentado no README.
 
-## M9 — Evolução: hotéis + microsserviços + Kubernetes ⬜
+## M9 — Evolução: hotéis + microsserviços + Kubernetes 💡 (sugestão futura, não é próximo passo)
 
-Decisão: aqui o `Bookable` paga a dívida de design do M1 — `Accommodation` entra sem tocar em `Booking`.
+Decisão (2026-09-09): rebaixado de "próximo marco" pra "ideia registrada" — o usuário avaliou que microsserviços/Kubernetes nesse ponto seriam mais exercício de "mostrar que sei desenhar pra isso" do que algo que agrega valor real a um projeto pessoal de portfólio. Fica documentado caso o interesse mude no futuro; o design abaixo continua válido se/quando isso acontecer.
+
+Decisão original: aqui o `Bookable` paga a dívida de design do M1 — `Accommodation` entra sem tocar em `Booking`.
 
 - [ ] 9.1 `Accommodation` implementando `Bookable`
 - [ ] 9.2 Adaptar busca para suportar os dois tipos
 - [ ] 9.3 Separar serviços (`auth`, `flight`, `ai`, `realtime`)
 - [ ] 9.4 Terraform de cluster EKS simples
 - [ ] 9.5 Migrar `ai-service` para o EKS + documentar comparação com Fargate
+
+## Ideias futuras (fora da numeração M1-M9)
+
+- **Script de seed de dados**: popular o banco com voos/rotas realistas — hoje só existem os 3 aeroportos seedados (V2), o resto é criado manualmente em testes. Resolveria o banco vazio pra demos e pra dar contexto de verdade à sugestão por IA (M7).
+- **Integração com API real de voos**: buscar voos de um provedor externo (AviationStack, Amadeus, OpenSky...) em vez de dados só cadastrados via `/admin/flights`. Maior escopo — exige escolher provedor, lidar com API key/rate limit/custo, mapear o schema deles pro domínio, decidir estratégia de sincronização.
 
 ## Checklist de fechamento de módulo
 

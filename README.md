@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml/badge.svg)](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml)
 
-Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas e com hotéis planejados como segunda especialização do mesmo domínio (M9). Projeto pessoal de estudo de backend Kotlin, construído em marcos incrementais.
+Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas — o domínio (`Bookable`) já foi desenhado pra suportar hotéis como segunda especialização no futuro, se fizer sentido. Projeto pessoal de estudo de backend Kotlin, construído em marcos incrementais.
 
 ## Stack
 
@@ -17,7 +17,7 @@ Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas e 
 - Terraform (VPC, ECR, RDS, ElastiCache, Secrets Manager, ECS Fargate) + GitHub Actions
 - AWS Bedrock (sugestões de voo por IA) + Bucket4j (rate limiting)
 
-Planejado para os próximos marcos: CI/CD completo, hotéis + microsserviços (M9).
+M1-M8 completos. Ideias registradas pra depois: script de seed de dados, integração com API real de voos — ver "Ideias futuras" no [CHECKLIST.md](CHECKLIST.md).
 
 ## Arquitetura
 
@@ -257,6 +257,6 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M6 — Nuvem** (Terraform: VPC/ECR/RDS/ElastiCache/Secrets Manager/ECS Fargate, LocalStack por padrão, validado contra AWS real)
 - ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
-- ⬜ M9 — Hotéis + microsserviços + Kubernetes
+- 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
