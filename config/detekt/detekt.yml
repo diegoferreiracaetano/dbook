@@ -730,6 +730,10 @@ style:
     allowNonStandardGrouping: false
   UnnecessaryAbstractClass:
     active: true
+    # Test fixture base classes are abstract on purpose — carrying shared setup for the
+    # single-test-per-class convention (each scenario extends one, JUnit must not be able
+    # to instantiate the base directly) — never because they declare an abstract member.
+    excludes: ['**/test/**']
   UnnecessaryAnnotationUseSiteTarget:
     active: false
   UnnecessaryApply:

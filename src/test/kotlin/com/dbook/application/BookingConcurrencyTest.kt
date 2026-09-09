@@ -22,7 +22,7 @@ class BookingConcurrencyTest : AbstractIntegrationTest() {
     lateinit var registerBookingUseCase: RegisterBookingUseCase
 
     @Test
-    fun `only one of two simultaneous bookings succeeds for the last seat`() {
+    fun `given a flight with one seat when two bookings race for it then only one succeeds`() {
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(

@@ -1,7 +1,8 @@
-package com.dbook.application
+package com.dbook.application.registerflightusecase
 
+import com.dbook.application.RegisterFlightCommand
+import com.dbook.application.RegisterFlightUseCase
 import com.dbook.domain.Airport
-import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.AirportRepository
 import com.dbook.domain.Flight
 import com.dbook.domain.FlightRepository
@@ -9,15 +10,12 @@ import com.dbook.domain.SeatClass
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
-private class FakeAirportRepository(private val airports: List<Airport>) : AirportRepository {
+class FakeAirportRepository(private val airports: List<Airport>) : AirportRepository {
     override fun findByIataCode(iataCode: String): Airport? = airports.find { it.iataCode == iataCode }
 }
 
-private class FakeFlightRepository : FlightRepository {
+class FakeFlightRepository : FlightRepository {
     val saved = mutableListOf<Flight>()
 
     override fun findById(id: Long): Flight? = saved.find { it.id == id }
@@ -36,14 +34,15 @@ private class FakeFlightRepository : FlightRepository {
     override fun findActive(): List<Flight> = saved.filter { it.active }
 }
 
-class RegisterFlightUseCaseTest {
+// Shared "given": GRU and GIG exist as airports; every scenario below registers a flight
+// between them (or a nonexistent code) using this fixed pair.
+abstract class RegisterFlightUseCaseFixture {
     private val gru = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
     private val gig = Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
-    private val airportRepository = FakeAirportRepository(listOf(gru, gig))
-    private val flightRepository = FakeFlightRepository()
-    private val useCase = RegisterFlightUseCase(flightRepository, airportRepository)
+    protected val flightRepository = FakeFlightRepository()
+    protected val useCase = RegisterFlightUseCase(flightRepository, FakeAirportRepository(listOf(gru, gig)))
 
-    private fun command(
+    protected fun command(
         origin: String = "GRU",
         destination: String = "GIG",
     ) = RegisterFlightCommand(
@@ -56,28 +55,4 @@ class RegisterFlightUseCaseTest {
         price = BigDecimal("500.00"),
         totalCapacity = 180,
     )
-
-    @Test
-    fun `registers a flight resolving airports by IATA code`() {
-        val flight = useCase.execute(command())
-
-        assertEquals("GRU", flight.origin.iataCode)
-        assertEquals("GIG", flight.destination.iataCode)
-        assertEquals(180, flight.availableCapacity)
-        assertEquals(1, flightRepository.saved.size)
-    }
-
-    @Test
-    fun `throws when origin airport does not exist`() {
-        assertFailsWith<AirportNotFoundException> {
-            useCase.execute(command(origin = "XXX"))
-        }
-    }
-
-    @Test
-    fun `throws when destination airport does not exist`() {
-        assertFailsWith<AirportNotFoundException> {
-            useCase.execute(command(destination = "YYY"))
-        }
-    }
 }

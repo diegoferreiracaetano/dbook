@@ -1,18 +1,11 @@
-package com.dbook.infrastructure.messaging
+package com.dbook.infrastructure.messaging.availabilitybroadcast
 
-import com.dbook.AbstractIntegrationTest
 import com.dbook.application.LoginCommand
-import com.dbook.application.LoginUseCase
 import com.dbook.application.RegisterBookingCommand
-import com.dbook.application.RegisterBookingUseCase
 import com.dbook.application.RegisterFlightCommand
-import com.dbook.application.RegisterFlightUseCase
 import com.dbook.application.RegisterUserCommand
-import com.dbook.application.RegisterUserUseCase
 import com.dbook.domain.SeatClass
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
+import com.dbook.infrastructure.messaging.AvailabilityUpdate
 import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.StompHeaders
 import org.springframework.messaging.simp.stomp.StompSession
@@ -27,28 +20,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-// The "test client" for item 5.4: a real STOMP-over-WebSocket connection (not a mock),
-// proving a live client actually receives the broadcast — same mechanism a real KMP/
-// Compose frontend would use later.
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class AvailabilityBroadcastTest : AbstractIntegrationTest() {
-    @LocalServerPort
-    var port: Int = 0
-
-    @Autowired
-    lateinit var registerUserUseCase: RegisterUserUseCase
-
-    @Autowired
-    lateinit var loginUseCase: LoginUseCase
-
-    @Autowired
-    lateinit var registerFlightUseCase: RegisterFlightUseCase
-
-    @Autowired
-    lateinit var registerBookingUseCase: RegisterBookingUseCase
-
+class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture() {
     @Test
-    fun `pushes an availability update over websocket when a booking is created`() {
+    fun `given a subscribed client when a booking is created then it receives the availability update`() {
         val email = "ws${(1..999_999_999).random()}@example.com"
         registerUserUseCase.execute(RegisterUserCommand(email, "s3cret-password"))
         val accessToken = loginUseCase.execute(LoginCommand(email, "s3cret-password")).accessToken
@@ -97,38 +71,13 @@ class AvailabilityBroadcastTest : AbstractIntegrationTest() {
 
         registerBookingUseCase.execute(RegisterBookingCommand(bookableId = bookableId, customerId = 1L))
 
-        // Generous timeout: this is the first time this specific test ever ran against
-        // real infrastructure (blocked locally by the Testcontainers/Docker Desktop
-        // incompatibility documented since M4) — a CI runner has less headroom than a
-        // local machine for the full round-trip (commit -> Redis publish -> subscriber
-        // -> STOMP broker -> WebSocket client), so 5s turned out to be too tight there.
+        // Generous timeout: a CI runner has less headroom than a local machine for the
+        // full round-trip (commit -> Redis publish -> subscriber -> STOMP broker -> client).
         val update = receivedUpdates.poll(15, TimeUnit.SECONDS)
         assertNotNull(update, "expected an availability update over the websocket connection")
         assertEquals(bookableId, update.bookableId)
         assertEquals(4, update.availableCapacity)
 
         session.disconnect()
-    }
-
-    @Test
-    fun `rejects STOMP CONNECT without a valid token`() {
-        val stompClient = WebSocketStompClient(StandardWebSocketClient())
-        stompClient.messageConverter = MappingJackson2MessageConverter()
-
-        val transportErrors = LinkedBlockingQueue<Throwable>()
-        val handler =
-            object : StompSessionHandlerAdapter() {
-                override fun handleTransportError(
-                    session: StompSession,
-                    exception: Throwable,
-                ) {
-                    transportErrors.add(exception)
-                }
-            }
-
-        stompClient.connectAsync("ws://localhost:$port/ws", null, StompHeaders(), handler)
-
-        val error = transportErrors.poll(5, TimeUnit.SECONDS)
-        assertNotNull(error, "expected the connection to be rejected for a missing/invalid token")
     }
 }
