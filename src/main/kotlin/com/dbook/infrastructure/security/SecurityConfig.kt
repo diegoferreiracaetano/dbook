@@ -30,6 +30,9 @@ class SecurityConfig(
                         "/flights/search",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
+                        // browsers can't set Authorization on the WS handshake request;
+                        // real auth happens on the STOMP CONNECT frame instead (5.7)
+                        "/ws/**",
                     ).permitAll()
                     .anyRequest().authenticated()
             }.exceptionHandling {
