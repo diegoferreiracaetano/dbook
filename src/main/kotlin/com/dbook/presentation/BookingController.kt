@@ -4,6 +4,7 @@ import com.dbook.application.CancelBookingUseCase
 import com.dbook.application.RegisterBookingCommand
 import com.dbook.application.RegisterBookingUseCase
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
+@SecurityRequirement(name = "bearerAuth")
 class BookingController(
     private val registerBookingUseCase: RegisterBookingUseCase,
     private val cancelBookingUseCase: CancelBookingUseCase,

@@ -1,12 +1,22 @@
 package com.dbook.config
 
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
+import io.swagger.v3.oas.annotations.security.SecurityScheme
 import io.swagger.v3.oas.models.Operation
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
+// Renamed from OpenApiExamplesConfig: this now also declares the bearerAuth scheme
+// (the "Authorize" button in Swagger UI), not just parameter examples.
 @Configuration
-class OpenApiExamplesConfig {
+@SecurityScheme(
+    name = "bearerAuth",
+    type = SecuritySchemeType.HTTP,
+    scheme = "bearer",
+    bearerFormat = "JWT",
+)
+class OpenApiConfig {
     @Bean
     fun parameterExamples(): OpenApiCustomizer =
         OpenApiCustomizer { openApi ->
