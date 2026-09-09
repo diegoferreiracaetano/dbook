@@ -104,4 +104,26 @@ class AvailabilityBroadcastTest : AbstractIntegrationTest() {
 
         session.disconnect()
     }
+
+    @Test
+    fun `rejects STOMP CONNECT without a valid token`() {
+        val stompClient = WebSocketStompClient(StandardWebSocketClient())
+        stompClient.messageConverter = MappingJackson2MessageConverter()
+
+        val transportErrors = LinkedBlockingQueue<Throwable>()
+        val handler =
+            object : StompSessionHandlerAdapter() {
+                override fun handleTransportError(
+                    session: StompSession,
+                    exception: Throwable,
+                ) {
+                    transportErrors.add(exception)
+                }
+            }
+
+        stompClient.connectAsync("ws://localhost:$port/ws", null, StompHeaders(), handler)
+
+        val error = transportErrors.poll(5, TimeUnit.SECONDS)
+        assertNotNull(error, "expected the connection to be rejected for a missing/invalid token")
+    }
 }

@@ -142,6 +142,18 @@ curl -X POST localhost:8080/bookings/1/cancel \
 
 Retorna `200` com a reserva `CANCELLED`, `401` sem token, `403` se não for o dono nem `ADMIN`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
 
+## Tempo real (WebSocket + Redis)
+
+Quando uma reserva é criada ou cancelada, a disponibilidade atualizada do `Bookable` é publicada em tempo real via WebSocket/STOMP, para clientes que estejam olhando aquela rota/voo no momento.
+
+- Endpoint STOMP: `ws://localhost:8080/ws` (sem SockJS — o cliente é um app KMP/Compose, não uma página de navegador precisando de fallback HTTP).
+- Tópico por `Bookable`: `/topic/bookables/{bookableId}/availability`, payload `{"bookableId": 1, "availableCapacity": 179}`.
+- Autenticação acontece no frame STOMP `CONNECT` (header `Authorization: Bearer <accessToken>`), não no handshake HTTP — um WebSocket nativo de navegador não permite setar headers HTTP arbitrários no handshake, então `/ws` é público no `SecurityConfig` e a validação real do JWT é feita pelo `StompAuthChannelInterceptor`. Um `CONNECT` sem token válido é rejeitado com um frame `ERROR` e a conexão é fechada.
+- O broadcast só acontece depois que a transação commita (`afterCommit`, ver `TransactionSupport.kt`) — uma reserva que sofre rollback nunca deveria ter avisado ninguém sobre uma mudança que não aconteceu.
+- Fan-out entre instâncias é feito via Redis Pub/Sub (canal `dbook:availability`): cada instância publica no Redis ao invés de empurrar direto pras próprias sessões STOMP; toda instância também assina esse canal e reencaminha pras suas sessões locais. Com 1 instância isso parece redundante, mas é exatamente o que passa a ser necessário a partir do M6 (múltiplos containers ECS Fargate) — decisão de aprender o padrão agora, achando com 1 instância, antes de precisar dele de verdade.
+
+Pré-requisito local: Redis também sobe pelo `docker compose up -d` (serviço `redis`, porta `6379`).
+
 ## Qualidade de código
 
 ```bash
@@ -161,8 +173,9 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 - **Apresentação** (`FlightAdminControllerTest`, `FlightSearchControllerTest`): contrato HTTP (status code, shape do JSON, mapeamento de exceção) com o caso de uso mockado via `@WebMvcTest` — segurança desligada nesses slices de propósito (ver `SecurityIntegrationTest`).
 - **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real.
 - **Segurança** (`SecurityIntegrationTest`): `@SpringBootTest` completo — rota admin sem token (401) e com role errada (403), reserva exige autenticação, dono vs. não-dono de reserva vs. ADMIN, rotação de refresh token (reuso rejeitado), busca pública sem token.
+- **Tempo real** (`AvailabilityBroadcastTest`): cliente STOMP real (não mock) conecta autenticado, assina o tópico de disponibilidade, dispara uma reserva e recebe o evento publicado via Redis Pub/Sub; e um `CONNECT` sem token válido é rejeitado.
 
-Esses dois últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractIntegrationTest`) — sobem um Postgres descartável sozinhos, não precisam mais de `docker compose up -d` manual. Só exigem Docker instalado e rodando.
+Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractIntegrationTest`) — sobem Postgres e Redis descartáveis sozinhos, não precisam mais de `docker compose up -d` manual. Só exigem Docker instalado e rodando.
 
 > **Nota:** em algumas instalações do Docker Desktop muito recentes, o Testcontainers pode falhar ao detectar o daemon (`Could not find a valid Docker environment`) por incompatibilidade do cliente HTTP interno com a API do Docker. Se isso acontecer localmente, o pipeline de CI (GitHub Actions, Docker padrão do runner) continua funcionando normalmente — é uma limitação do ambiente local, não do código.
 
@@ -172,7 +185,7 @@ Esses dois últimos usam [Testcontainers](https://testcontainers.com/) (`Abstrac
 - ✅ **M2 — Reserva com concorrência real** (lock otimista, endpoint de reserva/cancelamento, teste de concorrência real, Swagger)
 - ✅ **M3 — Segurança** (User + BCrypt, JWT com refresh rotativo, filtro de autenticação, rotas públicas/protegidas, roles + `@PreAuthorize`, testes de segurança)
 - ✅ **M4 — CI** (GitHub Actions rodando `./gradlew check`, Testcontainers pros testes de integração, badge no README)
-- ⬜ M5 — Tempo real (WebSocket + Redis)
+- ✅ **M5 — Tempo real** (WebSocket/STOMP, autenticação no `CONNECT`, broadcast pós-commit, fan-out entre instâncias via Redis Pub/Sub)
 - ⬜ M6 — Nuvem (Terraform + AWS)
 - ⬜ M7 — IA (Bedrock)
 - ⬜ M8 — CI/CD completo

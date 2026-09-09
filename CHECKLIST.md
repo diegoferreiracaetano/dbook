@@ -51,17 +51,26 @@ Decisão: entra assim que existe algo testável de verdade — não deixa pro fi
 - [x] 4.3 `./gradlew check` (ktlint + detekt) no pipeline
 - [x] 4.4 Badge de status no README
 
-## M5 — Tempo real ⬜
+## M5 — Tempo real ✅
 
 Decisão: WebSocket + Redis Pub/Sub mesmo com 1 instância — é o jeito barato de aprender o padrão antes de precisar dele em produção.
 
-- [ ] 5.1 Config STOMP (`/ws`)
-- [ ] 5.2 Canal de disponibilidade de assento
-- [ ] 5.3 Publicar evento ao confirmar/cancelar
-- [ ] 5.4 Cliente de teste escutando o canal
-- [ ] 5.5 Redis local via Docker Compose
-- [ ] 5.6 Trocar broadcast local por Redis Pub/Sub
-- [ ] 5.7 Autenticar handshake STOMP com JWT
+- [x] 5.1 Config STOMP (`/ws`)
+- [x] 5.2 Canal de disponibilidade de assento
+- [x] 5.3 Publicar evento ao confirmar/cancelar
+- [x] 5.4 Cliente de teste escutando o canal
+- [x] 5.5 Redis local via Docker Compose
+- [x] 5.6 Trocar broadcast local por Redis Pub/Sub
+- [x] 5.7 Autenticar handshake STOMP com JWT
+
+Checklist de fechamento:
+- [x] Revisão dos itens do checklist
+- [x] Revisão Clean Code
+- [x] Revisão SOLID
+- [x] `./gradlew check` (ktlint + detekt) limpo
+- [x] Cobertura de testes das camadas novas
+- [x] README.md atualizado
+- [x] Swagger/OpenAPI — não se aplica (nenhum endpoint REST novo neste módulo; WebSocket/STOMP não é descrito por OpenAPI)
 
 ## M6 — Nuvem (Terraform + AWS) ⬜
 

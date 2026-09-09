@@ -19,8 +19,10 @@ class WebSocketConfig(
     }
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
-        // simple (in-memory) broker for now — item 5.6 swaps this for Redis Pub/Sub
-        // so multiple app instances can fan out the same broadcast.
+        // In-memory broker: still only delivers to THIS instance's own connected
+        // sessions. Cross-instance fan-out is handled separately by
+        // RedisAvailabilitySubscriber, which forwards messages received from Redis
+        // into this same broker.
         registry.enableSimpleBroker("/topic")
     }
 
