@@ -28,3 +28,12 @@ jwt:
   secret: baB82M7DHaS9cSjspi0J4hJS05eUKmSLOu0hbOivY0k=
   access-token-expiration-minutes: 15
   refresh-token-expiration-days: 7
+ai:
+  bedrock:
+    region: us-east-1
+    # NOTE (2026-09-09): Bedrock model IDs retire over time — every dated Claude 3.x
+    # snapshot tried against this AWS Academy Lab account returned "reached the end of
+    # its life". Verify the current catalog with `aws bedrock list-foundation-models`
+    # (needs bedrock:ListFoundationModels, which this lab's IAM denies) or the Bedrock
+    # console before relying on this in a real environment, and update this value.
+    model-id: anthropic.claude-3-5-sonnet-20241022-v2:0
