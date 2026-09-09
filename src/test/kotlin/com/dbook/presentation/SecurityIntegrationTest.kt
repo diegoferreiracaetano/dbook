@@ -1,5 +1,6 @@
 package com.dbook.presentation
 
+import com.dbook.AbstractIntegrationTest
 import com.dbook.application.RegisterFlightCommand
 import com.dbook.application.RegisterFlightUseCase
 import com.dbook.domain.Role
@@ -9,7 +10,6 @@ import com.dbook.domain.UserRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -20,13 +20,12 @@ import kotlin.test.Test
 import kotlin.test.assertNotEquals
 
 // Exercises the real SecurityFilterChain + @PreAuthorize + JWT rotation end to end
-// (item 3.8) — needs `docker compose up -d` running, same as BookingConcurrencyTest.
-// This is deliberately a full @SpringBootTest rather than @WebMvcTest slices: the
-// custom SecurityConfig, JwtAuthenticationFilter and @EnableMethodSecurity are only
-// reliably exercised together against the real application context.
-@SpringBootTest
+// (item 3.8), against a Postgres provisioned by Testcontainers (item 4.2, no manual
+// setup needed). Deliberately a full @SpringBootTest rather than @WebMvcTest slices:
+// the custom SecurityConfig, JwtAuthenticationFilter and @EnableMethodSecurity are
+// only reliably exercised together against the real application context.
 @AutoConfigureMockMvc
-class SecurityIntegrationTest {
+class SecurityIntegrationTest : AbstractIntegrationTest() {
     @Autowired
     lateinit var mockMvc: MockMvc
 

@@ -37,6 +37,13 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    // pinned explicitly (newer than Spring Boot 3.3.4's managed 1.19.8) — needed for
+    // compatibility with recent Docker Desktop versions. Spring's BOM manages the core
+    // `testcontainers` artifact too, silently downgrading it back to 1.19.8 unless it's
+    // also pinned directly here (not just the two artifacts we actually import).
+    testImplementation("org.testcontainers:testcontainers:1.20.4")
+    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    testImplementation("org.testcontainers:postgresql:1.20.4")
 }
 
 kotlin {
@@ -64,4 +71,5 @@ tasks.check {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    environment("DOCKER_API_VERSION", "1.41")
 }

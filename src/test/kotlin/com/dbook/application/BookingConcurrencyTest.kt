@@ -1,8 +1,8 @@
 package com.dbook.application
 
+import com.dbook.AbstractIntegrationTest
 import com.dbook.domain.SeatClass
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
@@ -12,11 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// Exercises the optimistic lock (item 2.2) against a real Postgres — needs
-// `docker compose up -d` running. Testcontainers is deliberately deferred to
-// M4 (CI); we don't pull that piece forward here.
-@SpringBootTest
-class BookingConcurrencyTest {
+// Exercises the optimistic lock (item 2.2) against a real Postgres, provisioned by
+// Testcontainers (item 4.2) — no manual `docker compose up -d` needed anymore.
+class BookingConcurrencyTest : AbstractIntegrationTest() {
     @Autowired
     lateinit var registerFlightUseCase: RegisterFlightUseCase
 
