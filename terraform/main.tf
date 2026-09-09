@@ -83,6 +83,7 @@ module "ecs" {
   public_subnet_ids  = module.vpc.public_subnet_ids
   security_group_id  = aws_security_group.app.id
   ecr_repository_url = module.ecr.repository_url
+  image_tag          = var.image_tag
 
   db_endpoint            = module.rds.endpoint
   db_name                = "dbook"
@@ -92,4 +93,13 @@ module "ecs" {
 
   redis_endpoint = module.redis.endpoint
   redis_port     = module.redis.port
+}
+
+module "github_oidc" {
+  source = "./modules/github_oidc"
+
+  name              = var.project_name
+  github_repo       = var.github_repo
+  state_bucket_name = var.state_bucket_name
+  lock_table_name   = var.lock_table_name
 }

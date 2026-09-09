@@ -15,3 +15,27 @@ variable "project_name" {
   type        = string
   default     = "dbook"
 }
+
+variable "image_tag" {
+  description = "ECR image tag the ECS task should run — CI passes the git SHA here (M8); local applies fall back to \"latest\"."
+  type        = string
+  default     = "latest"
+}
+
+variable "github_repo" {
+  description = "GitHub repo (\"owner/repo\") allowed to assume the CI/CD deploy role via OIDC."
+  type        = string
+  default     = "diegoferreiracaetano/dbook"
+}
+
+# Must match terraform/bootstrap's own defaults — duplicated here (not read from its
+# outputs) because bootstrap is a separate Terraform root, not a module this one calls.
+variable "state_bucket_name" {
+  type    = string
+  default = "dbook-terraform-state"
+}
+
+variable "lock_table_name" {
+  type    = string
+  default = "dbook-terraform-locks"
+}
