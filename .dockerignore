@@ -1,0 +1,10 @@
+build/
+.gradle/
+.kotlin/
+out/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+terraform/
+.git/
