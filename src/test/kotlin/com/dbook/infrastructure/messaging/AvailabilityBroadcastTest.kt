@@ -93,11 +93,16 @@ class AvailabilityBroadcastTest : AbstractIntegrationTest() {
                 }
             },
         )
-        Thread.sleep(300) // let the SUBSCRIBE frame reach the broker before triggering the event
+        Thread.sleep(1000) // let the SUBSCRIBE frame reach the broker before triggering the event
 
         registerBookingUseCase.execute(RegisterBookingCommand(bookableId = bookableId, customerId = 1L))
 
-        val update = receivedUpdates.poll(5, TimeUnit.SECONDS)
+        // Generous timeout: this is the first time this specific test ever ran against
+        // real infrastructure (blocked locally by the Testcontainers/Docker Desktop
+        // incompatibility documented since M4) — a CI runner has less headroom than a
+        // local machine for the full round-trip (commit -> Redis publish -> subscriber
+        // -> STOMP broker -> WebSocket client), so 5s turned out to be too tight there.
+        val update = receivedUpdates.poll(15, TimeUnit.SECONDS)
         assertNotNull(update, "expected an availability update over the websocket connection")
         assertEquals(bookableId, update.bookableId)
         assertEquals(4, update.availableCapacity)
