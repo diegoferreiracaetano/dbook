@@ -16,6 +16,10 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
 server:
   port: 8080
 jwt:
