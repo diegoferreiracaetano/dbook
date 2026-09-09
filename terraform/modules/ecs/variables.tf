@@ -3,8 +3,14 @@ variable "name" {
 }
 
 variable "use_localstack" {
-  description = "AWS Academy Learner Lab can't create IAM roles — real AWS uses the pre-existing LabRole instead. LocalStack has no such restriction, so a real role is created there to mirror what a normal (non-lab) AWS account would do."
+  description = "AWS Academy Learner Lab can't create IAM roles — real AWS uses a pre-existing role instead. LocalStack has no such restriction, so a real role is created there to mirror what a normal (non-lab) AWS account would do."
   type        = bool
+}
+
+variable "lab_role_name" {
+  description = "Name of the pre-provisioned IAM role to use as both execution and task role against real AWS. Varies by Academy Lab template — this account has no \"LabRole\", only \"voclabs\"."
+  type        = string
+  default     = "voclabs"
 }
 
 variable "public_subnet_ids" {

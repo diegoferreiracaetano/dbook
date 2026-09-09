@@ -7,12 +7,14 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = 7
 }
 
-# AWS Academy Learner Lab blocks iam:CreateRole — real deployments there must reuse the
-# pre-provisioned LabRole. LocalStack's IAM has no such restriction, so a real execution
-# role is created there instead, mirroring what a normal AWS account would set up.
-data "aws_iam_role" "lab_role" {
+# AWS Academy Learner Lab blocks both iam:CreateRole and iam:GetRole — real deployments
+# there must reuse a pre-provisioned role, and its ARN has to be built directly (account
+# ID from STS, which IS allowed) rather than looked up via the IAM API. The role name
+# varies by lab template (this one has no "LabRole" at all, only "voclabs") — hence the
+# variable instead of a hardcoded name. LocalStack's IAM has no such restriction, so a
+# real execution role is created there instead, mirroring a normal AWS account.
+data "aws_caller_identity" "current" {
   count = var.use_localstack ? 0 : 1
-  name  = "LabRole"
 }
 
 resource "aws_iam_role" "ecs_execution_role" {
@@ -40,7 +42,11 @@ locals {
   # (the application itself) roles — the app doesn't call any AWS API yet, so it doesn't
   # need permissions beyond what the execution role already has. Revisit once M7 (Bedrock)
   # gives the application its own AWS calls to make.
-  role_arn = var.use_localstack ? aws_iam_role.ecs_execution_role[0].arn : data.aws_iam_role.lab_role[0].arn
+  role_arn = (
+    var.use_localstack
+    ? aws_iam_role.ecs_execution_role[0].arn
+    : "arn:aws:iam::${data.aws_caller_identity.current[0].account_id}:role/${var.lab_role_name}"
+  )
 }
 
 resource "aws_ecs_task_definition" "this" {
