@@ -1,5 +1,7 @@
 # DBook
 
+[![CI](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml/badge.svg)](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml)
+
 Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas e com hotéis planejados como segunda especialização do mesmo domínio (M9). Projeto pessoal de estudo de backend Kotlin, construído em marcos incrementais.
 
 ## Stack
@@ -157,8 +159,12 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 - **Domínio** (`FlightTest`, `BookingTest`, `UserTest`): invariantes de `Bookable`/`User` e a máquina de estados de `Booking` (PENDING → CONFIRMED/CANCELLED).
 - **Aplicação** (`RegisterFlightUseCaseTest`, `RegisterUserUseCaseTest`, `LoginUseCaseTest`): regras dos casos de uso com repositórios/hasher/token service fake.
 - **Apresentação** (`FlightAdminControllerTest`, `FlightSearchControllerTest`): contrato HTTP (status code, shape do JSON, mapeamento de exceção) com o caso de uso mockado via `@WebMvcTest` — segurança desligada nesses slices de propósito (ver `SecurityIntegrationTest`).
-- **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real — precisa de `docker compose up -d` rodando (Testcontainers fica reservado pro M4).
-- **Segurança** (`SecurityIntegrationTest`): `@SpringBootTest` completo — rota admin sem token (401) e com role errada (403), reserva exige autenticação, dono vs. não-dono de reserva vs. ADMIN, rotação de refresh token (reuso rejeitado), busca pública sem token. Também precisa do Postgres real.
+- **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real.
+- **Segurança** (`SecurityIntegrationTest`): `@SpringBootTest` completo — rota admin sem token (401) e com role errada (403), reserva exige autenticação, dono vs. não-dono de reserva vs. ADMIN, rotação de refresh token (reuso rejeitado), busca pública sem token.
+
+Esses dois últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractIntegrationTest`) — sobem um Postgres descartável sozinhos, não precisam mais de `docker compose up -d` manual. Só exigem Docker instalado e rodando.
+
+> **Nota:** em algumas instalações do Docker Desktop muito recentes, o Testcontainers pode falhar ao detectar o daemon (`Could not find a valid Docker environment`) por incompatibilidade do cliente HTTP interno com a API do Docker. Se isso acontecer localmente, o pipeline de CI (GitHub Actions, Docker padrão do runner) continua funcionando normalmente — é uma limitação do ambiente local, não do código.
 
 ## Status do roadmap
 
