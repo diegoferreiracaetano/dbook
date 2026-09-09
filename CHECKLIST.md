@@ -77,7 +77,7 @@ Checklist de fechamento:
 Decisão: ECS Fargate, não EKS ainda — Kubernetes só compensa com múltiplos serviços de verdade (isso é M9).
 
 - [x] 6.1 AWS CLI + bucket S3/DynamoDB pro state remoto
-- [ ] 6.2 Módulo Terraform: VPC
+- [x] 6.2 Módulo Terraform: VPC
 - [ ] 6.3 Módulo Terraform: repositório ECR (isolado, provisiona antes do resto)
 - [ ] 6.4 Dockerfile multi-stage da aplicação (build + runtime enxuto)
 - [ ] 6.5 Build local da imagem + push manual pro ECR
