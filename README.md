@@ -17,7 +17,7 @@ Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas �
 - Terraform (VPC, ECR, RDS, ElastiCache, Secrets Manager, ECS Fargate) + GitHub Actions
 - AWS Bedrock (sugestões de voo por IA) + Bucket4j (rate limiting)
 
-M1-M8 completos. Ideias registradas pra depois: script de seed de dados, integração com API real de voos — ver "Ideias futuras" no [CHECKLIST.md](CHECKLIST.md).
+M1-M8 e M10 completos. Ideias registradas pra depois: script de seed de dados, integração com API real de voos — ver "Ideias futuras" no [CHECKLIST.md](CHECKLIST.md).
 
 ## Arquitetura
 
@@ -105,7 +105,7 @@ Com a aplicação no ar:
 Confirma que a aplicação está no ar.
 
 ### `POST /admin/flights` (requer role `ADMIN`)
-Cadastra um voo, resolvendo origem/destino por código IATA.
+Cadastra um voo, resolvendo origem/destino por código IATA, e gera automaticamente seu mapa de assentos (6 por fileira, A-F) a partir de `totalCapacity`.
 
 ```bash
 curl -X POST localhost:8080/admin/flights \
@@ -123,7 +123,7 @@ curl -X POST localhost:8080/admin/flights \
   }'
 ```
 
-Retorna `201` com o voo criado, `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de origem/destino não existir.
+Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de origem/destino não existir.
 
 ### `GET /flights/search?origin=&destination=&date=`
 Busca voos por rota e data.
@@ -132,20 +132,29 @@ Busca voos por rota e data.
 curl "localhost:8080/flights/search?origin=GRU&destination=GIG&date=2026-10-01"
 ```
 
+### `GET /bookables/{id}/seats`
+Retorna o mapa de assentos de um `Bookable` (público, mesmo espírito de `/flights/search`) — cada assento com seu `label` (ex.: `"12A"`) e `status` (`AVAILABLE`/`RESERVED`).
+
+```bash
+curl localhost:8080/bookables/1/seats
+```
+
+Retorna `200` com a lista de assentos, ou `404` se o `bookableId` não existir.
+
 ### `POST /bookings` (autenticado)
-Reserva um `Bookable` (hoje só `Flight`; qualquer especialização futura funciona sem mudar este endpoint) em nome do usuário autenticado, decrementando a disponibilidade. Cria a reserva como `PENDING`.
+Reserva um assento específico (`seatId`) de um `Bookable` (hoje só `Flight`; qualquer especialização futura funciona sem mudar este endpoint) em nome do usuário autenticado, travando o assento sob lock otimista. `availableCapacity` do `Bookable` é derivado da contagem de assentos `AVAILABLE` — não é mais um contador em paralelo. Cria a reserva como `PENDING`.
 
 ```bash
 curl -X POST localhost:8080/bookings \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <accessToken>" \
-  -d '{"bookableId": 1}'
+  -d '{"bookableId": 1, "seatId": 1}'
 ```
 
-Retorna `201` com a reserva criada, `401` sem token, `404` se o `bookableId` não existir, ou `409` se não houver disponibilidade (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o último lugar).
+Retorna `201` com a reserva criada, `401` sem token, `400` se o `seatId` não pertencer ao `bookableId` informado, `404` se o `bookableId` ou `seatId` não existirem, ou `409` se o assento não estiver `AVAILABLE` (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o mesmo assento).
 
 ### `POST /bookings/{id}/cancel` (autenticado, dono ou ADMIN)
-Cancela uma reserva `PENDING`, devolvendo a disponibilidade ao `Bookable`. Só quem criou a reserva (ou um `ADMIN`) pode cancelá-la.
+Cancela uma reserva `PENDING`, liberando o assento de volta a `AVAILABLE`. Só quem criou a reserva (ou um `ADMIN`) pode cancelá-la.
 
 ```bash
 curl -X POST localhost:8080/bookings/1/cancel \
@@ -246,9 +255,9 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 **Convenção (2026-09-09): um cenário por classe, nomeado `given/when/then`.** Cada `@Test` fica sozinho numa classe cujo nome descreve o cenário (ex.: `AdminEndpointRejectsAClientTokenTest`), e o próprio nome do método (`` `given a CLIENT token when posting to admin flights then it returns 403` ``) documenta o cenário — sem comentário explicando o óbvio dentro do corpo do teste. Setup compartilhado entre cenários do mesmo caso de uso/controller vira uma classe fixture abstrata (ex.: `SecurityIntegrationFixture`) que cada cenário estende.
 
 - **Domínio** (`domain/booking`, `domain/flight`, `domain/user`): invariantes de `Bookable`/`User` e a máquina de estados de `Booking` (PENDING → CONFIRMED/CANCELLED).
-- **Aplicação** (`application/loginusecase`, `application/registeruserusecase`, `application/registerflightusecase`, `application/suggestflightsusecase`): regras dos casos de uso com repositórios/hasher/token service fake.
-- **Apresentação** (`presentation/flightadmincontroller`, `presentation/flightsearchcontroller`): contrato HTTP (status code, shape do JSON, mapeamento de exceção) com o caso de uso mockado via `@WebMvcTest` — segurança desligada nesses slices de propósito (ver `securityintegration`).
-- **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o último assento contra o Postgres real.
+- **Aplicação** (`application/loginusecase`, `application/registeruserusecase`, `application/registerflightusecase`, `application/registerbookingusecase`, `application/cancelbookingusecase`, `application/getseatmapusecase`, `application/suggestflightsusecase`): regras dos casos de uso com repositórios/hasher/token service/broadcaster fake — inclui a geração do mapa de assentos, o lock otimista por assento e a liberação no cancelamento.
+- **Apresentação** (`presentation/flightadmincontroller`, `presentation/flightsearchcontroller`, `presentation/bookablecontroller`): contrato HTTP (status code, shape do JSON, mapeamento de exceção) com o caso de uso mockado via `@WebMvcTest` — segurança desligada nesses slices de propósito (ver `securityintegration`).
+- **Concorrência** (`BookingConcurrencyTest`): duas threads disputando o mesmo assento (lock otimista por `Seat`, item 10.6) contra o Postgres real.
 - **Segurança** (`presentation/securityintegration`): `@SpringBootTest` completo — rota admin sem token (401) e com role errada (403), reserva exige autenticação, dono vs. não-dono de reserva vs. ADMIN, rotação de refresh token (reuso rejeitado), busca pública sem token.
 - **Tempo real** (`infrastructure/messaging/availabilitybroadcast`): cliente STOMP real (não mock) conecta autenticado, assina o tópico de disponibilidade, dispara uma reserva e recebe o evento publicado via Redis Pub/Sub; e um `CONNECT` sem token válido é rejeitado.
 - **IA** (`application/suggestflightsusecase`, `infrastructure/ai/bedrockaisuggestionservice`, `infrastructure/web/airatelimitinterceptor`): caso de uso com fakes (inclui o log sendo salvo tanto no sucesso quanto na falha), construção do prompt/parse da resposta do Bedrock isolados de qualquer chamada de rede, e o rate limiter (5/min, escopo por usuário) exercitado diretamente — nada disso depende de credencial AWS real pra rodar.
@@ -270,5 +279,6 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
 - 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
+- ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /bookables/{id}/seats`, `seatId` obrigatório em `POST /bookings`)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
