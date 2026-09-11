@@ -1,0 +1,1 @@
+ALTER TABLE booking ADD COLUMN seat_id BIGINT NOT NULL REFERENCES seat (id);

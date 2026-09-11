@@ -19,7 +19,6 @@ class FlightJpaEntity(
     title: String = "",
     price: BigDecimal = BigDecimal.ZERO,
     totalCapacity: Int = 0,
-    availableCapacity: Int = 0,
     active: Boolean = true,
     var flightNumber: String = "",
     @ManyToOne
@@ -32,4 +31,4 @@ class FlightJpaEntity(
     var arrivalTime: LocalDateTime = LocalDateTime.now(),
     @Enumerated(EnumType.STRING)
     var seatClass: SeatClass = SeatClass.ECONOMY,
-) : BookableJpaEntity(id, title, price, totalCapacity, availableCapacity, active)
+) : BookableJpaEntity(id, title, price, totalCapacity, active)

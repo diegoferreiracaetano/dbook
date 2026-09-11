@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class NewBookingStartsAsPendingTest : BookingTestFixture() {
     @Test
     fun `given a bookable flight when a booking is created then it starts as PENDING`() {
-        val booking = Booking(bookable = flight, customerId = 1)
+        val booking = Booking(bookable = flight, seatId = seatId, customerId = 1)
 
         assertEquals(BookingStatus.PENDING, booking.status)
     }

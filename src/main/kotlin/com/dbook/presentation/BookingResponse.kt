@@ -6,6 +6,7 @@ import com.dbook.domain.BookingStatus
 data class BookingResponse(
     val id: Long?,
     val bookableId: Long?,
+    val seatId: Long,
     val customerId: Long,
     val status: BookingStatus,
 ) {
@@ -14,6 +15,7 @@ data class BookingResponse(
             BookingResponse(
                 id = booking.id,
                 bookableId = booking.bookable.id,
+                seatId = booking.seatId,
                 customerId = booking.customerId,
                 status = booking.status,
             )

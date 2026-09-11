@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 
 // Shared "given" for every Booking scenario below — one Bookable with available capacity.
 abstract class BookingTestFixture {
+    protected val seatId = 100L
+
     protected val flight =
         Flight(
             id = 1,

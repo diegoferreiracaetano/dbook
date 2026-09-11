@@ -23,7 +23,6 @@ abstract class BookableJpaEntity(
     var title: String = "",
     var price: BigDecimal = BigDecimal.ZERO,
     var totalCapacity: Int = 0,
-    var availableCapacity: Int = 0,
     var active: Boolean = true,
     @Version
     var version: Long = 0,

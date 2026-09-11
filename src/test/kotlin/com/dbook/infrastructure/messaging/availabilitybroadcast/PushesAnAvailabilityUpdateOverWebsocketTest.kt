@@ -41,6 +41,7 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
                 ),
             )
         val bookableId = requireNotNull(flight.id)
+        val seatId = requireNotNull(seatRepository.findByBookableId(bookableId).first().id)
 
         val stompClient = WebSocketStompClient(StandardWebSocketClient())
         stompClient.messageConverter = MappingJackson2MessageConverter()
@@ -69,7 +70,9 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
         )
         Thread.sleep(1000) // let the SUBSCRIBE frame reach the broker before triggering the event
 
-        registerBookingUseCase.execute(RegisterBookingCommand(bookableId = bookableId, customerId = 1L))
+        registerBookingUseCase.execute(
+            RegisterBookingCommand(bookableId = bookableId, seatId = seatId, customerId = 1L),
+        )
 
         // Generous timeout: a CI runner has less headroom than a local machine for the
         // full round-trip (commit -> Redis publish -> subscriber -> STOMP broker -> client).

@@ -5,6 +5,7 @@ import com.dbook.application.RegisterFlightCommand
 import com.dbook.application.RegisterFlightUseCase
 import com.dbook.domain.Role
 import com.dbook.domain.SeatClass
+import com.dbook.domain.SeatRepository
 import com.dbook.domain.User
 import com.dbook.domain.UserRepository
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -34,6 +35,9 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var registerFlightUseCase: RegisterFlightUseCase
+
+    @Autowired
+    lateinit var seatRepository: SeatRepository
 
     protected fun uniqueEmail() = "user${(1..999_999_999).random()}@example.com"
 
@@ -98,7 +102,8 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
             ),
         )
 
-    protected fun registerFlightWithOneSeat(): Long {
+    /** @return the new flight's bookableId and its one generated seatId. */
+    protected fun registerFlightWithOneSeat(): Pair<Long, Long> {
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
@@ -112,6 +117,8 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
                     totalCapacity = 1,
                 ),
             )
-        return requireNotNull(flight.id)
+        val bookableId = requireNotNull(flight.id)
+        val seatId = requireNotNull(seatRepository.findByBookableId(bookableId).first().id)
+        return bookableId to seatId
     }
 }

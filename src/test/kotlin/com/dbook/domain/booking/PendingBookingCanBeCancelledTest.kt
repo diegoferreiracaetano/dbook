@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class PendingBookingCanBeCancelledTest : BookingTestFixture() {
     @Test
     fun `given a PENDING booking when it is cancelled then it moves to CANCELLED`() {
-        val booking = Booking(bookable = flight, customerId = 1)
+        val booking = Booking(bookable = flight, seatId = seatId, customerId = 1)
 
         val cancelled = booking.cancel()
 

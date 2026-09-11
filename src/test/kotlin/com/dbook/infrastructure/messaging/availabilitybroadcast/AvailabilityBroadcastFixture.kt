@@ -5,6 +5,7 @@ import com.dbook.application.LoginUseCase
 import com.dbook.application.RegisterBookingUseCase
 import com.dbook.application.RegisterFlightUseCase
 import com.dbook.application.RegisterUserUseCase
+import com.dbook.domain.SeatRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -28,4 +29,7 @@ abstract class AvailabilityBroadcastFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var registerBookingUseCase: RegisterBookingUseCase
+
+    @Autowired
+    lateinit var seatRepository: SeatRepository
 }

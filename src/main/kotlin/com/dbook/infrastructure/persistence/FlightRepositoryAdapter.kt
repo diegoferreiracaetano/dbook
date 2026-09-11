@@ -2,6 +2,7 @@ package com.dbook.infrastructure.persistence
 
 import com.dbook.domain.Flight
 import com.dbook.domain.FlightRepository
+import com.dbook.domain.SeatStatus
 import org.springframework.stereotype.Repository
 import java.time.LocalDate
 
@@ -9,8 +10,10 @@ import java.time.LocalDate
 class FlightRepositoryAdapter(
     private val flightJpaRepository: FlightJpaRepository,
     private val airportJpaRepository: AirportJpaRepository,
+    private val seatJpaRepository: SeatJpaRepository,
 ) : FlightRepository {
-    override fun findById(id: Long): Flight? = flightJpaRepository.findById(id).orElse(null)?.toDomain()
+    override fun findById(id: Long): Flight? =
+        flightJpaRepository.findById(id).orElse(null)?.toDomain(availableCapacityOf(id))
 
     override fun save(flight: Flight): Flight {
         val originId = requireNotNull(flight.origin.id) { "Flight.origin must be a persisted Airport" }
@@ -21,13 +24,14 @@ class FlightRepositoryAdapter(
         // origin/destination here are proxies (getReferenceById) with only the id set;
         // reading them outside the transaction throws LazyInitializationException. We
         // reuse the full domain objects the caller already had, only refreshing the
-        // generated id.
+        // generated id. availableCapacity reflects the seats persisted so far for this
+        // bookable (none yet, right after this insert — the caller generates them next).
         return Flight(
             id = saved.id,
             title = saved.title,
             price = saved.price,
             totalCapacity = saved.totalCapacity,
-            availableCapacity = saved.availableCapacity,
+            availableCapacity = availableCapacityOf(requireNotNull(saved.id)),
             active = saved.active,
             flightNumber = saved.flightNumber,
             origin = flight.origin,
@@ -52,9 +56,13 @@ class FlightRepositoryAdapter(
                 start,
                 end,
             )
-            .map { it.toDomain() }
+            .map { it.toDomain(availableCapacityOf(requireNotNull(it.id))) }
     }
 
     override fun findActive(): List<Flight> =
-        flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc().map { it.toDomain() }
+        flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc()
+            .map { it.toDomain(availableCapacityOf(requireNotNull(it.id))) }
+
+    private fun availableCapacityOf(bookableId: Long): Int =
+        seatJpaRepository.countByBookable_IdAndStatus(bookableId, SeatStatus.AVAILABLE)
 }

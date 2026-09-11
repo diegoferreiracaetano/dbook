@@ -8,12 +8,12 @@ class AClientCanBookWithAValidTokenTest : SecurityIntegrationFixture() {
     @Test
     fun `given a valid CLIENT token when posting a booking then it returns 201`() {
         val token = registerAndLogin(uniqueEmail())
-        val bookableId = registerFlightWithOneSeat()
+        val (bookableId, seatId) = registerFlightWithOneSeat()
 
         mockMvc.post("/bookings") {
             header("Authorization", "Bearer $token")
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId))
+            content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId, "seatId" to seatId))
         }.andExpect { status { isCreated() } }
     }
 }

@@ -2,6 +2,7 @@ package com.dbook.application
 
 import com.dbook.AbstractIntegrationTest
 import com.dbook.domain.SeatClass
+import com.dbook.domain.SeatRepository
 import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -12,14 +13,18 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// Exercises the optimistic lock (item 2.2) against a real Postgres, provisioned by
-// Testcontainers (item 4.2) — no manual `docker compose up -d` needed anymore.
+// Exercises the seat-level optimistic lock (item 10.6, replacing the bookable-level lock
+// from item 2.2) against a real Postgres, provisioned by Testcontainers (item 4.2) — no
+// manual `docker compose up -d` needed anymore.
 class BookingConcurrencyTest : AbstractIntegrationTest() {
     @Autowired
     lateinit var registerFlightUseCase: RegisterFlightUseCase
 
     @Autowired
     lateinit var registerBookingUseCase: RegisterBookingUseCase
+
+    @Autowired
+    lateinit var seatRepository: SeatRepository
 
     @Test
     fun `given a flight with one seat when two bookings race for it then only one succeeds`() {
@@ -36,6 +41,7 @@ class BookingConcurrencyTest : AbstractIntegrationTest() {
                     totalCapacity = 1,
                 ),
             )
+        val seatId = requireNotNull(seatRepository.findByBookableId(requireNotNull(flight.id)).first().id)
 
         val successes = AtomicInteger(0)
         val conflicts = AtomicInteger(0)
@@ -49,7 +55,7 @@ class BookingConcurrencyTest : AbstractIntegrationTest() {
                 ready.countDown()
                 start.await()
                 try {
-                    registerBookingUseCase.execute(RegisterBookingCommand(flight.id!!, customerId = 1L))
+                    registerBookingUseCase.execute(RegisterBookingCommand(flight.id!!, seatId, customerId = 1L))
                     successes.incrementAndGet()
                 } catch (
                     @Suppress("SwallowedException")

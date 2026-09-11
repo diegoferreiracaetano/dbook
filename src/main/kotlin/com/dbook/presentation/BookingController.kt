@@ -32,7 +32,11 @@ class BookingController(
     ): ResponseEntity<BookingResponse> {
         val booking =
             registerBookingUseCase.execute(
-                RegisterBookingCommand(bookableId = request.bookableId, customerId = authentication.currentUserId()),
+                RegisterBookingCommand(
+                    bookableId = request.bookableId,
+                    seatId = request.seatId,
+                    customerId = authentication.currentUserId(),
+                ),
             )
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
     }
