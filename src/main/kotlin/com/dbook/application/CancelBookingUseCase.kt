@@ -10,6 +10,7 @@ import com.dbook.domain.Role
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/** Cancels a PENDING [Booking] and returns its availability to the [com.dbook.domain.Bookable]. */
 @Service
 class CancelBookingUseCase(
     private val bookingRepository: BookingRepository,

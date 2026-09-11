@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+/** `POST /bookings`, `/bookings/{id}/cancel` — authenticated; cancel requires owner or ADMIN. */
 @RestController
 @RequestMapping("/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")

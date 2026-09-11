@@ -7,8 +7,11 @@ import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-// Renamed from OpenApiExamplesConfig: this now also declares the bearerAuth scheme
-// (the "Authorize" button in Swagger UI), not just parameter examples.
+/**
+ * Declares the `bearerAuth` scheme (the "Authorize" button in Swagger UI) and centralizes
+ * `@RequestParam`/`@PathVariable` examples — kept out of controllers on purpose, see
+ * [parameterExamples].
+ */
 @Configuration
 @SecurityScheme(
     name = "bearerAuth",

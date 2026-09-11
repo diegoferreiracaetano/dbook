@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 
+/** `GET /flights/search` — public, no authentication required. */
 @RestController
 @RequestMapping("/flights")
 @Tag(name = "Flights (public)", description = "Public flight search")

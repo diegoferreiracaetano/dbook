@@ -12,6 +12,10 @@ data class SuggestFlightsCommand(
     val requestingUserId: Long,
 )
 
+/**
+ * Suggests flights for a natural-language [SuggestFlightsCommand.query], grounded in
+ * currently active flights. Never books or decides on its own — see [execute].
+ */
 @Service
 class SuggestFlightsUseCase(
     private val flightRepository: FlightRepository,

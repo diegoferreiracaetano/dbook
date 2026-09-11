@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+/** `POST /ai/suggestions` — authenticated; rate-limited to 5/min per user (see `AiRateLimitInterceptor`). */
 @RestController
 @RequestMapping("/ai")
 @Tag(

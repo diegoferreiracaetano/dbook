@@ -10,6 +10,7 @@ data class LoginCommand(
     val password: String,
 )
 
+/** Authenticates by email/password and issues a fresh access/refresh token pair. */
 @Service
 class LoginUseCase(
     private val userRepository: UserRepository,

@@ -14,6 +14,7 @@ data class RegisterBookingCommand(
     val customerId: Long,
 )
 
+/** Books a [com.dbook.domain.Bookable] for a customer, decrementing its availability under an optimistic lock. */
 @Service
 class RegisterBookingUseCase(
     private val bookableRepository: BookableRepository,

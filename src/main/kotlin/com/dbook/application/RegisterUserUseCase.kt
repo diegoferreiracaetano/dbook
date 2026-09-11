@@ -12,6 +12,7 @@ data class RegisterUserCommand(
     val password: String,
 )
 
+/** Registers a new [User], always as [Role.CLIENT] — see the inline note on [execute] for why. */
 @Service
 class RegisterUserUseCase(
     private val userRepository: UserRepository,

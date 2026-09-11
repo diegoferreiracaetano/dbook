@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+/** `POST /admin/flights` — ADMIN only. */
 @RestController
 @RequestMapping("/admin/flights")
 @Tag(name = "Flights (admin)", description = "Flight registration")

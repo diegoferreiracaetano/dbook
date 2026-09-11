@@ -20,6 +20,7 @@ data class RegisterFlightCommand(
     val totalCapacity: Int,
 )
 
+/** Registers a new [Flight], resolving origin/destination by IATA code. Requires ADMIN. */
 @Service
 class RegisterFlightUseCase(
     private val flightRepository: FlightRepository,

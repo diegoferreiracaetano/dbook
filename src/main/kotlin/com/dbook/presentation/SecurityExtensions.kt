@@ -3,8 +3,8 @@ package com.dbook.presentation
 import com.dbook.domain.Role
 import org.springframework.security.core.Authentication
 
-// JwtAuthenticationFilter sets the principal to the user id (as String) and a single
-// ROLE_* authority — these extensions turn that back into domain types for controllers.
+/** The authenticated user's id — `JwtAuthenticationFilter` sets the principal name to it. */
 fun Authentication.currentUserId(): Long = name.toLong()
 
+/** The authenticated user's [Role] — `JwtAuthenticationFilter` sets a single `ROLE_*` authority. */
 fun Authentication.currentRole(): Role = authorities.first().authority.removePrefix("ROLE_").let(Role::valueOf)

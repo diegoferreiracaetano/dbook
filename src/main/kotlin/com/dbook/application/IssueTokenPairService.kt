@@ -11,8 +11,10 @@ data class TokenPair(
     val refreshToken: String,
 )
 
-// Shared by LoginUseCase and RefreshTokenUseCase — both need to generate a fresh
-// access+refresh pair for a user and persist the refresh token the same way.
+/**
+ * Shared by [LoginUseCase] and [RefreshTokenUseCase] — both need to generate a fresh
+ * access+refresh pair for a user and persist the refresh token the same way.
+ */
 @Service
 class IssueTokenPairService(
     private val tokenService: TokenService,

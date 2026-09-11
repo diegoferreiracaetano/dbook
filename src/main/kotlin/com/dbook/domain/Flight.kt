@@ -3,6 +3,7 @@ package com.dbook.domain
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
+/** A [Bookable] flight: a specific route, schedule, and seat class. */
 class Flight(
     id: Long? = null,
     title: String,

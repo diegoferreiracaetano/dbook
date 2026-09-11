@@ -7,6 +7,7 @@ import com.dbook.domain.UserRepository
 import org.springframework.stereotype.Service
 import java.time.Instant
 
+/** Exchanges a valid refresh token for a new access/refresh pair — single-use rotation, see [execute]. */
 @Service
 class RefreshTokenUseCase(
     private val refreshTokenRepository: RefreshTokenRepository,
