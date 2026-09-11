@@ -146,6 +146,26 @@ Decisão original: aqui o `Bookable` paga a dívida de design do M1 — `Accommo
 - [ ] 9.4 Terraform de cluster EKS simples
 - [ ] 9.5 Migrar `ai-service` para o EKS + documentar comparação com Fargate
 
+## M10 — Marcação de assentos ⬜
+
+Decisão (2026-09-11): hoje `Bookable`/`Flight` só rastreiam capacidade agregada (`totalCapacity`/`availableCapacity`), sem assento individual — uma reserva decrementa um número, não trava um lugar específico. Este marco introduz `Seat` como entidade própria, com lock otimista no nível do assento (mesmo padrão do M2, só que granular por assento em vez de por `Bookable` inteiro).
+
+Decisões fechadas:
+- **Geração automática**: ao cadastrar um voo, os assentos são gerados a partir de `totalCapacity` (6 por fileira, A-F) — sem mudar o request de `POST /admin/flights`.
+- **`availableCapacity` vira derivado**: deixa de ser um contador mantido em paralelo — passa a ser calculado a partir da contagem de assentos `AVAILABLE`, uma fonte de verdade só (evita os dois números descolarem).
+- **`seatId` obrigatório em `POST /bookings`**: reservar sem escolher assento deixa de fazer sentido — é uma mudança de contrato da API (`bookableId` sozinho não basta mais).
+
+- [ ] 10.1 Migration: tabela `seat` (`bookable_id`, `label`, `status`, `version` para lock otimista)
+- [ ] 10.2 Domínio: `Seat`, `SeatStatus`, `SeatRepository` (porta)
+- [ ] 10.3 Auto-geração do mapa de assentos em `RegisterFlightUseCase`
+- [ ] 10.4 `Bookable.availableCapacity` passa a ser derivado da contagem de assentos `AVAILABLE`
+- [ ] 10.5 Endpoint `GET /bookables/{id}/seats` — mapa de assentos (rota pública, mesmo espírito de `/flights/search`)
+- [ ] 10.6 `POST /bookings` exige `seatId`; `RegisterBookingUseCase` trava o assento via lock otimista
+- [ ] 10.7 `CancelBookingUseCase` libera o assento (volta a `AVAILABLE`)
+- [ ] 10.8 Testes: concorrência no nível do assento (2 reservas disputando o mesmo `seatId`), casos de uso, endpoint
+- [ ] 10.9 Swagger/OpenAPI atualizado (novo endpoint + `seatId` no request de reserva)
+- [ ] 10.10 README atualizado
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão 30) com rotas/preços/datas variados entre os 3 aeroportos seedados, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
