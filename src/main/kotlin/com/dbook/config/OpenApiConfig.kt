@@ -29,6 +29,7 @@ class OpenApiConfig {
                 exampleFor("date", "2026-10-01")
             }
             openApi.paths["/bookings/{id}/cancel"]?.post?.exampleFor("id", 1)
+            openApi.paths["/bookables/{id}/seats"]?.get?.exampleFor("id", 1)
         }
 
     private fun Operation.exampleFor(

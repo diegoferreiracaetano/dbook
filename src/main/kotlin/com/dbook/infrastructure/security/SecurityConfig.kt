@@ -28,6 +28,7 @@ class SecurityConfig(
                         "/auth/login",
                         "/auth/refresh",
                         "/flights/search",
+                        "/bookables/*/seats",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         // browsers can't set Authorization on the WS handshake request;
