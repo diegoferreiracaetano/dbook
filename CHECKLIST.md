@@ -285,12 +285,13 @@ cliente agrupa/filtra a mesma lista já carregada, sem endpoint novo.
 - [x] 14.3 `DestinationResponse` ganha `region`/`isPopular`; `isPopular` precisou de `@get:JsonProperty("isPopular")` — Jackson, por padrão, stripa o prefixo `is` de getters booleanos Kotlin e serializaria como `"popular"` sem a anotação (achado pelo teste do controller, que falhou com `PathNotFoundException` até a anotação entrar)
 - [x] 14.4 Testes: `ReturnsTheFeaturedDestinationsListTest` passa a afirmar `region`/`isPopular` no JSON; fixtures de `Airport(...)` em todo o módulo atualizadas (`region = "América do Sul"`, `isPopular = false` como valores neutros de teste, exceto onde o teste em si depende do valor)
 - [x] 14.5 README (exemplo de resposta) e Swagger em dia
+- [x] 14.6 (2026-09-13, follow-up) Mobile só tinha 3 regiões reais (América do Sul/Norte, Europa) — o usuário pediu uma 4ª. `V17__seed_asia_airport.sql` adiciona Narita (NRT, Tóquio, Japão), região "Ásia", foto real verificada no Unsplash (gratuita, checada visualmente antes de usar — mesmo processo do M1/M13); `scripts/seed-flights.sh` ganhou 6 rotas envolvendo NRT pra ele ter preço real, não `null`
 
 **Checklist de fechamento do M14:**
 - [x] Item 14.1-14.5 revisados
 - [x] Clean Code
 - [x] Arquitetura (nenhuma estrutura nova — `region`/`isPopular` são atributos do mesmo `Destination`, não uma segunda lista)
-- [x] `./gradlew ktlintCheck detekt test` — `ktlintFormat` rodou uma vez pra requebrar linhas depois do bulk-edit nos fixtures; 60/75 testes passaram (mesma limitação de Testcontainers do M11-M13, nenhuma falha nova depois do fix do `@JsonProperty`)
+- [x] `./gradlew ktlintCheck detekt test` — `ktlintFormat` rodou uma vez pra requebrar linhas depois do bulk-edit nos fixtures; 60/75 testes passaram (mesma limitação de Testcontainers do M11-M13, nenhuma falha nova depois do fix do `@JsonProperty`); reconfirmado depois do item 14.6 (Ásia), mesma baseline
 - [x] README atualizado
 - [x] Swagger em dia
 

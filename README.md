@@ -82,7 +82,7 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 
 > O `JAVA_HOME` explícito é necessário porque o Gradle 8.8 (versão do wrapper) ainda não roda em JDK mais recentes que o 21/22 — ver decisão registrada no histórico do projeto.
 
-A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 8 aeroportos, cada um com foto real: `GRU`, `GIG`, `JFK`, `LHR`, `CDG`, `LIS`, `MIA`, `EZE` — e 6 companhias aéreas: `LA`, `AD`, `G3`, `AA`, `DL`, `UA`, mesmo padrão de dado de referência).
+A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 9 aeroportos, cada um com foto real: `GRU`, `GIG`, `JFK`, `LHR`, `CDG`, `LIS`, `MIA`, `EZE`, `NRT` — e 6 companhias aéreas: `LA`, `AD`, `G3`, `AA`, `DL`, `UA`, mesmo padrão de dado de referência).
 
 Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à sugestão por IA do M7):
 
@@ -90,7 +90,7 @@ Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à
 ./scripts/seed-flights.sh 1000   # cria 1000 voos; padrão é 1000 se omitido
 ```
 
-Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 8 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
+Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 9 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
 
 ## Documentação da API (Swagger)
 
