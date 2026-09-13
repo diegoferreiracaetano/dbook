@@ -18,6 +18,8 @@ fun AirportJpaEntity.toDomain(): Airport =
         city = city,
         country = country,
         photoUrl = photoUrl,
+        region = region,
+        isPopular = isPopular,
     )
 
 fun AirlineJpaEntity.toDomain(): Airline =

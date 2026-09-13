@@ -18,6 +18,8 @@ class ReturnsTheFeaturedDestinationsListTest : DestinationControllerFixture() {
                 city = "Rio de Janeiro",
                 country = "Brasil",
                 photoUrl = "https://example.com/gig.jpg",
+                region = "América do Sul",
+                isPopular = true,
             )
         given(getFeaturedDestinationsUseCase.execute())
             .willReturn(listOf(FeaturedDestination(gig, BigDecimal("305.00"))))
@@ -27,6 +29,8 @@ class ReturnsTheFeaturedDestinationsListTest : DestinationControllerFixture() {
             jsonPath("$[0].iataCode") { value("GIG") }
             jsonPath("$[0].city") { value("Rio de Janeiro") }
             jsonPath("$[0].photoUrl") { value("https://example.com/gig.jpg") }
+            jsonPath("$[0].region") { value("América do Sul") }
+            jsonPath("$[0].isPopular") { value(true) }
             jsonPath("$[0].lowestPrice") { value(305.00) }
         }
     }

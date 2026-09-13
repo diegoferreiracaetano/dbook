@@ -101,6 +101,8 @@ abstract class RegisterBookingUseCaseFixture {
             city = "São Paulo",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
     private val destination =
         Airport(
@@ -110,6 +112,8 @@ abstract class RegisterBookingUseCaseFixture {
             city = "Rio de Janeiro",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
     private val flight =
         Flight(

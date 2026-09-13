@@ -17,6 +17,8 @@ abstract class FlightTestFixture {
             city = "São Paulo",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
     private val destination =
         Airport(
@@ -26,6 +28,8 @@ abstract class FlightTestFixture {
             city = "Rio de Janeiro",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
 
     protected fun buildFlight(

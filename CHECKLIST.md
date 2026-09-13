@@ -268,6 +268,32 @@ já estabelecido. Foto real vira dado do backend também (coluna nova em
 
 **Mesma limitação de ambiente do M11/M12** — `DestinationsRemainPublicWithoutATokenTest` também estende `AbstractIntegrationTest` (Testcontainers) e falha só por isso neste sandbox; caso de uso e controller (não-integração) passaram normalmente. 60/75 testes do módulo inteiro passaram; as 15 falhas são todas dessa mesma categoria, nenhuma nova.
 
+## M14 — Região e destino em destaque por aeroporto ✅
+
+Decisão (2026-09-13): o mobile precisava de uma tela Explore com "Principais
+destinos" (subconjunto curado) e "Destinos por Região" (Europa, América do
+Sul...). Primeira ideia (rejeitada pelo usuário, com razão): tratar região
+como uma lista separada, buscada à parte — teria criado uma segunda
+estrutura paralela à lista de destinos já existente, exatamente o tipo de
+retrabalho que o padrão desta sessão vem evitando. Decisão final: `region`
+e `isPopular` são só mais dois atributos de `Airport`/`DestinationResponse`
+— mesmo padrão de `photoUrl` (M13). Uma chamada só (`GET /destinations`); o
+cliente agrupa/filtra a mesma lista já carregada, sem endpoint novo.
+
+- [x] 14.1 Migration `V16__add_region_to_airport.sql` — colunas `region` e `is_popular`, backfill dos 8 aeroportos existentes (América do Sul: GRU/GIG/EZE; América do Norte: JFK/MIA; Europa: LHR/CDG/LIS) e curadoria de 4 populares (GRU, GIG, JFK, LHR — espalhados entre regiões, não um corte arbitrário)
+- [x] 14.2 `Airport` (domínio) + `AirportJpaEntity` + `Mappers.kt` ganham os dois campos
+- [x] 14.3 `DestinationResponse` ganha `region`/`isPopular`; `isPopular` precisou de `@get:JsonProperty("isPopular")` — Jackson, por padrão, stripa o prefixo `is` de getters booleanos Kotlin e serializaria como `"popular"` sem a anotação (achado pelo teste do controller, que falhou com `PathNotFoundException` até a anotação entrar)
+- [x] 14.4 Testes: `ReturnsTheFeaturedDestinationsListTest` passa a afirmar `region`/`isPopular` no JSON; fixtures de `Airport(...)` em todo o módulo atualizadas (`region = "América do Sul"`, `isPopular = false` como valores neutros de teste, exceto onde o teste em si depende do valor)
+- [x] 14.5 README (exemplo de resposta) e Swagger em dia
+
+**Checklist de fechamento do M14:**
+- [x] Item 14.1-14.5 revisados
+- [x] Clean Code
+- [x] Arquitetura (nenhuma estrutura nova — `region`/`isPopular` são atributos do mesmo `Destination`, não uma segunda lista)
+- [x] `./gradlew ktlintCheck detekt test` — `ktlintFormat` rodou uma vez pra requebrar linhas depois do bulk-edit nos fixtures; 60/75 testes passaram (mesma limitação de Testcontainers do M11-M13, nenhuma falha nova depois do fix do `@JsonProperty`)
+- [x] README atualizado
+- [x] Swagger em dia
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

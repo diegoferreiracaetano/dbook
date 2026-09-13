@@ -143,13 +143,13 @@ curl "localhost:8080/flights/lowest-price?destination=GIG"
 Retorna `200` com `{"destination": "GIG", "lowestPrice": 450.00}`, ou `404` se não houver nenhum voo ativo pra esse destino na janela.
 
 ### `GET /destinations`
-Todo aeroporto conhecido numa resposta só — código IATA, cidade, país, foto real e menor preço real (reaproveita a mesma agregação de `/flights/lowest-price`, sem duplicar a consulta). Público, mesmo espírito de `/flights/search`. Existe pra o cliente mobile não precisar de nenhuma lista de aeroportos fixa no app — a Home, a aba Explore e o seletor de origem/destino da busca renderizam exatamente essa lista, sem dado de negócio hardcoded no front.
+Todo aeroporto conhecido numa resposta só — código IATA, cidade, país, foto real, região, se é um destino em destaque (`isPopular`) e menor preço real (reaproveita a mesma agregação de `/flights/lowest-price`, sem duplicar a consulta). Público, mesmo espírito de `/flights/search`. Existe pra o cliente mobile não precisar de nenhuma lista de aeroportos fixa no app — a Home, a aba Explore e o seletor de origem/destino da busca renderizam exatamente essa lista, sem dado de negócio hardcoded no front. `region` e `isPopular` seguem o mesmo raciocínio de `photoUrl`: são atributos do aeroporto, não uma estrutura paralela — o cliente agrupa/filtra a mesma lista já carregada em vez de buscar "regiões" ou "destinos populares" como conceitos à parte.
 
 ```bash
 curl localhost:8080/destinations
 ```
 
-Retorna `200` com `[{"iataCode": "GIG", "city": "Rio de Janeiro", "country": "Brasil", "photoUrl": "https://...", "lowestPrice": 305.00}, ...]` — `lowestPrice` vem `null` quando não há voo ativo pra esse destino na janela de 60 dias.
+Retorna `200` com `[{"iataCode": "GIG", "city": "Rio de Janeiro", "country": "Brasil", "photoUrl": "https://...", "region": "América do Sul", "isPopular": true, "lowestPrice": 305.00}, ...]` — `lowestPrice` vem `null` quando não há voo ativo pra esse destino na janela de 60 dias.
 
 ### `GET /bookables/{id}/seats`
 Retorna o mapa de assentos de um `Bookable` (público, mesmo espírito de `/flights/search`) — cada assento com seu `label` (ex.: `"12A"`) e `status` (`AVAILABLE`/`RESERVED`).

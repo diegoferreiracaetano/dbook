@@ -28,6 +28,8 @@ abstract class BookingTestFixture {
                     city = "São Paulo",
                     country = "Brasil",
                     photoUrl = "https://example.com/photo.jpg",
+                    region = "América do Sul",
+                    isPopular = false,
                 ),
             destination =
                 Airport(
@@ -37,6 +39,8 @@ abstract class BookingTestFixture {
                     city = "Rio de Janeiro",
                     country = "Brasil",
                     photoUrl = "https://example.com/photo.jpg",
+                    region = "América do Sul",
+                    isPopular = false,
                 ),
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),

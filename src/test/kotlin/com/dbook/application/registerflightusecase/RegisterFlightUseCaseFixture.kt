@@ -107,6 +107,8 @@ abstract class RegisterFlightUseCaseFixture {
             city = "São Paulo",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
     private val gig =
         Airport(
@@ -116,6 +118,8 @@ abstract class RegisterFlightUseCaseFixture {
             city = "Rio de Janeiro",
             country = "Brasil",
             photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
     protected val flightRepository = FakeFlightRepository()
     protected val seatRepository = FakeSeatRepository()

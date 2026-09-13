@@ -75,6 +75,8 @@ abstract class SuggestFlightsUseCaseFixture {
                     city = "São Paulo",
                     country = "Brasil",
                     photoUrl = "https://example.com/photo.jpg",
+                    region = "América do Sul",
+                    isPopular = false,
                 ),
             destination =
                 Airport(
@@ -84,6 +86,8 @@ abstract class SuggestFlightsUseCaseFixture {
                     city = "Rio de Janeiro",
                     country = "Brasil",
                     photoUrl = "https://example.com/photo.jpg",
+                    region = "América do Sul",
+                    isPopular = false,
                 ),
             departureTime = LocalDateTime.of(2027, 3, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2027, 3, 1, 9, 10),

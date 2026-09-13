@@ -17,4 +17,6 @@ class AirportJpaEntity(
     var city: String = "",
     var country: String = "",
     var photoUrl: String = "",
+    var region: String = "",
+    var isPopular: Boolean = false,
 )

@@ -8,4 +8,6 @@ class Airport(
     val city: String,
     val country: String,
     val photoUrl: String,
+    val region: String,
+    val isPopular: Boolean,
 )

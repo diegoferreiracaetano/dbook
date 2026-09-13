@@ -53,5 +53,7 @@ abstract class GetFeaturedDestinationsUseCaseFixture {
             city = iataCode,
             country = iataCode,
             photoUrl = "https://example.com/$iataCode.jpg",
+            region = "América do Sul",
+            isPopular = false,
         )
 }
