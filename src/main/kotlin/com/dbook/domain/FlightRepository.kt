@@ -1,5 +1,6 @@
 package com.dbook.domain
 
+import java.math.BigDecimal
 import java.time.LocalDate
 
 /** Persistence port for [Flight]. */
@@ -14,6 +15,18 @@ interface FlightRepository {
         destinationIataCode: String,
         date: LocalDate,
     ): List<Flight>
+
+    /**
+     * Lowest price among active flights to [destinationIataCode] departing within
+     * [from]..[to] (inclusive), or `null` if none exist — used by
+     * `GET /flights/lowest-price`. An aggregate query (`MIN(price)`), not a full scan of
+     * matching flights.
+     */
+    fun findLowestPrice(
+        destinationIataCode: String,
+        from: LocalDate,
+        to: LocalDate,
+    ): BigDecimal?
 
     /**
      * Candidate pool for AI suggestions — bounding/ordering (soonest departures first)

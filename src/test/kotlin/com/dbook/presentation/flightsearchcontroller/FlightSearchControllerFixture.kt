@@ -1,6 +1,8 @@
 package com.dbook.presentation.flightsearchcontroller
 
+import com.dbook.application.GetLowestPriceForDestinationUseCase
 import com.dbook.application.SearchFlightsUseCase
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.TokenService
 import com.dbook.presentation.FlightSearchController
@@ -23,12 +25,32 @@ abstract class FlightSearchControllerFixture {
     @MockBean
     lateinit var searchFlightsUseCase: SearchFlightsUseCase
 
+    @MockBean
+    lateinit var getLowestPriceForDestinationUseCase: GetLowestPriceForDestinationUseCase
+
     // JwtAuthenticationFilter is still instantiated as a bean even with addFilters =
     // false (which only skips invoking it during dispatch), so its TokenService
     // dependency still needs to be satisfiable.
     @MockBean
     lateinit var tokenService: TokenService
 
-    protected val gru = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
-    protected val gig = Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
+    protected val gru =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
+    protected val gig =
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
+    protected val latam = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
 }

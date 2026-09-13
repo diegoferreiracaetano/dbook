@@ -2,6 +2,7 @@ package com.dbook.presentation.flightadmincontroller
 
 import com.dbook.application.RegisterFlightCommand
 import com.dbook.application.RegisterFlightUseCase
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.SeatClass
 import com.dbook.domain.TokenService
@@ -37,12 +38,30 @@ abstract class FlightAdminControllerFixture {
 
     protected val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
 
-    protected val gru = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
-    protected val gig = Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
+    protected val gru =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
+    protected val gig =
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
+    protected val latam = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
 
     protected val request =
         RegisterFlightRequest(
             flightNumber = "DB1234",
+            airlineIataCode = "LA",
             originIataCode = "GRU",
             destinationIataCode = "GIG",
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
@@ -55,6 +74,7 @@ abstract class FlightAdminControllerFixture {
     protected val expectedCommand =
         RegisterFlightCommand(
             flightNumber = request.flightNumber,
+            airlineIataCode = request.airlineIataCode,
             originIataCode = request.originIataCode,
             destinationIataCode = request.destinationIataCode,
             departureTime = request.departureTime,

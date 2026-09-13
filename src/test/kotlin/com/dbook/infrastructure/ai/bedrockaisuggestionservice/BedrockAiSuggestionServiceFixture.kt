@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.ai.bedrockaisuggestionservice
 
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.Flight
 import com.dbook.domain.SeatClass
@@ -27,8 +28,9 @@ abstract class BedrockAiSuggestionServiceFixture {
             totalCapacity = 180,
             availableCapacity = 170,
             flightNumber = "DB1234",
-            origin = Airport(1, "GRU", "Guarulhos", "São Paulo", "Brasil"),
-            destination = Airport(2, "GIG", "Galeão", "Rio de Janeiro", "Brasil"),
+            airline = Airline(1, "LA", "LATAM Airlines"),
+            origin = Airport(1, "GRU", "Guarulhos", "São Paulo", "Brasil", "https://example.com/photo.jpg"),
+            destination = Airport(2, "GIG", "Galeão", "Rio de Janeiro", "Brasil", "https://example.com/photo.jpg"),
             departureTime = LocalDateTime.of(2027, 3, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2027, 3, 1, 9, 10),
             seatClass = SeatClass.ECONOMY,

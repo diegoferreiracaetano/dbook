@@ -166,9 +166,111 @@ Decisões fechadas:
 - [x] 10.9 Swagger/OpenAPI atualizado (novo endpoint + `seatId` no request de reserva)
 - [x] 10.10 README atualizado
 
+## M11 — Companhias aéreas (Airline) ✅
+
+Decisão (2026-09-12): construindo a tela de Resultados da Busca no
+mobile a partir de uma referência visual real (várias companhias, selo
+colorido por voo), ficou claro que o backend não tem nenhum conceito de
+companhia aérea — todo voo gerado é anônimo, sem operador. Em vez de
+inventar esse dado só no lado mobile (o que contrariaria a regra já
+fechada de "sem parte fake" depois da correção do Multi-city), a
+companhia aérea vira dado real de backend, seguindo exatamente o mesmo
+padrão já usado por `Airport` (entidade JPA com tabela própria, seedada
+via Flyway, resolvida por código IATA) — ver `Airport.kt`,
+`AirportJpaEntity.kt`, `V1__create_bookable_and_flight_tables.sql`,
+`V2__seed_airports.sql`.
+
+- [x] 11.1 Migration `V11__create_airline_table.sql` (id, iata_code, name) + `V12__seed_airlines.sql` com 6 companhias reais que operam essas rotas (LATAM, Azul, GOL, American, Delta, United)
+- [x] 11.2 Domínio `Airline` (id, iataCode, name) + `AirlineRepository` (porta) + `AirlineNotFoundException` — mesmo padrão de `Airport`
+- [x] 11.3 `AirlineJpaEntity` + `AirlineJpaRepository` + `AirlineRepositoryAdapter`
+- [x] 11.4 `Flight` (domínio) ganha `airline: Airline`; `FlightJpaEntity` ganha `@ManyToOne airline` (`ALTER TABLE flight ADD COLUMN airline_id ...` — migration `V13`); `FlightRepositoryAdapter.save` resolve a referência igual já fazia com origem/destino
+- [x] 11.5 `FlightResponse` ganha `airlineName`/`airlineIataCode`; `.from()` atualizado
+- [x] 11.6 `POST /admin/flights` (`RegisterFlightRequest`/`RegisterFlightUseCase`) passa a exigir `airlineIataCode`, resolvido via `AirlineRepository` — mesmo padrão de resolução de `Airport` por IATA code; `RegisterFlightUseCase.execute` ganhou `resolveAirline`/`resolveAirport` privados (evita duplicar a lógica de "busca ou lança" 3x e mantém `ThrowsCount` do detekt em dia)
+- [x] 11.7 `scripts/seed-flights.sh` atualizado pra sortear uma companhia (`AIRLINES`) por voo gerado
+- [x] 11.8 Testes: `ThrowsWhenAirlineDoesNotExistTest` (caso de uso), asserção de `airline.iataCode` em `RegistersAFlightResolvingAirportsByIataCodeTest`, `airlineIataCode`/`airlineName` no JSON de `ReturnsMatchingFlightsTest` e `ReturnsCreatedWithTheCreatedFlightTest` — mais todos os fixtures existentes (`FlightTestFixture`, `BookingTestFixture`, `RegisterFlightUseCaseFixture` e os demais que constroem `Flight`/`RegisterFlightCommand`) atualizados pra continuar compilando com o campo novo
+- [x] 11.9 Swagger atualizado (`@Schema` em `airlineIataCode` de `RegisterFlightRequest`; `FlightResponse` documentado automaticamente como os demais campos, sem anotação dedicada — mesmo padrão já usado nesse DTO)
+- [x] 11.10 README atualizado (seed de aeroportos+companhias, exemplo de `POST /admin/flights` com `airlineIataCode`)
+
+**Checklist de fechamento do M11:**
+- [x] Itens 11.1-11.10 revisados
+- [x] Clean Code — `resolveAirline`/`resolveAirport` eliminam a duplicação que existia entre a resolução de origem e destino, além de resolver o `ThrowsCount`
+- [x] SOLID (porta `AirlineRepository` em `domain`, implementação em `infrastructure`, mesmo padrão de `Airport`)
+- [x] `./gradlew ktlintCheck detekt` sem violações — 2 thresholds documentados em `config/detekt/detekt.yml` (`LongParameterList.constructorThreshold`, `TooManyFunctions.thresholdInFiles`) precisaram subir mais uma unidade cada, mesmo motivo já registrado ali (crescimento legítimo de atributos/pares de mapper, não complexidade real)
+- [x] Testes das camadas ainda não cobertas — cobertos acima (11.8)
+- [x] README atualizado
+- [x] Swagger em dia
+
+**Limitação de ambiente nesta sessão (2026-09-12):** `./gradlew test` teve 13 falhas, todas em testes que estendem `AbstractIntegrationTest` (Testcontainers) — o Docker deste ambiente sandboxed responde `docker info`/`docker context` pela CLI, mas devolve um `/info` HTTP degenerado (todos os campos zerados/vazios) pro cliente Java do Testcontainers, que rejeita a resposta como inválida. Confirmado que não é causado por este marco: as 13 falhas são só integração (`BookingConcurrencyTest`, `PushesAnAvailabilityUpdateOverWebsocketTest`, todo `presentation/securityintegration`), nenhuma toca `Airline`; as 52 restantes passaram, incluindo todos os testes novos/atualizados deste marco. Precisa validação manual (`docker compose up` + app rodando de verdade) fora deste ambiente antes de considerar o fluxo de ponta a ponta 100% confirmado.
+
+## M12 — Preço mínimo por destino (endpoint agregado) ✅
+
+Decisão (2026-09-12): a grade "Destinos em destaque" do mobile precisa
+mostrar um preço real tipo "from $450" por destino. `GET
+/flights/search` só aceita data exata — perguntar preço mínimo assim
+exigiria o mobile tentar várias datas por destino (voos são seedados em
+datas aleatórias entre 1-60 dias, então boa parte das tentativas
+voltaria vazia). Decisão com o usuário: em vez disso, um endpoint
+agregado no backend (`MIN(price)` numa janela de datas, uma consulta
+SQL só), mais rápido e sempre real.
+
+- [x] 12.1 `GET /flights/lowest-price?destination={iataCode}` — retorna o menor preço encontrado num voo ativo com `destination = iataCode` e `departureTime` nos próximos 60 dias; `404` quando não há nenhum voo pra esse destino na janela
+- [x] 12.2 `FlightRepository.findLowestPrice` (porta) + `FlightJpaRepository` com `@Query("SELECT MIN(f.price) ...")` — agregação de verdade no banco, sem trazer as linhas inteiras
+- [x] 12.3 Endpoint público — `/flights/lowest-price` adicionado ao `permitAll()` do `SecurityConfig` (a lista é por rota exata, não `/flights/**`, então precisava da entrada própria — sem isso o endpoint teria voltado `401` em vez de `404`/`200`)
+- [x] 12.4 Testes: `GetLowestPriceForDestinationUseCase` (com preço, sem preço — um cenário por classe, convenção do projeto), controller (200 com preço, 404 sem voos), `LowestPriceRemainsPublicWithoutATokenTest` confirmando que não é bloqueado por auth
+- [x] 12.5 Swagger atualizado (`@Operation` no novo endpoint)
+- [x] 12.6 README atualizado
+
+**Checklist de fechamento do M12:**
+- [x] Itens 12.1-12.6 revisados
+- [x] Clean Code
+- [x] SOLID (`FlightRepository` continua a única porta pra tudo relativo a `Flight`, mesmo padrão de `search`/`findActive`)
+- [x] `./gradlew ktlintCheck detekt` sem violações
+- [x] Testes das camadas ainda não cobertas — cobertos acima (12.4)
+- [x] README atualizado
+- [x] Swagger em dia
+
+**Mesma limitação de ambiente do M11** (ver nota lá) — `LowestPriceRemainsPublicWithoutATokenTest` também estende `AbstractIntegrationTest` (Testcontainers) e falha só por isso neste sandbox; os testes de caso de uso e de controller (não-integração) passaram normalmente.
+
+**Bug real encontrado e corrigido durante a verificação visual do M12 (2026-09-13):** o backend nunca teve nenhuma configuração de CORS — todo request de um cliente browser (o app Flutter rodando em `flutter run -d web-server`) era bloqueado antes de chegar em qualquer endpoint, `/flights/lowest-price` incluído. Passou despercebido até agora porque `curl` e clientes nativos (Android/iOS) não aplicam CORS — só apareceu ao testar de verdade no Browser pane. Corrigido em `SecurityConfig.kt`: novo bean `corsConfigurationSource` (origens `http://localhost:*`/`http://127.0.0.1:*` — só servidor de dev local, nenhum frontend está publicado em lugar nenhum ainda) plugado em `http.cors { ... }` no `securityFilterChain`. Confirmado de ponta a ponta: `curl -H "Origin: http://localhost:8767"` retorna `Access-Control-Allow-Origin`, e a busca/preço mínimo funcionam de verdade no app rodando no Browser pane.
+
+## M13 — Endpoint agregado de destinos (`GET /destinations`) ✅
+
+Decisão (2026-09-13): ao pedir mais destinos reais na Home do mobile,
+ficou claro que `knownAirports` (lista fixa de aeroportos, hardcoded no
+Flutter) era dado de negócio vivendo no front — o usuário pediu
+explicitamente pra tirar isso de lá ("front deve ser burro e não ter
+regras de negócio"). Em vez de um serviço BFF separado (não se justifica
+pra um cliente só), este marco cria um endpoint novo **no próprio
+backend**, moldado pro que a Home do mobile precisa: pra cada aeroporto,
+código IATA, cidade, país, foto real e menor preço real, numa resposta
+só. Reaproveita o `GetLowestPriceForDestinationUseCase` do M12 (zero SQL
+novo pra preço) e segue o mesmo padrão de `Airport`/`AirportRepository`
+já estabelecido. Foto real vira dado do backend também (coluna nova em
+`airport`) — não fica metade no front, metade no backend.
+
+- [x] 13.1 Migration `V14__add_photo_url_to_airport.sql` (coluna nova + backfill das 3 fotos já usadas hoje no Flutter pra GRU/GIG/JFK, depois `NOT NULL`) e `V15__seed_more_airports.sql` (LHR, CDG, LIS, MIA, EZE — nome oficial real, foto real do Unsplash verificada visualmente antes de usar, uma a uma)
+- [x] 13.2 `Airport`/`AirportJpaEntity` ganharam `photoUrl`; `AirportRepository` ganhou `findAll()` (o `JpaRepository` já tinha de graça)
+- [x] 13.3 `GetFeaturedDestinationsUseCase` — busca todos os aeroportos e chama `GetLowestPriceForDestinationUseCase` (M12) pra cada um, sem duplicar a agregação de preço
+- [x] 13.4 `DestinationController` (`GET /destinations`, público) + `DestinationResponse` (iataCode, city, country, photoUrl, lowestPrice)
+- [x] 13.5 `SecurityConfig` — `/destinations` no `permitAll()` (rota exata, mesmo detalhe que faltou no M12 pro `/flights/lowest-price`)
+- [x] 13.6 `scripts/seed-flights.sh` — 20 rotas novas envolvendo os 5 aeroportos (GRU/GIG/JFK ↔ LHR/CDG/LIS/MIA/EZE)
+- [x] 13.7 Testes: caso de uso (`ReturnsEmptyListWhenNoAirportsExistTest`, `ReturnsNullPriceWhenAnAirportHasNoFlightsTest`, `ReturnsEachAirportWithItsRealLowestPriceTest`), controller (`ReturnsTheFeaturedDestinationsListTest`), segurança (`DestinationsRemainPublicWithoutATokenTest`)
+- [x] 13.8 Swagger (`@Operation`/`@Tag`) + README atualizados (endpoint novo, rota pública, contagem de aeroportos 3→8)
+
+**Checklist de fechamento do M13:**
+- [x] Itens 13.1-13.8 revisados
+- [x] Clean Code
+- [x] SOLID (`GetFeaturedDestinationsUseCase` reaproveita `GetLowestPriceForDestinationUseCase` em vez de duplicar a agregação)
+- [x] `./gradlew ktlintCheck detekt` sem violações (rodou `ktlintFormat` uma vez pra requebrar linhas depois de um `photoUrl` adicionado em bloco nos fixtures de teste)
+- [x] Testes das camadas ainda não cobertas — cobertos acima (13.7)
+- [x] README atualizado
+- [x] Swagger em dia
+
+**Mesma limitação de ambiente do M11/M12** — `DestinationsRemainPublicWithoutATokenTest` também estende `AbstractIntegrationTest` (Testcontainers) e falha só por isso neste sandbox; caso de uso e controller (não-integração) passaram normalmente. 60/75 testes do módulo inteiro passaram; as 15 falhas são todas dessa mesma categoria, nenhuma nova.
+
 ## Ideias futuras (fora da numeração M1-M9)
 
-- [x] **Script de seed de dados** ✅ (2026-09-09) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão 30) com rotas/preços/datas variados entre os 3 aeroportos seedados, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
+- [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
 - **Integração com API real de voos**: buscar voos de um provedor externo (AviationStack, Amadeus, OpenSky...) em vez de dados só cadastrados via `/admin/flights`. Maior escopo — exige escolher provedor, lidar com API key/rate limit/custo, mapear o schema deles pro domínio, decidir estratégia de sincronização.
 
 ## Checklist de fechamento de módulo

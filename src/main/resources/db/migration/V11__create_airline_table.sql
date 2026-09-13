@@ -1,0 +1,5 @@
+CREATE TABLE airline (
+    id BIGSERIAL PRIMARY KEY,
+    iata_code VARCHAR(3) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL
+);

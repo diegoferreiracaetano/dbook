@@ -63,7 +63,7 @@ curl -X POST localhost:8080/auth/refresh \
   -d '{"refreshToken": "<refreshToken>"}'
 ```
 
-Rotas públicas: `/health`, `/auth/**`, `/flights/search`, Swagger. Todo o resto exige `Authorization: Bearer <token>`. `POST /admin/flights` exige role `ADMIN`.
+Rotas públicas: `/health`, `/auth/**`, `/flights/search`, `/flights/lowest-price`, `/destinations`, Swagger. Todo o resto exige `Authorization: Bearer <token>`. `POST /admin/flights` exige role `ADMIN`.
 
 Não existe endpoint para promover um usuário a `ADMIN` (não foi pedido, e permitir isso via API seria uma falha de segurança). Pra testar rotas de admin localmente, promova direto no banco:
 
@@ -82,15 +82,15 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 
 > O `JAVA_HOME` explícito é necessário porque o Gradle 8.8 (versão do wrapper) ainda não roda em JDK mais recentes que o 21/22 — ver decisão registrada no histórico do projeto.
 
-A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 3 aeroportos: `GRU`, `GIG`, `JFK`).
+A aplicação sobe em `http://localhost:8080`. O Flyway aplica as migrations automaticamente (schema + seed de 8 aeroportos, cada um com foto real: `GRU`, `GIG`, `JFK`, `LHR`, `CDG`, `LIS`, `MIA`, `EZE` — e 6 companhias aéreas: `LA`, `AD`, `G3`, `AA`, `DL`, `UA`, mesmo padrão de dado de referência).
 
 Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à sugestão por IA do M7):
 
 ```bash
-./scripts/seed-flights.sh 30   # cria 30 voos; padrão é 30 se omitido
+./scripts/seed-flights.sh 1000   # cria 1000 voos; padrão é 1000 se omitido
 ```
 
-Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com rotas/preços/datas variados entre os 3 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
+Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 8 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
 
 ## Documentação da API (Swagger)
 
@@ -105,7 +105,7 @@ Com a aplicação no ar:
 Confirma que a aplicação está no ar.
 
 ### `POST /admin/flights` (requer role `ADMIN`)
-Cadastra um voo, resolvendo origem/destino por código IATA, e gera automaticamente seu mapa de assentos (6 por fileira, A-F) a partir de `totalCapacity`.
+Cadastra um voo, resolvendo companhia/origem/destino por código IATA, e gera automaticamente seu mapa de assentos (6 por fileira, A-F) a partir de `totalCapacity`.
 
 ```bash
 curl -X POST localhost:8080/admin/flights \
@@ -113,6 +113,7 @@ curl -X POST localhost:8080/admin/flights \
   -H "Authorization: Bearer <accessToken-de-um-ADMIN>" \
   -d '{
     "flightNumber": "DB1234",
+    "airlineIataCode": "LA",
     "originIataCode": "GRU",
     "destinationIataCode": "GIG",
     "departureTime": "2026-10-01T08:00:00",
@@ -123,7 +124,7 @@ curl -X POST localhost:8080/admin/flights \
   }'
 ```
 
-Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de origem/destino não existir.
+Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de companhia/origem/destino não existir.
 
 ### `GET /flights/search?origin=&destination=&date=`
 Busca voos por rota e data.
@@ -131,6 +132,24 @@ Busca voos por rota e data.
 ```bash
 curl "localhost:8080/flights/search?origin=GRU&destination=GIG&date=2026-10-01"
 ```
+
+### `GET /flights/lowest-price?destination=`
+Menor preço real entre os voos ativos pra esse destino nos próximos 60 dias (público, mesmo espírito de `/flights/search`) — uma consulta agregada (`MIN(price)`), não uma varredura de voos. Alimenta o "from $X" da grade de destinos em destaque no mobile sem esse cliente precisar tentar várias datas uma por uma.
+
+```bash
+curl "localhost:8080/flights/lowest-price?destination=GIG"
+```
+
+Retorna `200` com `{"destination": "GIG", "lowestPrice": 450.00}`, ou `404` se não houver nenhum voo ativo pra esse destino na janela.
+
+### `GET /destinations`
+Todo aeroporto conhecido numa resposta só — código IATA, cidade, país, foto real e menor preço real (reaproveita a mesma agregação de `/flights/lowest-price`, sem duplicar a consulta). Público, mesmo espírito de `/flights/search`. Existe pra o cliente mobile não precisar de nenhuma lista de aeroportos fixa no app — a Home, a aba Explore e o seletor de origem/destino da busca renderizam exatamente essa lista, sem dado de negócio hardcoded no front.
+
+```bash
+curl localhost:8080/destinations
+```
+
+Retorna `200` com `[{"iataCode": "GIG", "city": "Rio de Janeiro", "country": "Brasil", "photoUrl": "https://...", "lowestPrice": 305.00}, ...]` — `lowestPrice` vem `null` quando não há voo ativo pra esse destino na janela de 60 dias.
 
 ### `GET /bookables/{id}/seats`
 Retorna o mapa de assentos de um `Bookable` (público, mesmo espírito de `/flights/search`) — cada assento com seu `label` (ex.: `"12A"`) e `status` (`AVAILABLE`/`RESERVED`).

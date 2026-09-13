@@ -16,4 +16,5 @@ class AirportJpaEntity(
     var name: String = "",
     var city: String = "",
     var country: String = "",
+    var photoUrl: String = "",
 )

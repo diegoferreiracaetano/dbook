@@ -22,6 +22,9 @@ class FlightJpaEntity(
     active: Boolean = true,
     var flightNumber: String = "",
     @ManyToOne
+    @JoinColumn(name = "airline_id")
+    var airline: AirlineJpaEntity,
+    @ManyToOne
     @JoinColumn(name = "origin_airport_id")
     var origin: AirportJpaEntity,
     @ManyToOne

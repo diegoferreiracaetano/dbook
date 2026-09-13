@@ -32,6 +32,7 @@ class BookingConcurrencyTest : AbstractIntegrationTest() {
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
                     flightNumber = "DBC${(10000..99999).random()}",
+                    airlineIataCode = "LA",
                     originIataCode = "GRU",
                     destinationIataCode = "GIG",
                     departureTime = LocalDateTime.of(2026, 12, 1, 8, 0),

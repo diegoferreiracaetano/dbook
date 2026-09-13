@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 data class FlightResponse(
     val id: Long?,
     val flightNumber: String,
+    val airlineIataCode: String,
+    val airlineName: String,
     val origin: String,
     val destination: String,
     val departureTime: LocalDateTime,
@@ -21,6 +23,8 @@ data class FlightResponse(
             FlightResponse(
                 id = flight.id,
                 flightNumber = flight.flightNumber,
+                airlineIataCode = flight.airline.iataCode,
+                airlineName = flight.airline.name,
                 origin = flight.origin.iataCode,
                 destination = flight.destination.iataCode,
                 departureTime = flight.departureTime,

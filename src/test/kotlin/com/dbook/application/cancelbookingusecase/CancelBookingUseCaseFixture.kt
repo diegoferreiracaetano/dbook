@@ -1,6 +1,7 @@
 package com.dbook.application.cancelbookingusecase
 
 import com.dbook.application.CancelBookingUseCase
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.AvailabilityBroadcaster
 import com.dbook.domain.Booking
@@ -75,9 +76,25 @@ abstract class CancelBookingUseCaseFixture {
     protected val bookingId = 100L
     protected val ownerId = 1L
 
-    private val origin = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
+    private val airline = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
+    private val origin =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
     private val destination =
-        Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
     private val flight =
         Flight(
             id = bookableId,
@@ -86,6 +103,7 @@ abstract class CancelBookingUseCaseFixture {
             totalCapacity = 1,
             availableCapacity = 0,
             flightNumber = "DB1234",
+            airline = airline,
             origin = origin,
             destination = destination,
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),

@@ -7,4 +7,5 @@ class Airport(
     val name: String,
     val city: String,
     val country: String,
+    val photoUrl: String,
 )

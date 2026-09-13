@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 data class RegisterFlightRequest(
     @get:Schema(example = "DB1234")
     val flightNumber: String,
+    @get:Schema(example = "LA", description = "IATA code, must exist in the airline table")
+    val airlineIataCode: String,
     @get:Schema(example = "GRU", description = "IATA code, must exist in the airport table")
     val originIataCode: String,
     @get:Schema(example = "GIG", description = "IATA code, must exist in the airport table")

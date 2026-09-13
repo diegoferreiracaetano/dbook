@@ -9,4 +9,6 @@ class AirportRepositoryAdapter(
     private val airportJpaRepository: AirportJpaRepository,
 ) : AirportRepository {
     override fun findByIataCode(iataCode: String): Airport? = airportJpaRepository.findByIataCode(iataCode)?.toDomain()
+
+    override fun findAll(): List<Airport> = airportJpaRepository.findAll().map { it.toDomain() }
 }

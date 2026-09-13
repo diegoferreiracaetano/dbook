@@ -4,11 +4,13 @@ import com.dbook.domain.Flight
 import com.dbook.domain.FlightRepository
 import com.dbook.domain.SeatStatus
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
 class FlightRepositoryAdapter(
     private val flightJpaRepository: FlightJpaRepository,
+    private val airlineJpaRepository: AirlineJpaRepository,
     private val airportJpaRepository: AirportJpaRepository,
     private val seatJpaRepository: SeatJpaRepository,
 ) : FlightRepository {
@@ -16,11 +18,13 @@ class FlightRepositoryAdapter(
         flightJpaRepository.findById(id).orElse(null)?.toDomain(availableCapacityOf(id))
 
     override fun save(flight: Flight): Flight {
+        val airlineId = requireNotNull(flight.airline.id) { "Flight.airline must be a persisted Airline" }
         val originId = requireNotNull(flight.origin.id) { "Flight.origin must be a persisted Airport" }
         val destinationId = requireNotNull(flight.destination.id) { "Flight.destination must be a persisted Airport" }
+        val airlineRef = airlineJpaRepository.getReferenceById(airlineId)
         val originRef = airportJpaRepository.getReferenceById(originId)
         val destinationRef = airportJpaRepository.getReferenceById(destinationId)
-        val saved = flightJpaRepository.save(flight.toJpaEntity(originRef, destinationRef))
+        val saved = flightJpaRepository.save(flight.toJpaEntity(airlineRef, originRef, destinationRef))
         // origin/destination here are proxies (getReferenceById) with only the id set;
         // reading them outside the transaction throws LazyInitializationException. We
         // reuse the full domain objects the caller already had, only refreshing the
@@ -34,6 +38,7 @@ class FlightRepositoryAdapter(
             availableCapacity = availableCapacityOf(requireNotNull(saved.id)),
             active = saved.active,
             flightNumber = saved.flightNumber,
+            airline = flight.airline,
             origin = flight.origin,
             destination = flight.destination,
             departureTime = saved.departureTime,
@@ -62,6 +67,17 @@ class FlightRepositoryAdapter(
     override fun findActive(): List<Flight> =
         flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc()
             .map { it.toDomain(availableCapacityOf(requireNotNull(it.id))) }
+
+    override fun findLowestPrice(
+        destinationIataCode: String,
+        from: LocalDate,
+        to: LocalDate,
+    ): BigDecimal? =
+        flightJpaRepository.findLowestPrice(
+            destinationIataCode,
+            from.atStartOfDay(),
+            to.plusDays(1).atStartOfDay(),
+        )
 
     private fun availableCapacityOf(bookableId: Long): Int =
         seatJpaRepository.countByBookable_IdAndStatus(bookableId, SeatStatus.AVAILABLE)

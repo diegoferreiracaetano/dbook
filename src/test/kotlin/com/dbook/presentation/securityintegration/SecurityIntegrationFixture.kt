@@ -92,6 +92,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         objectMapper.writeValueAsString(
             mapOf(
                 "flightNumber" to "DBA${(10000..99999).random()}",
+                "airlineIataCode" to "LA",
                 "originIataCode" to "GRU",
                 "destinationIataCode" to "GIG",
                 "departureTime" to "2027-02-01T08:00:00",
@@ -108,6 +109,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
                     flightNumber = "DBS${(10000..99999).random()}",
+                    airlineIataCode = "LA",
                     originIataCode = "GRU",
                     destinationIataCode = "GIG",
                     departureTime = LocalDateTime.of(2027, 1, 1, 8, 0),

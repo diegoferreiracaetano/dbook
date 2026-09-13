@@ -31,6 +31,7 @@ class FlightAdminController(
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
                     flightNumber = request.flightNumber,
+                    airlineIataCode = request.airlineIataCode,
                     originIataCode = request.originIataCode,
                     destinationIataCode = request.destinationIataCode,
                     departureTime = request.departureTime,

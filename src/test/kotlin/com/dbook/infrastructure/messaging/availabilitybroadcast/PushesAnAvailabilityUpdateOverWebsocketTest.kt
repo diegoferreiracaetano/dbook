@@ -31,6 +31,7 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
                     flightNumber = "DBW${(10000..99999).random()}",
+                    airlineIataCode = "LA",
                     originIataCode = "GRU",
                     destinationIataCode = "GIG",
                     departureTime = LocalDateTime.of(2027, 3, 1, 8, 0),

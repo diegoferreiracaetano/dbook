@@ -2,6 +2,8 @@ package com.dbook.application.registerflightusecase
 
 import com.dbook.application.RegisterFlightCommand
 import com.dbook.application.RegisterFlightUseCase
+import com.dbook.domain.Airline
+import com.dbook.domain.AirlineRepository
 import com.dbook.domain.Airport
 import com.dbook.domain.AirportRepository
 import com.dbook.domain.Flight
@@ -16,6 +18,12 @@ import java.time.LocalDateTime
 
 class FakeAirportRepository(private val airports: List<Airport>) : AirportRepository {
     override fun findByIataCode(iataCode: String): Airport? = airports.find { it.iataCode == iataCode }
+
+    override fun findAll(): List<Airport> = airports
+}
+
+class FakeAirlineRepository(private val airlines: List<Airline>) : AirlineRepository {
+    override fun findByIataCode(iataCode: String): Airline? = airlines.find { it.iataCode == iataCode }
 }
 
 class FakeFlightRepository : FlightRepository {
@@ -37,6 +45,12 @@ class FakeFlightRepository : FlightRepository {
 
     override fun findActive(): List<Flight> = saved.filter { it.active }
 
+    override fun findLowestPrice(
+        destinationIataCode: String,
+        from: LocalDate,
+        to: LocalDate,
+    ): BigDecimal? = error("not used by RegisterFlightUseCase")
+
     private fun copyWithId(
         flight: Flight,
         id: Long,
@@ -48,6 +62,7 @@ class FakeFlightRepository : FlightRepository {
         availableCapacity = flight.availableCapacity,
         active = flight.active,
         flightNumber = flight.flightNumber,
+        airline = flight.airline,
         origin = flight.origin,
         destination = flight.destination,
         departureTime = flight.departureTime,
@@ -83,18 +98,42 @@ class FakeSeatRepository : SeatRepository {
 // Shared "given": GRU and GIG exist as airports; every scenario below registers a flight
 // between them (or a nonexistent code) using this fixed pair.
 abstract class RegisterFlightUseCaseFixture {
-    private val gru = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
-    private val gig = Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
+    private val latam = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
+    private val gru =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
+    private val gig =
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
     protected val flightRepository = FakeFlightRepository()
     protected val seatRepository = FakeSeatRepository()
     protected val useCase =
-        RegisterFlightUseCase(flightRepository, FakeAirportRepository(listOf(gru, gig)), seatRepository)
+        RegisterFlightUseCase(
+            flightRepository,
+            FakeAirlineRepository(listOf(latam)),
+            FakeAirportRepository(listOf(gru, gig)),
+            seatRepository,
+        )
 
     protected fun command(
         origin: String = "GRU",
         destination: String = "GIG",
+        airline: String = "LA",
     ) = RegisterFlightCommand(
         flightNumber = "DB1234",
+        airlineIataCode = airline,
         originIataCode = origin,
         destinationIataCode = destination,
         departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),

@@ -20,6 +20,7 @@ class ReturnsMatchingFlightsTest : FlightSearchControllerFixture() {
                 totalCapacity = 180,
                 availableCapacity = 180,
                 flightNumber = "DB1234",
+                airline = latam,
                 origin = gru,
                 destination = gig,
                 departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
@@ -36,6 +37,8 @@ class ReturnsMatchingFlightsTest : FlightSearchControllerFixture() {
         }.andExpect {
             status { isOk() }
             jsonPath("$[0].flightNumber") { value("DB1234") }
+            jsonPath("$[0].airlineIataCode") { value("LA") }
+            jsonPath("$[0].airlineName") { value("LATAM Airlines") }
         }
     }
 }

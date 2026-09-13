@@ -1,0 +1,1 @@
+ALTER TABLE flight ADD COLUMN airline_id BIGINT NOT NULL REFERENCES airline (id);

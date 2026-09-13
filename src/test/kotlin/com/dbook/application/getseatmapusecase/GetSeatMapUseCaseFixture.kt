@@ -1,6 +1,7 @@
 package com.dbook.application.getseatmapusecase
 
 import com.dbook.application.GetSeatMapUseCase
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.Bookable
 import com.dbook.domain.BookableRepository
@@ -34,9 +35,25 @@ class FakeSeatRepository(private val seats: List<Seat>) : SeatRepository {
 abstract class GetSeatMapUseCaseFixture {
     protected val bookableId = 1L
 
-    private val origin = Airport(id = 1, iataCode = "GRU", name = "Guarulhos", city = "São Paulo", country = "Brasil")
+    private val airline = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
+    private val origin =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
     private val destination =
-        Airport(id = 2, iataCode = "GIG", name = "Galeão", city = "Rio de Janeiro", country = "Brasil")
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+        )
     private val flight =
         Flight(
             id = bookableId,
@@ -45,6 +62,7 @@ abstract class GetSeatMapUseCaseFixture {
             totalCapacity = 2,
             availableCapacity = 2,
             flightNumber = "DB1234",
+            airline = airline,
             origin = origin,
             destination = destination,
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),

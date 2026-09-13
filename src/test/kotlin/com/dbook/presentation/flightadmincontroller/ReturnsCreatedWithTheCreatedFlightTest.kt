@@ -19,6 +19,7 @@ class ReturnsCreatedWithTheCreatedFlightTest : FlightAdminControllerFixture() {
                 totalCapacity = 180,
                 availableCapacity = 180,
                 flightNumber = "DB1234",
+                airline = latam,
                 origin = gru,
                 destination = gig,
                 departureTime = request.departureTime,
@@ -33,6 +34,7 @@ class ReturnsCreatedWithTheCreatedFlightTest : FlightAdminControllerFixture() {
         }.andExpect {
             status { isCreated() }
             jsonPath("$.flightNumber") { value("DB1234") }
+            jsonPath("$.airlineIataCode") { value("LA") }
             jsonPath("$.origin") { value("GRU") }
             jsonPath("$.destination") { value("GIG") }
         }

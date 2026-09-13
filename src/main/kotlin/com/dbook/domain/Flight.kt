@@ -12,6 +12,7 @@ class Flight(
     availableCapacity: Int,
     active: Boolean = true,
     val flightNumber: String,
+    val airline: Airline,
     val origin: Airport,
     val destination: Airport,
     val departureTime: LocalDateTime,

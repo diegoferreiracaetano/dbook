@@ -11,12 +11,19 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-FLIGHT_COUNT="${1:-30}"
+FLIGHT_COUNT="${1:-1000}"
 ADMIN_EMAIL="seed-admin@example.com"
 ADMIN_PASSWORD="seed-password-123"
 
-ROUTES=("GRU:GIG" "GIG:GRU" "GRU:JFK" "JFK:GRU" "GIG:JFK" "JFK:GIG")
+ROUTES=(
+  "GRU:GIG" "GIG:GRU" "GRU:JFK" "JFK:GRU" "GIG:JFK" "JFK:GIG"
+  "GRU:LHR" "LHR:GRU" "GRU:CDG" "CDG:GRU" "GRU:LIS" "LIS:GRU"
+  "GRU:MIA" "MIA:GRU" "GRU:EZE" "EZE:GRU"
+  "GIG:MIA" "MIA:GIG" "GIG:LIS" "LIS:GIG"
+  "JFK:LHR" "LHR:JFK" "JFK:CDG" "CDG:JFK" "JFK:MIA" "MIA:JFK"
+)
 SEAT_CLASSES=("ECONOMY" "BUSINESS")
+AIRLINES=("LA" "AD" "G3" "AA" "DL" "UA")
 
 echo "Registering seed admin user..."
 curl -s -o /dev/null -X POST "$BASE_URL/auth/register" -H "Content-Type: application/json" \
@@ -56,6 +63,7 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
   origin="${route%%:*}"
   destination="${route##*:}"
   seat_class="${SEAT_CLASSES[$((RANDOM % ${#SEAT_CLASSES[@]}))]}"
+  airline="${AIRLINES[$((RANDOM % ${#AIRLINES[@]}))]}"
 
   days_ahead=$((RANDOM % 60 + 1))
   base_date=$(date_days_ahead "$days_ahead")
@@ -70,6 +78,7 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
     -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
     -d "{
       \"flightNumber\": \"$flight_number\",
+      \"airlineIataCode\": \"$airline\",
       \"originIataCode\": \"$origin\",
       \"destinationIataCode\": \"$destination\",
       \"departureTime\": \"${base_date}T${dep_hour}:00:00\",
@@ -79,7 +88,7 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
       \"totalCapacity\": $capacity
     }")
 
-  echo "  [$http_code] $flight_number $origin->$destination on $base_date"
+  echo "  [$http_code] $flight_number ($airline) $origin->$destination on $base_date"
 done
 
 echo "Done."

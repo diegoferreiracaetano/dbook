@@ -1,5 +1,9 @@
 package com.dbook.application
 
+import com.dbook.domain.Airline
+import com.dbook.domain.AirlineNotFoundException
+import com.dbook.domain.AirlineRepository
+import com.dbook.domain.Airport
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.AirportRepository
 import com.dbook.domain.Flight
@@ -14,6 +18,7 @@ import java.time.LocalDateTime
 
 data class RegisterFlightCommand(
     val flightNumber: String,
+    val airlineIataCode: String,
     val originIataCode: String,
     val destinationIataCode: String,
     val departureTime: LocalDateTime,
@@ -33,17 +38,15 @@ private val ROW_LETTERS = ('A'..'F').toList()
 @Service
 class RegisterFlightUseCase(
     private val flightRepository: FlightRepository,
+    private val airlineRepository: AirlineRepository,
     private val airportRepository: AirportRepository,
     private val seatRepository: SeatRepository,
 ) {
     @Transactional
     fun execute(command: RegisterFlightCommand): Flight {
-        val origin =
-            airportRepository.findByIataCode(command.originIataCode)
-                ?: throw AirportNotFoundException(command.originIataCode)
-        val destination =
-            airportRepository.findByIataCode(command.destinationIataCode)
-                ?: throw AirportNotFoundException(command.destinationIataCode)
+        val airline = resolveAirline(command.airlineIataCode)
+        val origin = resolveAirport(command.originIataCode)
+        val destination = resolveAirport(command.destinationIataCode)
 
         val flight =
             Flight(
@@ -52,6 +55,7 @@ class RegisterFlightUseCase(
                 totalCapacity = command.totalCapacity,
                 availableCapacity = command.totalCapacity,
                 flightNumber = command.flightNumber,
+                airline = airline,
                 origin = origin,
                 destination = destination,
                 departureTime = command.departureTime,
@@ -67,6 +71,12 @@ class RegisterFlightUseCase(
             "Flight $bookableId was just saved but could not be reloaded"
         }
     }
+
+    private fun resolveAirline(iataCode: String): Airline =
+        airlineRepository.findByIataCode(iataCode) ?: throw AirlineNotFoundException(iataCode)
+
+    private fun resolveAirport(iataCode: String): Airport =
+        airportRepository.findByIataCode(iataCode) ?: throw AirportNotFoundException(iataCode)
 
     private fun generateSeatMap(
         bookableId: Long,

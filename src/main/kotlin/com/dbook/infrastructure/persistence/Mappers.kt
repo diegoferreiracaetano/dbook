@@ -1,6 +1,7 @@
 package com.dbook.infrastructure.persistence
 
 import com.dbook.domain.AiSuggestionLog
+import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.Bookable
 import com.dbook.domain.Booking
@@ -16,6 +17,14 @@ fun AirportJpaEntity.toDomain(): Airport =
         name = name,
         city = city,
         country = country,
+        photoUrl = photoUrl,
+    )
+
+fun AirlineJpaEntity.toDomain(): Airline =
+    Airline(
+        id = id,
+        iataCode = iataCode,
+        name = name,
     )
 
 // availableCapacity is no longer stored on the entity (V9) — derived from AVAILABLE seats,
@@ -29,6 +38,7 @@ fun FlightJpaEntity.toDomain(availableCapacity: Int): Flight =
         availableCapacity = availableCapacity,
         active = active,
         flightNumber = flightNumber,
+        airline = airline.toDomain(),
         origin = origin.toDomain(),
         destination = destination.toDomain(),
         departureTime = departureTime,
@@ -54,6 +64,7 @@ fun BookingJpaEntity.toDomain(availableCapacity: Int): Booking =
     )
 
 fun Flight.toJpaEntity(
+    airline: AirlineJpaEntity,
     origin: AirportJpaEntity,
     destination: AirportJpaEntity,
 ): FlightJpaEntity =
@@ -64,6 +75,7 @@ fun Flight.toJpaEntity(
         totalCapacity = totalCapacity,
         active = active,
         flightNumber = flightNumber,
+        airline = airline,
         origin = origin,
         destination = destination,
         departureTime = departureTime,

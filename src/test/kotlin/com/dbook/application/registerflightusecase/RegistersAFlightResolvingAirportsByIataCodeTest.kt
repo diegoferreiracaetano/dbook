@@ -8,6 +8,7 @@ class RegistersAFlightResolvingAirportsByIataCodeTest : RegisterFlightUseCaseFix
     fun `given valid GRU and GIG codes when registering then airports resolve and the flight is saved`() {
         val flight = useCase.execute(command())
 
+        assertEquals("LA", flight.airline.iataCode)
         assertEquals("GRU", flight.origin.iataCode)
         assertEquals("GIG", flight.destination.iataCode)
         assertEquals(180, flight.availableCapacity)
