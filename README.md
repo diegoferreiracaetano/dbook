@@ -172,6 +172,16 @@ curl localhost:8080/bookables/1/seats
 
 Retorna `200` com a lista de assentos, ou `404` se o `bookableId` não existir.
 
+### `GET /bookings` (autenticado)
+Lista todas as reservas do usuário autenticado ("minhas viagens") — cada item já vem com o `Seat` e o `Flight` completos, sem precisar de chamadas extras do lado do cliente. Sempre filtra por `authentication.currentUserId()`: nunca devolve reserva de outro usuário.
+
+```bash
+curl localhost:8080/bookings \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Retorna `200` com a lista (vazia se o usuário não tiver reservas), ou `401` sem token.
+
 ### `POST /bookings` (autenticado)
 Reserva um assento específico (`seatId`) de um `Bookable` (hoje só `Flight`; qualquer especialização futura funciona sem mudar este endpoint) em nome do usuário autenticado, travando o assento sob lock otimista. `availableCapacity` do `Bookable` é derivado da contagem de assentos `AVAILABLE` — não é mais um contador em paralelo. Cria a reserva como `PENDING`.
 

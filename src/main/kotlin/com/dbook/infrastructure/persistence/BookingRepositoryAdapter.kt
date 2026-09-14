@@ -16,6 +16,11 @@ class BookingRepositoryAdapter(
             entity.toDomain(availableCapacityOf(requireNotNull(entity.bookable.id)))
         }
 
+    override fun findByCustomerId(customerId: Long): List<Booking> =
+        bookingJpaRepository.findByCustomerId(customerId).map { entity ->
+            entity.toDomain(availableCapacityOf(requireNotNull(entity.bookable.id)))
+        }
+
     override fun save(booking: Booking): Booking {
         val bookableId = requireNotNull(booking.bookable.id) { "Booking.bookable must be persisted" }
         val bookableRef = bookableJpaRepository.getReferenceById(bookableId)

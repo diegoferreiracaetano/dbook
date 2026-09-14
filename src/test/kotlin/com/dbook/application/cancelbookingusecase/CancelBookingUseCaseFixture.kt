@@ -20,6 +20,8 @@ class FakeBookingRepository(initial: List<Booking>) : BookingRepository {
 
     override fun findById(id: Long): Booking? = store[id]
 
+    override fun findByCustomerId(customerId: Long): List<Booking> = store.values.filter { it.customerId == customerId }
+
     override fun save(booking: Booking): Booking {
         store[requireNotNull(booking.id)] = booking
         return booking

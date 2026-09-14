@@ -348,6 +348,29 @@ verdade por voo (2+2 / 3+3 / 3+3+3), não só um redesenho visual do 3+3
 - [x] README atualizado
 - [x] Swagger em dia
 
+## M17 — `GET /bookings` (Minhas Viagens persistidas) ✅
+
+Decisão (2026-09-14): seguindo o plano aprovado — Minhas Viagens no mobile
+era só memória de sessão (`BookingRecord` local), sumia ao reabrir o app.
+Não existia `GET /bookings`. O usuário escolheu o escopo maior: persistir
+de verdade no backend em vez de só guardar localmente no app.
+
+- [x] 17.1 `BookingRepository` (porta) ganha `findByCustomerId(customerId): List<Booking>`; `BookingJpaRepository` implementa via método derivado do Spring Data (sem SQL manual); `BookingRepositoryAdapter` mapeia reaproveitando o mesmo padrão de `findById` (`.toDomain(availableCapacityOf(...))`)
+- [x] 17.2 `ListMyBookingsUseCase` (novo) — busca as reservas do usuário e resolve o `Seat` de cada uma via `SeatRepository.findById`; descoberta durante a implementação: `Booking.bookable` já É o `Flight` completo (resolvido pelo mapper), então não precisa de uma segunda chamada a `FlightRepository` — só compõe o que já tem, sem estrutura paralela redundante
+- [x] 17.3 `MyBookingResponse(id, status, seat: SeatResponse, flight: FlightResponse)` (novo) — reaproveita `SeatResponse.from`/`FlightResponse.from` já existentes, só compõe
+- [x] 17.4 `BookingController` ganha `GET /bookings` (autenticado, filtra sempre por `authentication.currentUserId()` — nunca aceita um `customerId` arbitrário, mesma disciplina de `/users/me`)
+- [x] 17.5 Testes: `ListMyBookingsUseCase` (lista vazia, reservas com seat+flight corretos, nunca vaza reserva de outro customer — 3 cenários, um por classe, seguindo o padrão da sessão); `securityintegration/` ganhou o caso de 401 sem token em `BookingEndpointsRequireAuthenticationTest` e `ReturnsOnlyTheAuthenticatedUsersOwnBookingsTest` (dois usuários, cada um reserva um voo, confirma que `GET /bookings` de um nunca devolve a reserva do outro)
+- [x] 17.6 README (`GET /bookings`) + Swagger + `CHECKLIST.md`
+
+**Checklist de fechamento do M17:**
+- [x] Itens 17.1-17.6 revisados
+- [x] Clean Code
+- [x] Arquitetura (`GET /bookings` sempre filtra por `currentUserId()`, nunca vaza dado de outro customer; sem estrutura paralela pra "minhas reservas" — reaproveita `Booking.bookable` que já é o `Flight` completo)
+- [x] `./gradlew ktlintCheck detekt test` — 71/92 testes passaram; as 21 falhas são a mesma limitação de Testcontainers de sempre (as 19 já conhecidas + as 2 novas rotas de `GET /bookings` que também estendem `AbstractIntegrationTest`), nenhuma falha real
+- [x] Testado manualmente via curl: usuário sem reserva → `GET /bookings` devolve `[]`; após `POST /bookings`, `GET /bookings` devolve a reserva com `seat`/`flight` corretos (incluindo `aircraftType`/`seatLayout` do M16)
+- [x] README atualizado
+- [x] Swagger em dia
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

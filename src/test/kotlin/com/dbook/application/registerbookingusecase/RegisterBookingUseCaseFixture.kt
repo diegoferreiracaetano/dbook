@@ -59,6 +59,8 @@ class FakeBookingRepository : BookingRepository {
 
     override fun findById(id: Long): Booking? = saved.find { it.id == id }
 
+    override fun findByCustomerId(customerId: Long): List<Booking> = saved.filter { it.customerId == customerId }
+
     override fun save(booking: Booking): Booking {
         val withId =
             if (booking.id == null) {
