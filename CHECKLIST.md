@@ -338,6 +338,7 @@ verdade por voo (2+2 / 3+3 / 3+3+3), não só um redesenho visual do 3+3
 - [x] 16.6 Testes: `SeatLayout` (os 3 layouts + fallback), `RegisterFlightUseCase` gera o mapa certo pra Embraer E195 (2+2) e Boeing 777 (3+4+3), controller confirma `aircraftType`/`seatLayout` no JSON
 - [x] 16.7 `detekt`: `Flight`/`FlightJpaEntity` cresceram pra 15 parâmetros — `constructorThreshold` bumpado 14→15 (mesmo padrão documentado do M11); `seatLayoutFor` ganhou `@Suppress("MagicNumber")` — os números são o próprio dado de negócio (contagem real de colunas por avião), não "mágicos" no sentido que a regra tenta pegar (precedente: `JwtTokenService`/`BookableJpaEntity` já usam `@Suppress` pontual do mesmo jeito)
 - [x] 16.8 README (endpoint atualizado) + Swagger + `CHECKLIST.md`
+- [x] 16.9 (2026-09-14, addendum durante o M16 do `dbook-mobile` — "Resultados de busca mais ricos") `scripts/seed-flights.sh`: janela de datas de `days_ahead` reduzida de 1-60 pra 1-21 dias — mesma quantidade de voos (`FLIGHT_COUNT`), mais concentrados nas datas que uma busca de verdade tende a testar (quase triplica a densidade por rota+data); não afeta a janela de 60 dias do `GET /flights/lowest-price` (regra de negócio independente do endpoint, continua valendo pra todo voo gerado nos primeiros 21 dias)
 
 **Checklist de fechamento do M16:**
 - [x] Itens 16.1-16.8 revisados

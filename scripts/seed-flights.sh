@@ -70,7 +70,10 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
   airline="${AIRLINES[$((RANDOM % ${#AIRLINES[@]}))]}"
   aircraft_type="${AIRCRAFT_TYPES[$((RANDOM % ${#AIRCRAFT_TYPES[@]}))]}"
 
-  days_ahead=$((RANDOM % 60 + 1))
+  # Janela de 21 dias (era 60) — mesma quantidade de voos, mais concentrados
+  # nas datas que uma busca de verdade tende a testar; quase triplica a
+  # densidade por rota+data sem mudar a distribuição de rotas/companhias.
+  days_ahead=$((RANDOM % 21 + 1))
   base_date=$(date_days_ahead "$days_ahead")
   dep_hour=$(printf "%02d" $((RANDOM % 15 + 6))) # 06..20, never rolls past midnight below
   arr_hour=$(printf "%02d" $((10#$dep_hour + 3)))
