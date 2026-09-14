@@ -295,6 +295,32 @@ cliente agrupa/filtra a mesma lista já carregada, sem endpoint novo.
 - [x] README atualizado
 - [x] Swagger em dia
 
+## M15 — Nome do usuário + `GET /users/me` / `PATCH /users/me` ✅
+
+Decisão (2026-09-14): o usuário revisou a parte logada do app (Perfil,
+assento, Minhas Viagens, resultados) contra 5 telas de referência e pediu
+um plano estruturado (ver plano aprovado). Perfil precisava de nome de
+verdade — `User` só tinha `email`+`role`. Escopo maior escolhido (das 3
+perguntas feitas): campo `name` de verdade no cadastro, não só cosmético.
+
+- [x] 15.1 Migration `V18__add_name_to_app_user.sql` — coluna `name`, backfill dos usuários existentes com `split_part(email, '@', 1)` (não inventa nome bonito, só evita NULL), depois `NOT NULL` — mesmo padrão backfill-antes-de-NOT-NULL do V16
+- [x] 15.2 `User` (domínio) ganha `name: String` com validação `isNotBlank()` no `init`; `UserJpaEntity` + `Mappers.kt` (`toDomain`/`toJpaEntity`) idem
+- [x] 15.3 Cadastro: `RegisterUserRequest`/`RegisterUserCommand`/`RegisterUserUseCase` passam a exigir `name`; `UserResponse` expõe `name`
+- [x] 15.4 `UserController` novo (`/users`, autenticado, fora do `permitAll()`) — `GET /me` (lê via `UserRepository.findById` direto, sem caso de uso — é só leitura de um registro) e `PATCH /me` (`UpdateUserNameUseCase` novo, valida e salva); `UserNotFoundException` nova, registrada no `ApiExceptionHandler` (404)
+- [x] 15.5 Testes: `UpdateUserNameUseCase` (atualiza, lança `UserNotFoundException` pra id desconhecido); `RegisterUserUseCase` confirma `name` persistido; `securityintegration/` ganhou `UsersMeEndpointsRequireAuthenticationTest` (401 sem token nos dois verbos), `ReturnsTheAuthenticatedUsersOwnProfileTest`, `UpdatesTheAuthenticatedUsersNameTest` — sem slice `@WebMvcTest` pra este controller (mesmo padrão já usado em `BookingController`: métodos que dependem de `Authentication.currentUserId()` só são testados via integração real, não dá pra fake-ar de forma confiável numa slice)
+- [x] 15.6 README (exemplo de `/auth/register` com `name`, `GET`/`PATCH /users/me`) + Swagger + `CHECKLIST.md`
+
+**Bug real encontrado e corrigido durante o teste manual do `PATCH /users/me`:** o endpoint devolvia `401 Authentication required` mesmo com um token válido — parecia um problema de autenticação, mas era outra coisa. Debug com `println` temporário no `JwtAuthenticationFilter` mostrou que o contexto de segurança estava correto (`userId`/`role` certos) até `filterChain.doFilter()`, mas o status da resposta virava `400` logo depois — o log do Spring revelou o motivo real: `HttpMessageNotReadableException: Cannot construct instance of UpdateUserNameRequest (although at least one Creator exists)`. É um problema conhecido do Jackson com data class Kotlin de **um único parâmetro** (o projeto já tinha batido nisso antes — `RefreshRequest.kt` tem um comentário exatamente sobre isso). O `400` original disparava o redirecionamento de erro do Spring Boot pra `/error`, que reentra na cadeia de filtros como `DispatcherType.ERROR` — só que `OncePerRequestFilter` pula esse redespacho por padrão (`shouldNotFilterErrorDispatch() == true`), então o `JwtAuthenticationFilter` não roda de novo, o contexto de segurança fica anônimo nesse segundo passe, e *isso* é o que gera o `401` que o cliente via — mascarando o erro `400` real de desserialização. Corrigido do mesmo jeito que `RefreshRequest`: `UpdateUserNameRequest` ganhou `@JsonCreator`/`@JsonProperty` explícitos no construtor.
+- [x] 15.7 (achado acima) `UpdateUserNameRequest` corrigido com `@JsonCreator` explícito
+
+**Checklist de fechamento do M15:**
+- [x] Itens 15.1-15.7 revisados
+- [x] Clean Code
+- [x] Arquitetura (`/users/me` sempre opera sobre o próprio usuário via `authentication.currentUserId()`, nunca aceita um id arbitrário — não existe rota pra ver/editar o perfil de outro usuário)
+- [x] `./gradlew ktlintCheck detekt test` — 62/81 testes passaram; as 19 falhas são todas a mesma limitação de Testcontainers do sandbox (as 15 já conhecidas + as 4 novas rotas de `/users/me`, que também estendem `AbstractIntegrationTest`), nenhuma falha real
+- [x] README atualizado
+- [x] Swagger em dia
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

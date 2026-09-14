@@ -17,6 +17,7 @@ class UserJpaEntity(
     var id: Long? = null,
     var email: String = "",
     var passwordHash: String = "",
+    var name: String = "",
     @Enumerated(EnumType.STRING)
     var role: Role = Role.CLIENT,
 )

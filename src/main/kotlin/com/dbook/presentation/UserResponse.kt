@@ -6,9 +6,10 @@ import com.dbook.domain.User
 data class UserResponse(
     val id: Long?,
     val email: String,
+    val name: String,
     val role: Role,
 ) {
     companion object {
-        fun from(user: User) = UserResponse(id = user.id, email = user.email, role = user.role)
+        fun from(user: User) = UserResponse(id = user.id, email = user.email, name = user.name, role = user.role)
     }
 }

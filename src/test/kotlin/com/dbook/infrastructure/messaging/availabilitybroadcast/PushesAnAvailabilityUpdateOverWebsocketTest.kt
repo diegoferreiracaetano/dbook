@@ -24,7 +24,7 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
     @Test
     fun `given a subscribed client when a booking is created then it receives the availability update`() {
         val email = "ws${(1..999_999_999).random()}@example.com"
-        registerUserUseCase.execute(RegisterUserCommand(email, "s3cret-password"))
+        registerUserUseCase.execute(RegisterUserCommand(email, "s3cret-password", "WS Test User"))
         val accessToken = loginUseCase.execute(LoginCommand(email, "s3cret-password")).accessToken
 
         val flight =

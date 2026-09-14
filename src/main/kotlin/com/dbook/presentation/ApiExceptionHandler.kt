@@ -10,6 +10,7 @@ import com.dbook.domain.InvalidTokenException
 import com.dbook.domain.NotBookingOwnerException
 import com.dbook.domain.SeatNotFoundException
 import com.dbook.domain.UserAlreadyExistsException
+import com.dbook.domain.UserNotFoundException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -23,6 +24,7 @@ class ApiExceptionHandler {
         BookableNotFoundException::class,
         BookingNotFoundException::class,
         SeatNotFoundException::class,
+        UserNotFoundException::class,
     )
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNotFound(ex: RuntimeException): Map<String, String> = mapOf("error" to (ex.message ?: "Not found"))

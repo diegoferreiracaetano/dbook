@@ -8,10 +8,10 @@ import kotlin.test.assertFailsWith
 class RejectsADuplicateEmailTest : RegisterUserUseCaseFixture() {
     @Test
     fun `given an already-registered email when registering again then it throws UserAlreadyExistsException`() {
-        useCase.execute(RegisterUserCommand(email = "diego@example.com", password = "s3cret"))
+        useCase.execute(RegisterUserCommand(email = "diego@example.com", password = "s3cret", name = "Diego"))
 
         assertFailsWith<UserAlreadyExistsException> {
-            useCase.execute(RegisterUserCommand(email = "diego@example.com", password = "other"))
+            useCase.execute(RegisterUserCommand(email = "diego@example.com", password = "other", name = "Diego"))
         }
     }
 }

@@ -44,10 +44,14 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
     protected fun registerAndLogin(
         email: String,
         password: String = "s3cret-password",
+        name: String = "Test User",
     ): String {
         mockMvc.post("/auth/register") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(mapOf("email" to email, "password" to password))
+            content =
+                objectMapper.writeValueAsString(
+                    mapOf("email" to email, "password" to password, "name" to name),
+                )
         }
         return loginAccessToken(email, password)
     }
@@ -84,7 +88,15 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
     ): String {
         registerAndLogin(email, password)
         val user = requireNotNull(userRepository.findByEmail(email))
-        userRepository.save(User(id = user.id, email = user.email, passwordHash = user.passwordHash, role = Role.ADMIN))
+        userRepository.save(
+            User(
+                id = user.id,
+                email = user.email,
+                passwordHash = user.passwordHash,
+                name = user.name,
+                role = Role.ADMIN,
+            ),
+        )
         return loginAccessToken(email, password)
     }
 

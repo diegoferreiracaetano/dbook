@@ -59,7 +59,7 @@ class FixedPasswordHasher(private val validPassword: String) : PasswordHasher {
 // correct password is "correct-password".
 abstract class LoginUseCaseFixture {
     protected val existingUser =
-        User(id = 1, email = "diego@example.com", passwordHash = "irrelevant", role = Role.CLIENT)
+        User(id = 1, email = "diego@example.com", passwordHash = "irrelevant", name = "Diego", role = Role.CLIENT)
     protected val refreshTokenRepository = FakeRefreshTokenRepository()
     private val issueTokenPairService = IssueTokenPairService(FakeTokenService(), refreshTokenRepository)
     protected val useCase =

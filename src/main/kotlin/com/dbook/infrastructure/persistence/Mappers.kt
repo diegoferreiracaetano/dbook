@@ -118,6 +118,7 @@ fun UserJpaEntity.toDomain(): User =
         id = id,
         email = email,
         passwordHash = passwordHash,
+        name = name,
         role = role,
     )
 
@@ -126,6 +127,7 @@ fun User.toJpaEntity(): UserJpaEntity =
         id = id,
         email = email,
         passwordHash = passwordHash,
+        name = name,
         role = role,
     )
 

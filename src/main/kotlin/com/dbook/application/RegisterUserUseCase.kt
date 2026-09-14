@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 data class RegisterUserCommand(
     val email: String,
     val password: String,
+    val name: String,
 )
 
 /** Registers a new [User], always as [Role.CLIENT] — see the inline note on [execute] for why. */
@@ -29,6 +30,7 @@ class RegisterUserUseCase(
             User(
                 email = command.email,
                 passwordHash = passwordHasher.hash(command.password),
+                name = command.name,
                 role = Role.CLIENT,
             )
         return userRepository.save(user)

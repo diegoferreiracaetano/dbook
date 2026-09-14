@@ -8,7 +8,7 @@ class RejectsABlankEmailTest {
     @Test
     fun `given a blank email when a User is built then it throws IllegalArgumentException`() {
         assertFailsWith<IllegalArgumentException> {
-            User(email = "", passwordHash = "hash")
+            User(email = "", passwordHash = "hash", name = "Test User")
         }
     }
 }

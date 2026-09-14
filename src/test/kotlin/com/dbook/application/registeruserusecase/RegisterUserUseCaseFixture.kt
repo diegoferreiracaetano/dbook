@@ -18,6 +18,7 @@ class FakeUserRepository : UserRepository {
                 id = user.id ?: (users.size + 1L),
                 email = user.email,
                 passwordHash = user.passwordHash,
+                name = user.name,
                 role = user.role,
             )
         users += saved

@@ -7,4 +7,6 @@ data class RegisterUserRequest(
     val email: String,
     @get:Schema(example = "s3cret-password")
     val password: String,
+    @get:Schema(example = "Diego Ferreira")
+    val name: String,
 )
