@@ -112,6 +112,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
                 "seatClass" to "ECONOMY",
                 "price" to 100.00,
                 "totalCapacity" to 10,
+                "aircraftType" to "Airbus A320",
             ),
         )
 
@@ -129,6 +130,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
                     seatClass = SeatClass.ECONOMY,
                     price = BigDecimal("100.00"),
                     totalCapacity = 1,
+                    aircraftType = "Airbus A320",
                 ),
             )
         val bookableId = requireNotNull(flight.id)

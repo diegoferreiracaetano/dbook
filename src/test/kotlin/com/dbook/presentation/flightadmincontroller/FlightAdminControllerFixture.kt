@@ -73,6 +73,7 @@ abstract class FlightAdminControllerFixture {
             seatClass = SeatClass.ECONOMY,
             price = BigDecimal("500.00"),
             totalCapacity = 180,
+            aircraftType = "Airbus A320",
         )
 
     protected val expectedCommand =
@@ -86,5 +87,6 @@ abstract class FlightAdminControllerFixture {
             seatClass = request.seatClass,
             price = request.price,
             totalCapacity = request.totalCapacity,
+            aircraftType = request.aircraftType,
         )
 }

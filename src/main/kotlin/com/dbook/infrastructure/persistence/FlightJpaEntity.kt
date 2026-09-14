@@ -34,4 +34,5 @@ class FlightJpaEntity(
     var arrivalTime: LocalDateTime = LocalDateTime.now(),
     @Enumerated(EnumType.STRING)
     var seatClass: SeatClass = SeatClass.ECONOMY,
+    var aircraftType: String = "",
 ) : BookableJpaEntity(id, title, price, totalCapacity, active)

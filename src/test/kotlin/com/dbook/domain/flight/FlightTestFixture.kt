@@ -48,5 +48,6 @@ abstract class FlightTestFixture {
         departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
         arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
         seatClass = SeatClass.ECONOMY,
+        aircraftType = "Airbus A320",
     )
 }

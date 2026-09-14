@@ -39,6 +39,7 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
                     seatClass = SeatClass.ECONOMY,
                     price = BigDecimal("100.00"),
                     totalCapacity = 5,
+                    aircraftType = "Airbus A320",
                 ),
             )
         val bookableId = requireNotNull(flight.id)

@@ -11,6 +11,7 @@ import com.dbook.domain.FlightRepository
 import com.dbook.domain.Seat
 import com.dbook.domain.SeatClass
 import com.dbook.domain.SeatRepository
+import com.dbook.domain.seatLayoutFor
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -26,14 +27,16 @@ data class RegisterFlightCommand(
     val seatClass: SeatClass,
     val price: BigDecimal,
     val totalCapacity: Int,
+    val aircraftType: String,
 )
 
-private const val SEATS_PER_ROW = 6
-private val ROW_LETTERS = ('A'..'F').toList()
+private val ROW_LETTERS = ('A'..'Z').toList()
 
 /**
  * Registers a new [Flight], resolving origin/destination by IATA code, and generates its
- * seat map (6 seats per row, A-F) from [RegisterFlightCommand.totalCapacity]. Requires ADMIN.
+ * seat map — seats per row and column letters come from [seatLayoutFor], based on
+ * [RegisterFlightCommand.aircraftType], so different aircraft really do get different
+ * layouts (2+2, 3+3, 3+4+3...). Requires ADMIN.
  */
 @Service
 class RegisterFlightUseCase(
@@ -61,10 +64,11 @@ class RegisterFlightUseCase(
                 departureTime = command.departureTime,
                 arrivalTime = command.arrivalTime,
                 seatClass = command.seatClass,
+                aircraftType = command.aircraftType,
             )
         val saved = flightRepository.save(flight)
         val bookableId = requireNotNull(saved.id) { "A saved Flight must have an id" }
-        seatRepository.saveAll(generateSeatMap(bookableId, command.totalCapacity))
+        seatRepository.saveAll(generateSeatMap(bookableId, command.totalCapacity, command.aircraftType))
 
         // availableCapacity is derived from the seats just generated above, not from `saved`
         return requireNotNull(flightRepository.findById(bookableId)) {
@@ -81,10 +85,13 @@ class RegisterFlightUseCase(
     private fun generateSeatMap(
         bookableId: Long,
         totalCapacity: Int,
-    ): List<Seat> =
-        (0 until totalCapacity).map { index ->
-            val row = index / SEATS_PER_ROW + 1
-            val letter = ROW_LETTERS[index % SEATS_PER_ROW]
+        aircraftType: String,
+    ): List<Seat> {
+        val seatsPerRow = seatLayoutFor(aircraftType).sum()
+        return (0 until totalCapacity).map { index ->
+            val row = index / seatsPerRow + 1
+            val letter = ROW_LETTERS[index % seatsPerRow]
             Seat(bookableId = bookableId, label = "$row$letter")
         }
+    }
 }

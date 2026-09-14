@@ -44,6 +44,7 @@ class FlightRepositoryAdapter(
             departureTime = saved.departureTime,
             arrivalTime = saved.arrivalTime,
             seatClass = saved.seatClass,
+            aircraftType = saved.aircraftType,
         )
     }
 

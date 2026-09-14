@@ -39,6 +39,7 @@ class FlightAdminController(
                     seatClass = request.seatClass,
                     price = request.price,
                     totalCapacity = request.totalCapacity,
+                    aircraftType = request.aircraftType,
                 ),
             )
         return ResponseEntity.status(HttpStatus.CREATED).body(FlightResponse.from(flight))

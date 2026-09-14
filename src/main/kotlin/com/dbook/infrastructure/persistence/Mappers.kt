@@ -46,6 +46,7 @@ fun FlightJpaEntity.toDomain(availableCapacity: Int): Flight =
         departureTime = departureTime,
         arrivalTime = arrivalTime,
         seatClass = seatClass,
+        aircraftType = aircraftType,
     )
 
 // Bookable is abstract: whatever arrives here at runtime is always a concrete
@@ -83,6 +84,7 @@ fun Flight.toJpaEntity(
         departureTime = departureTime,
         arrivalTime = arrivalTime,
         seatClass = seatClass,
+        aircraftType = aircraftType,
     )
 
 fun Booking.toJpaEntity(

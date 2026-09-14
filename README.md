@@ -114,7 +114,7 @@ Com a aplicação no ar:
 Confirma que a aplicação está no ar.
 
 ### `POST /admin/flights` (requer role `ADMIN`)
-Cadastra um voo, resolvendo companhia/origem/destino por código IATA, e gera automaticamente seu mapa de assentos (6 por fileira, A-F) a partir de `totalCapacity`.
+Cadastra um voo, resolvendo companhia/origem/destino por código IATA, e gera automaticamente seu mapa de assentos a partir de `totalCapacity` e `aircraftType` — a quantidade de assentos por fileira (e onde ficam os corredores) vem de `SeatLayout.kt`, a única fonte dessa regra no sistema: `"Embraer E195"` → 2+2 (4/fileira), `"Airbus A320"` → 3+3 (6/fileira, o padrão), `"Boeing 777"` → 3+4+3 (10/fileira, widebody com 2 corredores). Qualquer outro valor cai no 3+3 padrão.
 
 ```bash
 curl -X POST localhost:8080/admin/flights \
@@ -129,9 +129,12 @@ curl -X POST localhost:8080/admin/flights \
     "arrivalTime": "2026-10-01T09:10:00",
     "seatClass": "ECONOMY",
     "price": 450.00,
-    "totalCapacity": 180
+    "totalCapacity": 180,
+    "aircraftType": "Airbus A320"
   }'
 ```
+
+`GET /flights/search` e `GET /flights/lowest-price` (e qualquer resposta com `FlightResponse`) devolvem `aircraftType` e `seatLayout` (ex.: `[3, 3]`) já resolvidos — o cliente nunca precisa saber qual avião mapeia pra qual layout, só agrupar os assentos pelo array que chega.
 
 Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de companhia/origem/destino não existir.
 

@@ -321,6 +321,33 @@ perguntas feitas): campo `name` de verdade no cadastro, não só cosmético.
 - [x] README atualizado
 - [x] Swagger em dia
 
+## M16 — Modelo de avião real e layout de assento variável ✅
+
+Decisão (2026-09-14): seguindo o plano aprovado — a seleção de assento no
+mobile era só quadrados iguais, sem noção de fileira/corredor/modelo de
+avião; todo voo gerava sempre 6 assentos por fileira (`A`-`F`), fixo no
+código (`SEATS_PER_ROW`). O usuário escolheu o escopo maior: variação de
+verdade por voo (2+2 / 3+3 / 3+3+3), não só um redesenho visual do 3+3
+único que já existia.
+
+- [x] 16.1 `SeatLayout.kt` (novo) — `seatLayoutFor(aircraftType): List<Int>`, única fonte da regra (nem front nem seed reinventam o mapeamento): `"Embraer E195"` → `[2, 2]`, `"Boeing 777"` → `[3, 4, 3]`, qualquer outro (inclusive `"Airbus A320"`) → `[3, 3]` (o padrão de antes, agora explícito em vez de implícito)
+- [x] 16.2 Migration `V19__add_aircraft_type_to_flight.sql` — coluna `aircraft_type`, backfill dos voos existentes com `'Airbus A320'` (o layout que já tinham), depois `NOT NULL`
+- [x] 16.3 `Flight`/`FlightJpaEntity`/`Mappers.kt` ganham `aircraftType`; `RegisterFlightRequest`/`RegisterFlightCommand` exigem no cadastro; `FlightResponse` expõe `aircraftType` **e** `seatLayout` (já resolvido via `seatLayoutFor`, o cliente nunca precisa saber qual avião mapeia pra qual layout)
+- [x] 16.4 `RegisterFlightUseCase.generateSeatMap` troca `SEATS_PER_ROW = 6` fixo por `seatLayoutFor(aircraftType).sum()`; letras das colunas viram `'A'..'Z'` (precisa de até `J` pro Boeing 777, 10/fileira)
+- [x] 16.5 `scripts/seed-flights.sh` — `AIRCRAFT_TYPES` (mesmos 3 nomes de `SeatLayout.kt`) sorteado por voo, dá variedade real entre buscas; script também ganhou `"name"` no registro do admin seed (quebrado pelo M15 — `/auth/register` agora exige nome)
+- [x] 16.6 Testes: `SeatLayout` (os 3 layouts + fallback), `RegisterFlightUseCase` gera o mapa certo pra Embraer E195 (2+2) e Boeing 777 (3+4+3), controller confirma `aircraftType`/`seatLayout` no JSON
+- [x] 16.7 `detekt`: `Flight`/`FlightJpaEntity` cresceram pra 15 parâmetros — `constructorThreshold` bumpado 14→15 (mesmo padrão documentado do M11); `seatLayoutFor` ganhou `@Suppress("MagicNumber")` — os números são o próprio dado de negócio (contagem real de colunas por avião), não "mágicos" no sentido que a regra tenta pegar (precedente: `JwtTokenService`/`BookableJpaEntity` já usam `@Suppress` pontual do mesmo jeito)
+- [x] 16.8 README (endpoint atualizado) + Swagger + `CHECKLIST.md`
+
+**Checklist de fechamento do M16:**
+- [x] Itens 16.1-16.8 revisados
+- [x] Clean Code
+- [x] Arquitetura (`seatLayoutFor` é a única fonte da regra — backend gera os assentos E expõe o layout já resolvido; o mobile só vai precisar agrupar colunas pelo array que já chega, sem tabela própria)
+- [x] `./gradlew ktlintCheck detekt test` — 68/87 testes passaram; as 19 falhas são a mesma limitação de Testcontainers de sempre (as 15 originais + as 4 do M15), nenhuma falha nova
+- [x] Testado manualmente: reseed com `scripts/seed-flights.sh 1000` gerou voos nos 3 modelos; confirmado via `GET /flights/search` que `aircraftType`/`seatLayout` variam de verdade entre voos, e via `GET /bookables/{id}/seats` que um voo Boeing 777 realmente gera 10 assentos por fileira (`A`-`J`)
+- [x] README atualizado
+- [x] Swagger em dia
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

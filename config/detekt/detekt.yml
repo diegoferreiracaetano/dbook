@@ -139,8 +139,9 @@ complexity:
     # toString on lazy associations is a known footgun), so `ignoreDataClasses` doesn't
     # apply. functionThreshold stays strict: long parameter lists on functions/methods
     # (as opposed to entity constructors) are still a real smell. Bumped again (13->14,
-    # M11) when Flight/FlightJpaEntity gained `airline`, same category of growth.
-    constructorThreshold: 14
+    # M11) when Flight/FlightJpaEntity gained `airline`, and again (14->15, M16) when
+    # they gained `aircraftType` — same category of growth, not scope creep.
+    constructorThreshold: 15
     ignoreDefaultParameters: false
     ignoreDataClasses: true
     ignoreAnnotatedParameter: []

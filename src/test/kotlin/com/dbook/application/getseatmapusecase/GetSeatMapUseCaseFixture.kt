@@ -72,6 +72,7 @@ abstract class GetSeatMapUseCaseFixture {
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
             seatClass = SeatClass.ECONOMY,
+            aircraftType = "Airbus A320",
         )
 
     protected val seats = listOf(Seat(1, bookableId, "1A"), Seat(2, bookableId, "1B"))

@@ -2,6 +2,7 @@ package com.dbook.presentation
 
 import com.dbook.domain.Flight
 import com.dbook.domain.SeatClass
+import com.dbook.domain.seatLayoutFor
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -17,6 +18,8 @@ data class FlightResponse(
     val seatClass: SeatClass,
     val price: BigDecimal,
     val availableCapacity: Int,
+    val aircraftType: String,
+    val seatLayout: List<Int>,
 ) {
     companion object {
         fun from(flight: Flight) =
@@ -32,6 +35,8 @@ data class FlightResponse(
                 seatClass = flight.seatClass,
                 price = flight.price,
                 availableCapacity = flight.availableCapacity,
+                aircraftType = flight.aircraftType,
+                seatLayout = seatLayoutFor(flight.aircraftType),
             )
     }
 }

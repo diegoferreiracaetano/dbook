@@ -25,6 +25,7 @@ class ReturnsCreatedWithTheCreatedFlightTest : FlightAdminControllerFixture() {
                 departureTime = request.departureTime,
                 arrivalTime = request.arrivalTime,
                 seatClass = SeatClass.ECONOMY,
+                aircraftType = "Airbus A320",
             )
         given(registerFlightUseCase.execute(expectedCommand)).willReturn(flight)
 
@@ -37,6 +38,9 @@ class ReturnsCreatedWithTheCreatedFlightTest : FlightAdminControllerFixture() {
             jsonPath("$.airlineIataCode") { value("LA") }
             jsonPath("$.origin") { value("GRU") }
             jsonPath("$.destination") { value("GIG") }
+            jsonPath("$.aircraftType") { value("Airbus A320") }
+            jsonPath("$.seatLayout[0]") { value(3) }
+            jsonPath("$.seatLayout[1]") { value(3) }
         }
     }
 }

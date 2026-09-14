@@ -18,4 +18,5 @@ class Flight(
     val departureTime: LocalDateTime,
     val arrivalTime: LocalDateTime,
     val seatClass: SeatClass,
+    val aircraftType: String,
 ) : Bookable(id, title, price, totalCapacity, availableCapacity, active)

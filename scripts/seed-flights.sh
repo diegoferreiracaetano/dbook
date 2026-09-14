@@ -25,10 +25,13 @@ ROUTES=(
 )
 SEAT_CLASSES=("ECONOMY" "BUSINESS")
 AIRLINES=("LA" "AD" "G3" "AA" "DL" "UA")
+# Must match SeatLayout.kt's KNOWN_AIRCRAFT_TYPES — varying this per flight is what gives
+# the seat map real 2+2 / 3+3 / 3+4+3 variety across searches, not just a cosmetic label.
+AIRCRAFT_TYPES=("Embraer E195" "Airbus A320" "Boeing 777")
 
 echo "Registering seed admin user..."
 curl -s -o /dev/null -X POST "$BASE_URL/auth/register" -H "Content-Type: application/json" \
-  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}" || true
+  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\",\"name\":\"Seed Admin\"}" || true
 
 echo "Promoting to ADMIN (direct SQL — local dev only)..."
 docker compose exec -T postgres psql -U dbook -d dbook -c \
@@ -65,6 +68,7 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
   destination="${route##*:}"
   seat_class="${SEAT_CLASSES[$((RANDOM % ${#SEAT_CLASSES[@]}))]}"
   airline="${AIRLINES[$((RANDOM % ${#AIRLINES[@]}))]}"
+  aircraft_type="${AIRCRAFT_TYPES[$((RANDOM % ${#AIRCRAFT_TYPES[@]}))]}"
 
   days_ahead=$((RANDOM % 60 + 1))
   base_date=$(date_days_ahead "$days_ahead")
@@ -86,7 +90,8 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
       \"arrivalTime\": \"${base_date}T${arr_hour}:00:00\",
       \"seatClass\": \"$seat_class\",
       \"price\": $price.00,
-      \"totalCapacity\": $capacity
+      \"totalCapacity\": $capacity,
+      \"aircraftType\": \"$aircraft_type\"
     }")
 
   echo "  [$http_code] $flight_number ($airline) $origin->$destination on $base_date"

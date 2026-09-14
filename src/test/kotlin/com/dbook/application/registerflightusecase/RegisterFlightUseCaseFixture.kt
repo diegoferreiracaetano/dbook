@@ -68,6 +68,7 @@ class FakeFlightRepository : FlightRepository {
         departureTime = flight.departureTime,
         arrivalTime = flight.arrivalTime,
         seatClass = flight.seatClass,
+        aircraftType = flight.aircraftType,
     )
 }
 
@@ -135,6 +136,8 @@ abstract class RegisterFlightUseCaseFixture {
         origin: String = "GRU",
         destination: String = "GIG",
         airline: String = "LA",
+        aircraftType: String = "Airbus A320",
+        totalCapacity: Int = 180,
     ) = RegisterFlightCommand(
         flightNumber = "DB1234",
         airlineIataCode = airline,
@@ -144,6 +147,7 @@ abstract class RegisterFlightUseCaseFixture {
         arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
         seatClass = SeatClass.ECONOMY,
         price = BigDecimal("500.00"),
-        totalCapacity = 180,
+        totalCapacity = totalCapacity,
+        aircraftType = aircraftType,
     )
 }

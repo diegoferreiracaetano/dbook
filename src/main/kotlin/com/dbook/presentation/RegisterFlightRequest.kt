@@ -24,4 +24,6 @@ data class RegisterFlightRequest(
     val price: BigDecimal,
     @get:Schema(example = "180")
     val totalCapacity: Int,
+    @get:Schema(example = "Airbus A320", description = "Determines the real seat layout — see SeatLayout")
+    val aircraftType: String,
 )

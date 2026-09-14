@@ -40,6 +40,7 @@ class BookingConcurrencyTest : AbstractIntegrationTest() {
                     seatClass = SeatClass.ECONOMY,
                     price = BigDecimal("100.00"),
                     totalCapacity = 1,
+                    aircraftType = "Airbus A320",
                 ),
             )
         val seatId = requireNotNull(seatRepository.findByBookableId(requireNotNull(flight.id)).first().id)

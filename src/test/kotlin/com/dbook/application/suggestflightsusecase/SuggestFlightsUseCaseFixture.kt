@@ -92,6 +92,7 @@ abstract class SuggestFlightsUseCaseFixture {
             departureTime = LocalDateTime.of(2027, 3, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2027, 3, 1, 9, 10),
             seatClass = SeatClass.ECONOMY,
+            aircraftType = "Airbus A320",
         )
     protected val flightRepository = ActiveOnlyFlightRepository(listOf(flight))
     protected val logRepository = FakeAiSuggestionLogRepository()

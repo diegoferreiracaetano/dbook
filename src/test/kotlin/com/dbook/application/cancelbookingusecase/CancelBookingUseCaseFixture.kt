@@ -113,6 +113,7 @@ abstract class CancelBookingUseCaseFixture {
             departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
             seatClass = SeatClass.ECONOMY,
+            aircraftType = "Airbus A320",
         )
 
     protected val seatRepository = FakeSeatRepository(listOf(Seat(seatId, bookableId, "1A", SeatStatus.RESERVED)))

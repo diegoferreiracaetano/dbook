@@ -54,5 +54,6 @@ abstract class BedrockAiSuggestionServiceFixture {
             departureTime = LocalDateTime.of(2027, 3, 1, 8, 0),
             arrivalTime = LocalDateTime.of(2027, 3, 1, 9, 10),
             seatClass = SeatClass.ECONOMY,
+            aircraftType = "Airbus A320",
         )
 }
