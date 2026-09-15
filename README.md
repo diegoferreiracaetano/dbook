@@ -204,6 +204,18 @@ curl -X POST localhost:8080/bookings/1/cancel \
 
 Retorna `200` com a reserva `CANCELLED`, `401` sem token, `403` se não for o dono nem `ADMIN`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
 
+### `POST /payments` (autenticado)
+Paga uma ou mais reservas `PENDING` do usuário autenticado de uma vez só (ex.: ida + volta de uma Round Trip, num único pagamento) e as confirma (`CONFIRMED`). Não existe gateway de pagamento real por trás — só os 4 últimos dígitos do cartão e o nome do titular são recebidos e guardados; número completo e CVV nunca chegam ao backend.
+
+```bash
+curl -X POST localhost:8080/payments \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <accessToken>" \
+  -d '{"bookingIds": [1, 2], "cardLast4": "4242", "cardholderName": "Jane Doe"}'
+```
+
+Retorna `201` com o pagamento criado (`amount` já somando todas as reservas), `401` sem token, `403` se alguma reserva não pertencer a quem está pagando, `404` se algum `bookingId` não existir, ou `409` se alguma reserva não estiver `PENDING` (já confirmada ou cancelada).
+
 ## Tempo real (WebSocket + Redis)
 
 Quando uma reserva é criada ou cancelada, a disponibilidade atualizada do `Bookable` é publicada em tempo real via WebSocket/STOMP, para clientes que estejam olhando aquela rota/voo no momento.

@@ -26,4 +26,7 @@ class BookingJpaEntity(
     var customerId: Long = 0,
     @Enumerated(EnumType.STRING)
     var status: BookingStatus = BookingStatus.PENDING,
+    @ManyToOne
+    @JoinColumn(name = "payment_id")
+    var payment: PaymentJpaEntity? = null,
 )

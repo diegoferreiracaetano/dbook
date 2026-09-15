@@ -64,6 +64,7 @@ fun BookingJpaEntity.toDomain(availableCapacity: Int): Booking =
         seatId = seat.id ?: error("A persisted Booking must reference a persisted Seat"),
         customerId = customerId,
         status = status,
+        paymentId = payment?.id,
     )
 
 fun Flight.toJpaEntity(
@@ -90,6 +91,7 @@ fun Flight.toJpaEntity(
 fun Booking.toJpaEntity(
     bookable: BookableJpaEntity,
     seat: SeatJpaEntity,
+    payment: PaymentJpaEntity?,
 ): BookingJpaEntity =
     BookingJpaEntity(
         id = id,
@@ -97,6 +99,7 @@ fun Booking.toJpaEntity(
         seat = seat,
         customerId = customerId,
         status = status,
+        payment = payment,
     )
 
 fun SeatJpaEntity.toDomain(): Seat =

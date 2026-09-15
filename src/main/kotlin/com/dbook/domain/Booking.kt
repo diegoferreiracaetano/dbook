@@ -11,15 +11,19 @@ class Booking(
     val seatId: Long,
     val customerId: Long,
     val status: BookingStatus = BookingStatus.PENDING,
+    val paymentId: Long? = null,
 ) {
     /** @throws IllegalStateException if this booking isn't PENDING. */
-    fun confirm(): Booking = transitionTo(BookingStatus.CONFIRMED)
+    fun confirm(paymentId: Long): Booking = transitionTo(BookingStatus.CONFIRMED, paymentId)
 
     /** @throws IllegalStateException if this booking isn't PENDING. */
     fun cancel(): Booking = transitionTo(BookingStatus.CANCELLED)
 
-    private fun transitionTo(newStatus: BookingStatus): Booking {
+    private fun transitionTo(
+        newStatus: BookingStatus,
+        paymentId: Long? = this.paymentId,
+    ): Booking {
         check(status == BookingStatus.PENDING) { "Only a PENDING booking can transition to $newStatus" }
-        return Booking(id, bookable, seatId, customerId, newStatus)
+        return Booking(id, bookable, seatId, customerId, newStatus, paymentId)
     }
 }

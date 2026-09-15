@@ -372,6 +372,33 @@ de verdade no backend em vez de só guardar localmente no app.
 - [x] README atualizado
 - [x] Swagger em dia
 
+## M18 — `Payment` real, `POST /payments` ✅
+
+Decisão (2026-09-14): seguindo o plano aprovado — o usuário pediu que a
+seleção de assento virasse só um detalhe dentro de uma revisão, com uma
+tela de pagamento nova cobrindo os dois trechos de uma Round Trip de uma
+vez só. Escopo fechado com o usuário: suporte real no backend (não só
+UI) e uma única revisão/pagamento no final, não um por trecho.
+`Booking.confirm()` já existia mas era código morto (nenhuma reserva
+saía de PENDING pra CONFIRMED) — pagar é o gatilho que faltava.
+
+- [x] 18.1 Migration `V20__create_payment.sql` — tabela `payment` (`customer_id`, `amount`, `card_last4`, `cardholder_name`) + `booking.payment_id` (FK nullable, preenchida só quando a reserva é confirmada)
+- [x] 18.2 `Payment` (domínio, novo) — valida `cardLast4` como 4 dígitos e `cardholderName` não-vazio, mesmo estilo de `init { require(...) }` de `User`/`Bookable`; `PaymentRepository` (porta) + `PaymentRepositoryAdapter`/`PaymentJpaEntity` (mirror de `Booking`)
+- [x] 18.3 `Booking.confirm()` ganha o parâmetro `paymentId: Long` — deixa de ser código morto, passa a exigir de qual pagamento a confirmação veio (`transitionTo` repassa o campo, mesma disciplina de "só PENDING transiciona" de antes)
+- [x] 18.4 `RegisterPaymentUseCase` (novo) — busca cada `Booking` (`BookingNotFoundException` se faltar), valida dono (`NotBookingOwnerException`), soma `booking.bookable.price` de todas (reaproveita `Booking.bookable`, já resolvido — sem lookup de `Flight` separado), salva o `Payment` e confirma cada reserva com o `paymentId` gerado, tudo em uma `@Transactional`
+- [x] 18.5 `PaymentController` (novo) — `POST /payments`, autenticado, mesmo padrão de `BookingController` (`RegisterPaymentRequest`/`PaymentResponse`, `201 CREATED`)
+- [x] 18.6 Testes: `Payment` (validação de `cardLast4`/`cardholderName`/`amount`), `RegisterPaymentUseCase` (paga 1 reserva, paga 2 reservas de trechos diferentes somando o preço certo, dono errado → forbidden, reserva não-PENDING → conflict, reserva inexistente → not found — um cenário por classe, mesmo padrão de `cancelbookingusecase`), `securityintegration` (401 sem token, fluxo completo reserva→paga→confirma via `GET /bookings`)
+- [x] 18.7 `Mappers.kt` passou do limite de 16 funções por arquivo (detekt `TooManyFunctions`) — mappers de `Payment` extraídos pra `PaymentMappers.kt` própria, em vez de bumpar o threshold (não é um caso de "esse arquivo é legitimamente grande", é um novo agregado que merece seu próprio arquivo)
+- [x] 18.8 README (`POST /payments`) + Swagger + `CHECKLIST.md`
+
+**Checklist de fechamento do M18:**
+- [x] Itens 18.1-18.8 revisados
+- [x] Clean Code
+- [x] Arquitetura (a reserva continua sendo criada — e o assento reservado — no momento da escolha do assento, não no pagamento; pagar só confirma reservas `PENDING` que já existem, evitando uma corrida onde o assento seria perdido enquanto o usuário ainda preenche o cartão; full card number/CVV nunca chegam ao backend, só `cardLast4`+`cardholderName`)
+- [x] `./gradlew ktlintCheck detekt test` — 80/103 testes passaram; as 23 falhas são a mesma limitação de Testcontainers de sempre (as 21 já conhecidas + as 2 novas rotas de `/payments` que também estendem `AbstractIntegrationTest`), nenhuma falha real — todos os testes de domínio/caso de uso do Payment (que não dependem de Testcontainers) passaram
+- [x] README atualizado
+- [x] Swagger em dia
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
