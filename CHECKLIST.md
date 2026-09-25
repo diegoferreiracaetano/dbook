@@ -399,6 +399,33 @@ saía de PENDING pra CONFIRMED) — pagar é o gatilho que faltava.
 - [x] README atualizado
 - [x] Swagger em dia
 
+## M19 — Avaliação de reserva, `POST /reviews` ✅
+
+Decisão (2026-09-24): exercício de aprendizado do dono pra praticar como
+criar uma feature de ponta a ponta no backend, camada por camada. Escopo
+fechado antes de começar: usuário avalia uma reserva `CONFIRMED` (nota de
+1 a 5 + comentário opcional), só o dono pode avaliar, só depois de
+`CONFIRMED` (não dá pra avaliar uma reserva que nunca foi paga), e só uma
+vez por reserva. Escrito pelo próprio dono, revisado item a item contra o
+irmão mais próximo (`Payment`/`RegisterPaymentUseCase`/`PaymentController`).
+
+- [x] 19.1 Migration `V21__create_review_table.sql` — tabela `review` (`booking_id` `UNIQUE` + `REFERENCES booking (id)`, `customer_id`, `rating SMALLINT CHECK (rating BETWEEN 1 AND 5)`, `comment` opcional, `created_at`). Bug achado só ao subir a aplicação de verdade (não pega em `ktlintCheck`/`detekt`/teste de domínio): `rating SMALLINT` não bate com `ReviewJpaEntity.rating: Int`, que o Hibernate mapeia pra `INTEGER` — `ddl-auto: validate` recusa subir (`SchemaManagementException`). Como o V21 já tinha sido aplicado no banco de dev, a correção foi uma migration nova (`V22__widen_review_rating_column.sql`, `ALTER TABLE review ALTER COLUMN rating TYPE INTEGER`) em vez de editar o V21 — regra do projeto, nenhuma outra coluna `int` do schema usa `SMALLINT`
+- [x] 19.2 `Review` (domínio, novo) — valida `rating in 1..5` via `init { require(...) }`, mesmo estilo de `Payment`; `ReviewRepository` (porta, `findById`/`findByBookingId`/`save`)
+- [x] 19.3 `CreateReviewUseCase` (novo) — busca o `Booking` (`BookingNotFoundException` se faltar), valida dono (`NotBookingOwnerException`), valida `status == CONFIRMED` e "ainda não avaliada" via `check(...)` (409 — sem exceção nova pra invariante de estado, regra do projeto), salva o `Review`
+- [x] 19.4 `ReviewJpaEntity`/`ReviewJpaRepository`/`ReviewRepositoryAdapter` (mirror de `Payment`); mappers em `ReviewMappers.kt` própria (`Mappers.kt` estourou `TooManyFunctions` de novo, mesmo precedente do `PaymentMappers.kt`)
+- [x] 19.5 `ReviewController` (novo) — `POST /reviews`, autenticado, `customerId` vem de `authentication.currentUserId()` (nunca do corpo — achado numa revisão: a primeira versão aceitava `customerId` no `RegisterReviewRequest`, corrigido antes de fechar)
+- [x] 19.6 Testes, um cenário por classe: `domain/review` (nota válida, nota 0, nota 6), `application/createreviewusecase` (avalia reserva `CONFIRMED`, reserva inexistente → not found, dono errado → forbidden, reserva ainda `PENDING` → conflict, reserva já avaliada → conflict), `presentation/securityintegration` (401 sem token, fluxo completo registra→reserva→paga→avalia via `POST /reviews`)
+- [x] 19.7 README (`POST /reviews`) + `CHECKLIST.md`
+
+**Checklist de fechamento do M19:**
+- [x] Itens 19.1-19.7 revisados
+- [x] Clean Code
+- [x] Arquitetura (nenhuma exceção nova pra invariante de estado — `check()` cobre "não confirmada"/"já avaliada", igual a regra já documentada; review referencia `booking_id`, não `bookable_id` — é a experiência de uma reserva específica, não do voo em abstrato; `ReviewNotFoundException` criada mas nunca usada — removida, sem `GET /reviews/{id}` no escopo)
+- [x] `./gradlew ktlintCheck detekt` limpo (confirmado com `--rerun-tasks`, sem cache)
+- [x] `./gradlew test` — 110 testes, 85 passaram, 25 falharam — todas as 25 são a mesma limitação de Testcontainers/Docker de sempre (confirmado comparando com `PaymentEndpointRequiresAuthenticationTest`, que já existia antes desta feature e falha do mesmo jeito); todos os testes de domínio/caso de uso do Review (que não dependem de Testcontainers) passaram
+- [x] Aplicação rodando de verdade (`./gradlew bootRun`, Postgres/Redis via `docker compose`) — achou o bug do `SMALLINT` (19.1) e confirmou `/reviews` no Swagger (`@Tag`/`@Operation`/`@Schema` com exemplos reais nos 3 campos do `RegisterReviewRequest`). Fluxo completo via `curl` contra o banco real: registra→loga→reserva→**avalia antes de pagar → 409**→paga→**avalia CONFIRMED → 201**→**avalia de novo → 409**→**nota 9 numa reserva nova → 400** (`"rating must be between 1 and 5"`, mensagem do domínio)→**sem token → 401**
+- [x] README atualizado
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

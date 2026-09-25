@@ -216,6 +216,18 @@ curl -X POST localhost:8080/payments \
 
 Retorna `201` com o pagamento criado (`amount` já somando todas as reservas), `401` sem token, `403` se alguma reserva não pertencer a quem está pagando, `404` se algum `bookingId` não existir, ou `409` se alguma reserva não estiver `PENDING` (já confirmada ou cancelada).
 
+### `POST /reviews` (autenticado)
+Avalia uma reserva `CONFIRMED` do usuário autenticado — nota de 1 a 5 e comentário opcional. Só quem fez a reserva pode avaliá-la, só depois de `CONFIRMED` (não dá pra avaliar antes de pagar), e só uma vez por reserva.
+
+```bash
+curl -X POST localhost:8080/reviews \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <accessToken>" \
+  -d '{"bookingId": 1, "rating": 5, "comment": "Great flight!"}'
+```
+
+Retorna `201` com a review criada, `400` se a nota estiver fora de 1-5, `401` sem token, `403` se a reserva não pertencer a quem está avaliando, `404` se o `bookingId` não existir, ou `409` se a reserva não estiver `CONFIRMED` ou já tiver sido avaliada.
+
 ## Tempo real (WebSocket + Redis)
 
 Quando uma reserva é criada ou cancelada, a disponibilidade atualizada do `Bookable` é publicada em tempo real via WebSocket/STOMP, para clientes que estejam olhando aquela rota/voo no momento.
@@ -333,5 +345,6 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
 - 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
 - ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /bookables/{id}/seats`, `seatId` obrigatório em `POST /bookings`)
+- ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário de uma reserva `CONFIRMED`, só o dono, só uma vez)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
