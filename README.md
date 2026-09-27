@@ -173,7 +173,7 @@ curl localhost:8080/bookables/1/seats
 Retorna `200` com a lista de assentos, ou `404` se o `bookableId` não existir.
 
 ### `GET /bookings` (autenticado)
-Lista todas as reservas do usuário autenticado ("minhas viagens") — cada item já vem com o `Seat` e o `Flight` completos, sem precisar de chamadas extras do lado do cliente. Sempre filtra por `authentication.currentUserId()`: nunca devolve reserva de outro usuário.
+Lista todas as reservas do usuário autenticado ("minhas viagens") — cada item já vem com o `Seat` e o `Flight` completos, sem precisar de chamadas extras do lado do cliente, e também com a `review` (se a reserva já tiver sido avaliada) — o cliente nunca precisa guardar isso localmente pra saber se já avaliou. Sempre filtra por `authentication.currentUserId()`: nunca devolve reserva de outro usuário.
 
 ```bash
 curl localhost:8080/bookings \
@@ -217,7 +217,7 @@ curl -X POST localhost:8080/payments \
 Retorna `201` com o pagamento criado (`amount` já somando todas as reservas), `401` sem token, `403` se alguma reserva não pertencer a quem está pagando, `404` se algum `bookingId` não existir, ou `409` se alguma reserva não estiver `PENDING` (já confirmada ou cancelada).
 
 ### `POST /reviews` (autenticado)
-Avalia uma reserva `CONFIRMED` do usuário autenticado — nota de 1 a 5 e comentário opcional. Só quem fez a reserva pode avaliá-la, só depois de `CONFIRMED` (não dá pra avaliar antes de pagar), e só uma vez por reserva.
+Avalia uma reserva `CONFIRMED` do usuário autenticado — nota de 1 a 5 e comentário (obrigatório). Só quem fez a reserva pode avaliá-la, só depois de `CONFIRMED` (não dá pra avaliar antes de pagar), e só uma vez por reserva.
 
 ```bash
 curl -X POST localhost:8080/reviews \
@@ -345,6 +345,6 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
 - 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
 - ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /bookables/{id}/seats`, `seatId` obrigatório em `POST /bookings`)
-- ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário de uma reserva `CONFIRMED`, só o dono, só uma vez)
+- ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
