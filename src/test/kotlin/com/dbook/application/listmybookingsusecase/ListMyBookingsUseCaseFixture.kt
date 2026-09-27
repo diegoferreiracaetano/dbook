@@ -1,6 +1,7 @@
 package com.dbook.application.listmybookingsusecase
 
 import com.dbook.application.ListMyBookingsUseCase
+import com.dbook.application.createreviewusecase.FakeReviewRepository
 import com.dbook.domain.Airline
 import com.dbook.domain.Airport
 import com.dbook.domain.Booking
@@ -91,7 +92,7 @@ abstract class ListMyBookingsUseCaseFixture {
     protected fun useCase(
         bookings: List<Booking> = emptyList(),
         seats: List<Seat> = emptyList(),
-    ) = ListMyBookingsUseCase(FakeBookingRepository(bookings), FakeSeatRepository(seats))
+    ) = ListMyBookingsUseCase(FakeBookingRepository(bookings), FakeSeatRepository(seats), FakeReviewRepository())
 
     protected val ownBooking = Booking(bookingId, flight, seatId, ownerId)
     protected val ownSeat = Seat(seatId, bookableId, "1A", SeatStatus.RESERVED)

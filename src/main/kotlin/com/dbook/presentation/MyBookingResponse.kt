@@ -9,6 +9,7 @@ data class MyBookingResponse(
     val status: BookingStatus,
     val seat: SeatResponse,
     val flight: FlightResponse,
+    val review: ReviewResponse?,
 ) {
     companion object {
         // Bookable is abstract; the only concrete specialization today is Flight (see the
@@ -20,6 +21,7 @@ data class MyBookingResponse(
                 status = details.booking.status,
                 seat = SeatResponse.from(details.seat),
                 flight = FlightResponse.from(details.booking.bookable as Flight),
+                review = details.review?.let { ReviewResponse.from(it) },
             )
     }
 }
