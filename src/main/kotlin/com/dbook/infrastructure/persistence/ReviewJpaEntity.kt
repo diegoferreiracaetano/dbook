@@ -16,6 +16,6 @@ class ReviewJpaEntity(
     var bookingId: Long = 0,
     var customerId: Long = 0,
     var rating: Int = 0,
-    var comment: String? = null,
+    var comment: String = "",
     var createdAt: LocalDateTime,
 )

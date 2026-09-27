@@ -12,7 +12,7 @@ class ThrowsWhenBookingWasAlreadyReviewedTest : CreateReviewUseCaseFixture() {
                 bookingId = confirmedBookingId,
                 customerId = ownerId,
                 rating = 5,
-                comment = null,
+                comment = "Great flight!",
             ),
         )
 

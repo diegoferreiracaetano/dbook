@@ -14,7 +14,7 @@ class ThrowsWhenBookingDoesNotExistTest : CreateReviewUseCaseFixture() {
                     bookingId = 999_999,
                     customerId = ownerId,
                     rating = 5,
-                    comment = null,
+                    comment = "Great flight!",
                 ),
             )
         }

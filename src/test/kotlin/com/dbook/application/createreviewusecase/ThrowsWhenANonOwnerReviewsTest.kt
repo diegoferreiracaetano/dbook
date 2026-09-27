@@ -14,7 +14,7 @@ class ThrowsWhenANonOwnerReviewsTest : CreateReviewUseCaseFixture() {
                     bookingId = confirmedBookingId,
                     customerId = 999,
                     rating = 5,
-                    comment = null,
+                    comment = "Great flight!",
                 ),
             )
         }

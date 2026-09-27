@@ -1,0 +1,1 @@
+ALTER TABLE review ALTER COLUMN comment SET NOT NULL;

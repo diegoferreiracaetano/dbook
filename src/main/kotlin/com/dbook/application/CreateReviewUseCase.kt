@@ -13,7 +13,7 @@ data class CreateReviewCommand(
     val bookingId: Long,
     val customerId: Long,
     val rating: Int,
-    val comment: String?,
+    val comment: String,
 )
 
 /**

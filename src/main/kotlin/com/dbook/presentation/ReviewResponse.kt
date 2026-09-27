@@ -8,7 +8,7 @@ data class ReviewResponse(
     val bookingId: Long,
     val customerId: Long,
     val rating: Int,
-    val comment: String? = null,
+    val comment: String,
     val createdAt: LocalDateTime,
 ) {
     companion object {

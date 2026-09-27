@@ -13,7 +13,7 @@ class ThrowsWhenBookingIsNotConfirmedTest : CreateReviewUseCaseFixture() {
                     bookingId = pendingBookingId,
                     customerId = ownerId,
                     rating = 5,
-                    comment = null,
+                    comment = "Great flight!",
                 ),
             )
         }
