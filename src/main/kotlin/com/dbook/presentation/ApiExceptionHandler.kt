@@ -13,6 +13,7 @@ import com.dbook.domain.UserAlreadyExistsException
 import com.dbook.domain.UserNotFoundException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -33,6 +34,14 @@ class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleIllegalArgument(ex: IllegalArgumentException): Map<String, String> =
         mapOf("error" to (ex.message ?: "Invalid request"))
+
+    // Without this, Spring falls back to response.sendError(400), which triggers a
+    // container-level forward to /error — a path that isn't in SecurityConfig's
+    // permitAll(), so it gets rejected as 401 before ever reaching this class. Handling
+    // it here keeps the response inside the original request, with our own error body.
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleMalformedRequest(): Map<String, String> = mapOf("error" to "Malformed request body")
 
     @ExceptionHandler(
         OptimisticLockingFailureException::class,
