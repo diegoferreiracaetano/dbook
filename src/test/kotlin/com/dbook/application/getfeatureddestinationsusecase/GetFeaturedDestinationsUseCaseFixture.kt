@@ -1,7 +1,9 @@
 package com.dbook.application.getfeatureddestinationsusecase
 
+import com.dbook.application.GetAverageRatingForDestinationUseCase
 import com.dbook.application.GetFeaturedDestinationsUseCase
 import com.dbook.application.GetLowestPriceForDestinationUseCase
+import com.dbook.application.createreviewusecase.FakeReviewRepository
 import com.dbook.domain.Airport
 import com.dbook.domain.AirportRepository
 import com.dbook.domain.Flight
@@ -40,9 +42,11 @@ abstract class GetFeaturedDestinationsUseCaseFixture {
     protected fun useCase(
         airports: List<Airport>,
         prices: Map<String, BigDecimal> = emptyMap(),
+        ratings: Map<String, Double> = emptyMap(),
     ) = GetFeaturedDestinationsUseCase(
         FakeAirportRepository(airports),
         GetLowestPriceForDestinationUseCase(FakeFlightRepository(prices)),
+        GetAverageRatingForDestinationUseCase(FakeReviewRepository(averageRatingByDestination = ratings)),
     )
 
     protected fun airport(iataCode: String) =

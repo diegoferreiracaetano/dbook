@@ -22,7 +22,7 @@ class ReturnsTheFeaturedDestinationsListTest : DestinationControllerFixture() {
                 isPopular = true,
             )
         given(getFeaturedDestinationsUseCase.execute())
-            .willReturn(listOf(FeaturedDestination(gig, BigDecimal("305.00"))))
+            .willReturn(listOf(FeaturedDestination(gig, BigDecimal("305.00"), 4.5)))
 
         mockMvc.get("/destinations").andExpect {
             status { isOk() }
@@ -32,6 +32,7 @@ class ReturnsTheFeaturedDestinationsListTest : DestinationControllerFixture() {
             jsonPath("$[0].region") { value("América do Sul") }
             jsonPath("$[0].isPopular") { value(true) }
             jsonPath("$[0].lowestPrice") { value(305.00) }
+            jsonPath("$[0].averageRating") { value(4.5) }
         }
     }
 }

@@ -13,6 +13,7 @@ data class DestinationResponse(
     @get:JsonProperty("isPopular")
     val isPopular: Boolean,
     val lowestPrice: BigDecimal?,
+    val averageRating: Double?,
 ) {
     companion object {
         fun from(destination: FeaturedDestination) =
@@ -24,6 +25,7 @@ data class DestinationResponse(
                 region = destination.airport.region,
                 isPopular = destination.airport.isPopular,
                 lowestPrice = destination.lowestPrice,
+                averageRating = destination.averageRating,
             )
     }
 }

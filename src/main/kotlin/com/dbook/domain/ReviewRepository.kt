@@ -6,4 +6,6 @@ interface ReviewRepository {
     fun findByBookingId(bookingId: Long): Review?
 
     fun save(review: Review): Review
+
+    fun findAverageRatingByDestination(destinationIataCode: String): Double?
 }

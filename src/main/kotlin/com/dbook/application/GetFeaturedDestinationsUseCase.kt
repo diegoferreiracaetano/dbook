@@ -8,6 +8,7 @@ import java.math.BigDecimal
 data class FeaturedDestination(
     val airport: Airport,
     val lowestPrice: BigDecimal?,
+    val averageRating: Double?,
 )
 
 /**
@@ -20,12 +21,14 @@ data class FeaturedDestination(
 class GetFeaturedDestinationsUseCase(
     private val airportRepository: AirportRepository,
     private val getLowestPriceForDestinationUseCase: GetLowestPriceForDestinationUseCase,
+    private val getAverageRatingForDestinationUseCase: GetAverageRatingForDestinationUseCase,
 ) {
     fun execute(): List<FeaturedDestination> =
         airportRepository.findAll().map { airport ->
             FeaturedDestination(
                 airport = airport,
                 lowestPrice = getLowestPriceForDestinationUseCase.execute(airport.iataCode),
+                averageRating = getAverageRatingForDestinationUseCase.execute(airport.iataCode),
             )
         }
 }

@@ -117,14 +117,14 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         )
 
     /** @return the new flight's bookableId and its one generated seatId. */
-    protected fun registerFlightWithOneSeat(): Pair<Long, Long> {
+    protected fun registerFlightWithOneSeat(destinationIataCode: String = "GIG"): Pair<Long, Long> {
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
                     flightNumber = "DBS${(10000..99999).random()}",
                     airlineIataCode = "LA",
                     originIataCode = "GRU",
-                    destinationIataCode = "GIG",
+                    destinationIataCode = destinationIataCode,
                     departureTime = LocalDateTime.of(2027, 1, 1, 8, 0),
                     arrivalTime = LocalDateTime.of(2027, 1, 1, 9, 10),
                     seatClass = SeatClass.ECONOMY,

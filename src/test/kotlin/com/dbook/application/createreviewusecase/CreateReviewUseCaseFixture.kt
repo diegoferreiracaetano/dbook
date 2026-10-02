@@ -26,19 +26,23 @@ class FakeBookingRepository(initial: List<Booking>) : BookingRepository {
     }
 }
 
-class FakeReviewRepository : ReviewRepository {
-    var nextId = 1L
-    val saved = mutableListOf<Review>()
+class FakeReviewRepository(
+    reviews: List<Review> = emptyList(),
+    private val averageRatingByDestination: Map<String, Double> = emptyMap(),
+) : ReviewRepository {
+    private val store = reviews.associateBy { it.bookingId }.toMutableMap()
 
-    override fun findById(id: Long): Review? = saved.find { it.id == id }
+    override fun findById(id: Long): Review? = store.values.find { it.id == id }
 
-    override fun findByBookingId(bookingId: Long): Review? = saved.find { it.bookingId == bookingId }
+    override fun findByBookingId(bookingId: Long): Review? = store[bookingId]
 
     override fun save(review: Review): Review {
-        val withId = Review(nextId++, review.bookingId, review.customerId, review.rating, review.comment)
-        saved += withId
-        return withId
+        store[review.bookingId] = review
+        return review
     }
+
+    override fun findAverageRatingByDestination(destinationIataCode: String): Double? =
+        averageRatingByDestination[destinationIataCode]
 }
 
 // Shared "given": ownerId has one CONFIRMED booking (reviewable) and one still-PENDING

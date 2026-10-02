@@ -13,4 +13,7 @@ class ReviewRepositoryAdapter(
     override fun findByBookingId(bookingId: Long): Review? = reviewJpaRepository.findByBookingId(bookingId)?.toDomain()
 
     override fun save(review: Review): Review = reviewJpaRepository.save(review.toJpaEntity()).toDomain()
+
+    override fun findAverageRatingByDestination(destinationIataCode: String) =
+        reviewJpaRepository.findAverageRatingByDestination(destinationIataCode)
 }

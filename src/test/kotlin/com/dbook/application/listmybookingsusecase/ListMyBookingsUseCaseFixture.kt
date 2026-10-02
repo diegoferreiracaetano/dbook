@@ -7,6 +7,7 @@ import com.dbook.domain.Airport
 import com.dbook.domain.Booking
 import com.dbook.domain.BookingRepository
 import com.dbook.domain.Flight
+import com.dbook.domain.Review
 import com.dbook.domain.Seat
 import com.dbook.domain.SeatClass
 import com.dbook.domain.SeatRepository
@@ -92,7 +93,8 @@ abstract class ListMyBookingsUseCaseFixture {
     protected fun useCase(
         bookings: List<Booking> = emptyList(),
         seats: List<Seat> = emptyList(),
-    ) = ListMyBookingsUseCase(FakeBookingRepository(bookings), FakeSeatRepository(seats), FakeReviewRepository())
+        reviews: List<Review> = emptyList(),
+    ) = ListMyBookingsUseCase(FakeBookingRepository(bookings), FakeSeatRepository(seats), FakeReviewRepository(reviews))
 
     protected val ownBooking = Booking(bookingId, flight, seatId, ownerId)
     protected val ownSeat = Seat(seatId, bookableId, "1A", SeatStatus.RESERVED)
