@@ -6,6 +6,7 @@ import com.dbook.application.RegisterBookingUseCase
 import com.dbook.application.RegisterFlightUseCase
 import com.dbook.application.RegisterUserUseCase
 import com.dbook.domain.SeatRepository
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -32,4 +33,7 @@ abstract class AvailabilityBroadcastFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var seatRepository: SeatRepository
+
+    @Autowired
+    lateinit var objectMapper: ObjectMapper
 }

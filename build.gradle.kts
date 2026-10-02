@@ -121,5 +121,8 @@ tasks.check {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    environment("DOCKER_API_VERSION", "1.41")
+    // docker-java (inside Testcontainers 1.20.4) defaults to API 1.32, which recent Docker
+    // Desktop rejects with a 400 ("Could not find a valid Docker environment"). It reads
+    // this system property, not the DOCKER_API_VERSION env var the CLI tools use.
+    systemProperty("api.version", "1.41")
 }

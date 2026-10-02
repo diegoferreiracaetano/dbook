@@ -329,9 +329,9 @@ JAVA_HOME="/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home" ./gra
 
 Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractIntegrationTest`) — sobem Postgres e Redis descartáveis sozinhos, não precisam mais de `docker compose up -d` manual. Só exigem Docker instalado e rodando.
 
-**Cobertura (JaCoCo, 2026-09-09):** `./gradlew check` roda `jacocoTestCoverageVerification` com um mínimo de 75% de cobertura de linha, excluindo entidades JPA/DTOs (dados puros, sem lógica própria) e o `main()`. Relatório em `build/reports/jacoco/test/html/index.html` após `./gradlew jacocoTestReport`. **Nota:** localmente a cobertura medida fica bem abaixo de 75% por causa do mesmo bloqueio Testcontainers/Docker Desktop documentado acima — os pacotes que só têm teste de integração (`persistence`, `security`, `messaging`) aparecem como 0% cobertos porque esses testes simplesmente não rodam aqui, não porque não existem. O número real só é confiável rodando no CI.
+**Cobertura (JaCoCo, 2026-09-09):** `./gradlew check` roda `jacocoTestCoverageVerification` com um mínimo de 75% de cobertura de linha, excluindo entidades JPA/DTOs (dados puros, sem lógica própria) e o `main()`. Relatório em `build/reports/jacoco/test/html/index.html` após `./gradlew jacocoTestReport`. Localmente, com o Docker rodando, `./gradlew check` mede o mesmo que o CI.
 
-> **Nota:** em algumas instalações do Docker Desktop muito recentes, o Testcontainers pode falhar ao detectar o daemon (`Could not find a valid Docker environment`) por incompatibilidade do cliente HTTP interno com a API do Docker. Se isso acontecer localmente, o pipeline de CI (GitHub Actions, Docker padrão do runner) continua funcionando normalmente — é uma limitação do ambiente local, não do código.
+> **Nota:** o cliente Docker interno do Testcontainers 1.20.4 negocia a API 1.32 por padrão, e o Docker Desktop recente recusa isso (`Could not find a valid Docker environment`). O `build.gradle.kts` fixa `api.version=1.41` como propriedade de sistema da task `test` (a variável `DOCKER_API_VERSION` não é lida por esse cliente), então os testes de integração rodam localmente igual ao CI. Foi essa falha local que, por meses, fez parecer "normal" ver só o CI vermelho — e escondeu dois testes realmente quebrados.
 
 ## Status do roadmap
 

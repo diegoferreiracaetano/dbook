@@ -97,7 +97,7 @@ docker compose up -d                 # Postgres + Redis (+ LocalStack) p/ rodar 
 ./gradlew jacocoTestReport           # build/reports/jacoco/test/html/index.html
 ```
 
-**Limitação conhecida de ambiente:** testes que estendem `AbstractIntegrationTest` (todos os `securityintegration`, `BookingConcurrencyTest`, `messaging`) falham fora do CI quando o Testcontainers não acha o Docker (`Could not find a valid Docker environment`) — documentado no README. Isso **não** é regressão; confirme que a única causa é essa (todos os demais testes passam) e diga isso no relatório. A cobertura local também fica subestimada pelo mesmo motivo — o número confiável é o do CI.
+**Testcontainers local:** precisa do Docker Desktop aberto. O `build.gradle.kts` já fixa `api.version=1.41` (sem isso o Testcontainers 1.20.4 falha com `Could not find a valid Docker environment` no Docker Desktop recente). Se esses testes falharem localmente, **é falha real** — o mesmo que o CI vê; não os descarte como limitação de ambiente.
 
 ## Regras de qualidade (sempre valem)
 
@@ -118,6 +118,6 @@ Antes de dizer "pronto", confirme cada item (ou diga qual não se aplica e por q
 - [ ] Endpoint novo: autenticação correta (`currentUserId()`, sem id no corpo), `@Tag`/`@Operation`/`@Schema`.
 - [ ] Migration nova (se mexeu no schema) sem editar as antigas; entidade/mapper/adapter alinhados.
 - [ ] Testes criados/atualizados no padrão um-cenário-por-classe (caminho feliz **e** as falhas: 400/403/404/409).
-- [ ] `./gradlew ktlintCheck detekt` limpo e `./gradlew test` rodado — sem falha nova além da limitação de Testcontainers descrita acima.
+- [ ] `./gradlew ktlintCheck detekt` limpo e `./gradlew test` rodado — sem nenhuma falha (inclusive os de integração, que exigem Docker aberto).
 - [ ] `README.md` (Endpoints) e `CHECKLIST.md` atualizados quando o comportamento público mudou.
 - [ ] Relatório final lista **arquivos alterados** e **validações executadas** (com o resultado real, não o esperado).

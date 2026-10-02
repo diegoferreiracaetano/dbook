@@ -46,7 +46,12 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
         val seatId = requireNotNull(seatRepository.findByBookableId(bookableId).first().id)
 
         val stompClient = WebSocketStompClient(StandardWebSocketClient())
-        stompClient.messageConverter = MappingJackson2MessageConverter()
+        // The application's own ObjectMapper, not MappingJackson2MessageConverter's default
+        // one: that bare mapper can't build a Kotlin data class, and a failed conversion on
+        // the client is swallowed silently — the test would just see "no message arrived".
+        val messageConverter = MappingJackson2MessageConverter()
+        messageConverter.objectMapper = objectMapper
+        stompClient.messageConverter = messageConverter
 
         val receivedUpdates = LinkedBlockingQueue<AvailabilityUpdate>()
         val connectHeaders = StompHeaders()
