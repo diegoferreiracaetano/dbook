@@ -2,6 +2,7 @@ package com.dbook.presentation
 
 import com.dbook.domain.AiResponseParsingException
 import com.dbook.domain.AiServiceUnavailableException
+import com.dbook.domain.AirlineNotFoundException
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookingNotFoundException
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class ApiExceptionHandler {
     @ExceptionHandler(
+        AirlineNotFoundException::class,
         AirportNotFoundException::class,
         BookableNotFoundException::class,
         BookingNotFoundException::class,
