@@ -291,6 +291,8 @@ curl -X POST localhost:8080/ai/suggestions \
 
 `.github/workflows/ci.yml` (teste+lint+detekt, toda PR/push) e `.github/workflows/cd.yml` (build+push+deploy, só depois que o CI passa) são pipelines separados — o CD só começa via `workflow_run` quando o CI termina com sucesso no `main`.
 
+Sem o secret `AWS_DEPLOY_ROLE_ARN` (não há conta AWS persistente — o Academy Lab é temporário), o job `check-aws` desliga o pipeline inteiro: os demais jobs aparecem como "skipped" em vez de falhar. Ao criar o secret, o CD passa a rodar sozinho.
+
 Fluxo do CD:
 1. **build-and-push**: builda a imagem Docker, autentica no ECR via OIDC (sem chave de longa duração guardada como secret) e publica com a tag sendo o SHA do commit — necessário porque o repositório ECR é `IMMUTABLE` (M6/6.3), não dá pra reusar uma tag como `latest` em pushes repetidos.
 2. **deploy-dev**: automático após o build, roda `terraform apply -var="image_tag=<sha>"` — reaproveita a variável `image_tag` que a Task Definition do ECS já usa desde o M6.

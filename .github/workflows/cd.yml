@@ -17,8 +17,24 @@ env:
   ECR_REPOSITORY: dbook
 
 jobs:
+  # The `secrets` context can't be used in a job-level `if`, so this job copies the
+  # secret's presence into an output the others can check. Without the secret (no AWS
+  # account — the AWS Academy lab is temporary) the whole pipeline is skipped instead of
+  # failing red on every push; it starts working by itself once AWS_DEPLOY_ROLE_ARN exists.
+  check-aws:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+    env:
+      AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+    steps:
+      - name: Check AWS deploy role is configured
+        id: gate
+        run: echo "enabled=${{ env.AWS_DEPLOY_ROLE_ARN != '' }}" >> "$GITHUB_OUTPUT"
+
   build-and-push:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: check-aws
+    if: github.event.workflow_run.conclusion == 'success' && needs.check-aws.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     outputs:
       image-tag: ${{ steps.tag.outputs.sha }}
