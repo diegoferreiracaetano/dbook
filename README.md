@@ -161,7 +161,7 @@ Todo aeroporto conhecido numa resposta só — código IATA, cidade, país, foto
 curl localhost:8080/destinations
 ```
 
-Retorna `200` com `[{"iataCode": "GIG", "city": "Rio de Janeiro", "country": "Brasil", "photoUrl": "https://...", "region": "América do Sul", "isPopular": true, "lowestPrice": 305.00}, ...]` — `lowestPrice` vem `null` quando não há voo ativo pra esse destino na janela de 60 dias.
+Retorna `200` com `[{"iataCode": "GIG", "city": "Rio de Janeiro", "country": "Brasil", "photoUrl": "https://...", "region": "América do Sul", "isPopular": true, "lowestPrice": 305.00, "averageRating": 4.5}, ...]` — `lowestPrice` vem `null` quando não há voo ativo pra esse destino na janela de 60 dias, e `averageRating` (média de 1 a 5 das avaliações de reservas de voos pra esse destino, ver `POST /reviews`) vem `null` enquanto ninguém avaliou nenhuma viagem até lá.
 
 ### `GET /bookables/{id}/seats`
 Retorna o mapa de assentos de um `Bookable` (público, mesmo espírito de `/flights/search`) — cada assento com seu `label` (ex.: `"12A"`) e `status` (`AVAILABLE`/`RESERVED`).
