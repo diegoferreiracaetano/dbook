@@ -32,6 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     implementation("software.amazon.awssdk:bedrockruntime:2.28.29")
     implementation("software.amazon.awssdk:sqs:2.28.29")
     implementation("com.bucket4j:bucket4j-core:8.10.1")

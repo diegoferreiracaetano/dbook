@@ -1,0 +1,27 @@
+# Reads the JSON logs the app writes with SPRING_PROFILES_ACTIVE=json,logfile (logs/dbook.json)
+# and ships them to Loki. Only `level` becomes a label (a small fixed set); everything else —
+# requestId, userId, status... — stays in the line and is filtered at query time with
+# `| json | requestId="..."`. Labels with many distinct values would blow up Loki's index.
+server:
+  http_listen_port: 9080
+positions:
+  filename: /tmp/positions.yaml
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+scrape_configs:
+  - job_name: dbook
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: dbook
+          __path__: /var/log/dbook/dbook.json
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            ts: '"@timestamp"'
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+      - labels:
+          level:

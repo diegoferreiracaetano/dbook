@@ -23,7 +23,10 @@ abstract class ObservabilityFixture : AbstractIntegrationTest() {
     @LocalManagementPort
     var managementPort: Int = 0
 
-    protected fun getFromApi(path: String): HttpResponse<String> = get(port, path)
+    protected fun getFromApi(
+        path: String,
+        headers: Map<String, String> = emptyMap(),
+    ): HttpResponse<String> = get(port, path, headers)
 
     protected fun getFromManagement(path: String): HttpResponse<String> = get(managementPort, path)
 
@@ -42,9 +45,10 @@ abstract class ObservabilityFixture : AbstractIntegrationTest() {
     private fun get(
         targetPort: Int,
         path: String,
-    ): HttpResponse<String> =
-        HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder(URI("http://localhost:$targetPort$path")).GET().build(),
-            HttpResponse.BodyHandlers.ofString(),
-        )
+        headers: Map<String, String> = emptyMap(),
+    ): HttpResponse<String> {
+        val request = HttpRequest.newBuilder(URI("http://localhost:$targetPort$path")).GET()
+        headers.forEach { (name, value) -> request.header(name, value) }
+        return HttpClient.newHttpClient().send(request.build(), HttpResponse.BodyHandlers.ofString())
+    }
 }

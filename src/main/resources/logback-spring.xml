@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging, in two shapes:
+    - default (local development): one readable line, with the request id and user id
+    - profile "json" (production / ECS): one JSON object per line, which CloudWatch Logs
+      Insights and Loki can filter by field (level, requestId, userId, status...)
+  Profile "logfile" additionally writes the JSON to logs/dbook.json (what the local Loki
+  stack reads — see docker-compose.yml, profile "observability").
+  requestId and userId come from the MDC (RequestLoggingFilter / JwtAuthenticationFilter).
+-->
+<configuration>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="dbook"/>
+
+    <springProfile name="!json">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %-5level [%X{requestId:--}] [user=%X{userId:--}] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <springProfile name="json">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"app":"${APP_NAME}"}</customFields>
+                <includeContext>false</includeContext>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <springProfile name="logfile">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/dbook.json</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/dbook.%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <maxHistory>7</maxHistory>
+                <totalSizeCap>500MB</totalSizeCap>
+            </rollingPolicy>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"app":"${APP_NAME}"}</customFields>
+                <includeContext>false</includeContext>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- one root per profile combination: an appender-ref to an appender that the active
+         profiles did not define would fail the whole configuration -->
+    <springProfile name="logfile">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+    <springProfile name="!logfile">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

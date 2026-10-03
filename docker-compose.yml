@@ -28,6 +28,41 @@ services:
       - dbook_localstack_data:/var/lib/localstack
       - ./scripts/localstack-init:/etc/localstack/init/ready.d
 
+  # --- Logs: a place to send the app's JSON logs and query them -------------------------------
+  # Optional (docker compose --profile observability up -d). Run the app with
+  # SPRING_PROFILES_ACTIVE=json,logfile so it writes logs/dbook.json, then open Grafana
+  # (http://localhost:3000 > Explore > Loki). See the "Logs" section of the README.
+  loki:
+    image: grafana/loki:3.2.0
+    profiles: ["observability"]
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.2.0
+    profiles: ["observability"]
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./observability/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/dbook:ro
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    environment:
+      # local only: no login screen, everyone is an admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - loki
+
 volumes:
   dbook_pgdata:
   dbook_localstack_data:

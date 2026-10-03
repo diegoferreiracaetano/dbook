@@ -83,6 +83,8 @@ resource "aws_ecs_task_definition" "this" {
         { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
         { name = "SPRING_DATA_REDIS_HOST", value = var.redis_endpoint },
         { name = "SPRING_DATA_REDIS_PORT", value = tostring(var.redis_port) },
+        # one JSON object per log line: CloudWatch Logs Insights can then filter by field
+        { name = "SPRING_PROFILES_ACTIVE", value = "json" },
       ]
       secrets = [
         { name = "SPRING_DATASOURCE_PASSWORD", valueFrom = var.db_password_secret_arn },

@@ -250,6 +250,103 @@ curl -X POST localhost:8080/reviews \
 
 Retorna `201` com a review criada, `400` se a nota estiver fora de 1-5, `401` sem token, `403` se a reserva não pertencer a quem está avaliando, `404` se o `bookingId` não existir, ou `409` se a reserva não estiver `CONFIRMED` ou já tiver sido avaliada.
 
+## Observabilidade: health, métricas e logs
+
+### Health e métricas (porta de gestão 8081)
+
+Os endpoints operacionais ficam numa porta própria, **que nunca é exposta publicamente** (o Dockerfile e o Terraform do ECS só mapeiam a 8080); pela porta 8080 os mesmos caminhos continuam exigindo autenticação.
+
+| URL | Para quê |
+|---|---|
+| `http://localhost:8081/actuator/health/liveness` | o processo está vivo? |
+| `http://localhost:8081/actuator/health/readiness` | pode receber tráfego? (confere Postgres e Redis; com um deles fora, responde `503`) |
+| `http://localhost:8081/actuator/prometheus` | métricas para o Prometheus: JVM, HTTP, pool de conexões, tempo de cada caso de uso (`dbook_usecase_seconds_*`) e as de negócio (`dbook_payment_total{outcome="created\|replayed"}`, `dbook_booking_expiration_total{outcome="expired\|ignored\|failed"}`) |
+
+### Logs
+
+A aplicação loga em dois formatos, escolhidos por perfil do Spring:
+
+| Perfil | Formato | Uso |
+|---|---|---|
+| (nenhum) | uma linha legível: `20:41:03.424 INFO [demo-bookings-1] [user=33] ...RequestLoggingFilter - GET /bookings -> 200 in 134 ms` | desenvolvimento local |
+| `json` | **um objeto JSON por linha** | produção (o Terraform do ECS já ativa) e qualquer lugar onde os logs sejam consultados |
+| `logfile` | acrescenta a gravação de `logs/dbook.json` (rotação diária ou a cada 50 MB, 7 dias, teto de 500 MB) | alimentar o Loki local |
+
+Cada requisição ganha um **`requestId`** e termina com **uma linha de acesso**. Um exemplo, no formato JSON:
+
+```json
+{"@timestamp":"2026-10-03T20:39:03.42-03:00","level":"INFO","message":"GET /bookings -> 200 in 134 ms",
+ "requestId":"demo-bookings-1","userId":"33","status":200,"duration_ms":134,"app":"dbook", ...}
+```
+
+- O `requestId` está em **todas** as linhas daquela requisição e volta no cabeçalho de resposta `X-Request-Id`. O cliente pode mandar o seu próprio (`X-Request-Id: abc-123`): só vale se for curto e simples (`A-Z a-z 0-9 . _ -`, até 64 caracteres), senão é trocado por um UUID — um cabeçalho nunca consegue injetar quebras de linha ou texto arbitrário nos logs.
+- O `userId` aparece nas requisições autenticadas. As linhas que não vêm de uma requisição HTTP (por exemplo, o consumidor da fila) não têm `requestId` nem `userId`.
+- **O que nunca é logado:** a *query string* (pode carregar token), os cabeçalhos (`Authorization`) e os corpos (senha, dados de cartão). O log de acesso tem só método, caminho, status e duração. Há teste para a query string.
+- Um `5xx` sai como `ERROR`; o resto, como `INFO`.
+
+#### Rodando em JSON localmente
+
+```bash
+SPRING_PROFILES_ACTIVE=json,logfile ./gradlew bootRun
+```
+
+#### Consultando sem nenhuma ferramenta (só `jq`)
+
+O arquivo `logs/dbook.json` tem um JSON por linha:
+
+```bash
+jq -c 'select(.level=="ERROR")' logs/dbook.json                               # só os erros
+jq -c 'select(.requestId=="demo-bookings-1")' logs/dbook.json                 # tudo de uma requisição
+jq -c 'select(.status==401) | {requestId, message}' logs/dbook.json           # respostas 401
+jq -c 'select(.duration_ms > 500) | {message, duration_ms}' logs/dbook.json   # requisições lentas
+```
+
+#### Mandando os logs para um lugar central e consultando (Loki + Grafana, local)
+
+Um perfil opcional do `docker-compose` sobe o **Loki** (guarda os logs), o **Promtail** (lê `logs/dbook.json` e envia ao Loki) e o **Grafana** (a tela de consulta). Com a aplicação rodando em `json,logfile` (comando acima):
+
+```bash
+docker compose --profile observability up -d
+```
+
+Abra **http://localhost:3000** → **Explore** → fonte **Loki** (já vem configurada, sem login). As consultas usam a linguagem **LogQL**; todas as abaixo foram testadas contra o Loki de verdade:
+
+| O que você quer | Consulta |
+|---|---|
+| tudo da aplicação | `{job="dbook"}` |
+| só avisos e erros | `{job="dbook", level=~"WARN\|ERROR"}` |
+| tudo de uma requisição | `{job="dbook"} \| json \| requestId="demo-bookings-1"` |
+| o que um usuário fez | `{job="dbook"} \| json \| userId="33"` |
+| respostas 401 | `{job="dbook"} \| json \| status = 401` |
+| requisições lentas (> 100 ms) | `{job="dbook"} \| json \| duration_ms > 100` |
+| procurar um texto | `{job="dbook"} \|= "palavra"` |
+
+(Na tabela, o `\|` é só para o Markdown não quebrar a coluna: na consulta real é um `|` simples.)
+
+Só o `level` vira *label* (poucos valores). `requestId`, `userId` e `status` ficam na linha e são filtrados na consulta com `| json`: *labels* com muitos valores distintos derrubam o desempenho do Loki. Para desligar: `docker compose --profile observability down`. A configuração está em `observability/`.
+
+#### Na AWS (CloudWatch Logs Insights)
+
+O ECS já envia a saída do contêiner para o CloudWatch (driver `awslogs`, grupo criado pelo Terraform) e, com o perfil `json`, cada linha é um JSON: o **Logs Insights** descobre os campos sozinho. Em *CloudWatch → Logs Insights*, escolha o grupo de logs da aplicação e rode:
+
+```
+fields @timestamp, level, message, requestId, userId, status, duration_ms
+| filter requestId = "demo-bookings-1"
+| sort @timestamp asc
+```
+```
+fields @timestamp, message, requestId, status
+| filter level = "ERROR" or status >= 500
+| sort @timestamp desc
+| limit 50
+```
+```
+stats count() as requests, pct(duration_ms, 95) as p95_ms by bin(5m)
+| filter ispresent(duration_ms)
+```
+
+> Estas consultas do Logs Insights **não foram executadas**: o projeto não tem uma conta AWS persistente. O formato dos campos é o mesmo que foi consultado no Loki, mas vale conferir na primeira vez que houver um ambiente real.
+
 ## Tempo real (WebSocket + Redis)
 
 Quando uma reserva é criada ou cancelada, a disponibilidade atualizada do `Bookable` é publicada em tempo real via WebSocket/STOMP, para clientes que estejam olhando aquela rota/voo no momento.
@@ -411,5 +508,7 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
 - ✅ **M20 — Expiração de reservas pendentes** (fila SQS com atraso de 15 min no LocalStack, consumidor idempotente com DLQ, lock otimista na `Booking` contra a corrida pagar × expirar — Terraform da SQS e outbox ficaram como evolução)
 - ✅ **M21 — Idempotência no pagamento** (`Idempotency-Key` obrigatório em `POST /payments`: a retentativa devolve o pagamento original, chave reutilizada com outro pedido é 422, corrida entre requisições iguais resolvida pelo índice único — o teste de corrida achou um 500 real causado pela tradução de exceções do Spring em `@Repository`)
+- ✅ **M22 — Pacotes por conceito** (domain/application/presentation/persistence divididos em `catalog`, `seating`, `booking`, `payment`, `review`, `identity`, `ai`; regras de arquitetura verificadas por testes ArchUnit)
+- 🚧 **M23 — Observabilidade** (em andamento: health liveness/readiness e métricas Prometheus numa porta de gestão separada, `@Observed` em todos os casos de uso, métricas de negócio de pagamento e expiração, logs em JSON com `requestId`/`userId` consultáveis no Loki e no CloudWatch — falta o gauge de reservas pendentes, o tracing com OpenTelemetry e o dashboard)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

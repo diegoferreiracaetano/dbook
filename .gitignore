@@ -21,3 +21,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# JSON logs written locally with the 'logfile' profile (read by the Loki stack)
+logs/

@@ -4,6 +4,7 @@ import com.dbook.domain.identity.TokenService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.MDC
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -32,6 +33,8 @@ class JwtAuthenticationFilter(
                         listOf(SimpleGrantedAuthority("ROLE_$role")),
                     )
                 SecurityContextHolder.getContext().authentication = authentication
+                // every log line of this request now says who it was (cleared by RequestLoggingFilter)
+                MDC.put("userId", userId.toString())
             }
         }
         filterChain.doFilter(request, response)
