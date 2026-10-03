@@ -65,6 +65,7 @@ fun BookingJpaEntity.toDomain(availableCapacity: Int): Booking =
         customerId = customerId,
         status = status,
         paymentId = payment?.id,
+        version = version,
     )
 
 fun Flight.toJpaEntity(
@@ -100,6 +101,7 @@ fun Booking.toJpaEntity(
         customerId = customerId,
         status = status,
         payment = payment,
+        version = version,
     )
 
 fun SeatJpaEntity.toDomain(): Seat =

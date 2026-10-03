@@ -436,6 +436,17 @@ irmão mais próximo (`Payment`/`RegisterPaymentUseCase`/`PaymentController`).
 - [x] Testado de ponta a ponta de novo: `/auth/register`, `/payments` e `/reviews` com corpo incompleto → `400` certinho; requisição sem token nenhum continua `401` de verdade
 - [x] README atualizado
 
+## M20 — Expiração de reservas pendentes (fila SQS) 🚧
+
+Problema real: uma `Booking` `PENDING` já tirou o assento de circulação e nada a expira — quem abandona o pagamento prende o assento para sempre. Solução planejada: mensagem com atraso (SQS, via LocalStack) que cancela a reserva se ela ainda estiver `PENDING`, com DLQ e consumidor idempotente. Pagamento continua síncrono (não há gateway real; webhook/pagamento assíncrono fica como evolução).
+
+- [x] 20.1 Lock otimista no nível da `Booking` (pré-requisito da fila) — pagar e cancelar/expirar a mesma reserva ao mesmo tempo eram uma corrida real: ambos liam `PENDING` e ambos gravavam, podendo terminar com reserva `CONFIRMED` e assento liberado (mesmo assento vendido duas vezes). Só o `Seat` tinha `@Version`. Migration `V24__add_optimistic_lock_to_booking.sql`, `@Version` em `BookingJpaEntity` e `version` no domínio `Booking`: o `save` do adapter monta uma entidade nova a cada gravação, então a versão precisa viajar pelo domínio (lida do banco em `toDomain`, devolvida em `toJpaEntity` e no retorno do `save`) — um `@Version` sozinho na entidade seria sempre comparado com `0`. O perdedor da corrida falha com `OptimisticLockingFailureException` (→ 409, já mapeado) e a transação dele inteira é desfeita
+- [x] Testes de concorrência reorganizados em `application/bookingconcurrency/` (fixture + um cenário por classe): `OnlyOneOfTwoBookingsForTheSameSeatWinsTest` (antigo `BookingConcurrencyTest`, agora com usuário real em vez de `customerId = 1L`) e `OnlyOneOfPayAndCancelWinsTest` (20 rodadas; verificado por mutação: sem o `@Version` ele falha, com ele passa)
+- [ ] 20.2 SQS no LocalStack (`sqs` em `SERVICES`)
+- [ ] 20.3 Porta no domínio + adapter SQS + mensagem com atraso ao criar a reserva (`afterCommit`)
+- [ ] 20.4 Consumidor idempotente (cancela só se ainda `PENDING`) + DLQ
+- [ ] 20.5 Terraform do módulo SQS (validado só por `terraform plan`, sem conta AWS) + README
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
