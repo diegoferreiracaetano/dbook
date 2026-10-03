@@ -3,6 +3,7 @@ package com.dbook.application.catalog
 import com.dbook.application.review.GetAverageRatingForDestinationUseCase
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.AirportRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
@@ -18,6 +19,7 @@ data class FeaturedDestination(
  * aggregation; backs `GET /destinations`, the one call the mobile Home screen needs instead of
  * a hardcoded airport list plus one price request per card.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class GetFeaturedDestinationsUseCase(
     private val airportRepository: AirportRepository,

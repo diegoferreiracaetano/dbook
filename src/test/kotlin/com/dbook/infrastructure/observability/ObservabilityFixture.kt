@@ -27,6 +27,18 @@ abstract class ObservabilityFixture : AbstractIntegrationTest() {
 
     protected fun getFromManagement(path: String): HttpResponse<String> = get(managementPort, path)
 
+    protected fun postToApi(
+        path: String,
+        jsonBody: String,
+    ): HttpResponse<String> =
+        HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder(URI("http://localhost:$port$path"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(),
+        )
+
     private fun get(
         targetPort: Int,
         path: String,

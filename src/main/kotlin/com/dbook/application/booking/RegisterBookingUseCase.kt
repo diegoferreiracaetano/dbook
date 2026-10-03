@@ -9,6 +9,7 @@ import com.dbook.domain.catalog.BookableNotFoundException
 import com.dbook.domain.catalog.BookableRepository
 import com.dbook.domain.seating.SeatNotFoundException
 import com.dbook.domain.seating.SeatRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
@@ -23,6 +24,7 @@ data class RegisterBookingCommand(
  * Books a specific [com.dbook.domain.seating.Seat] of a [com.dbook.domain.catalog.Bookable] for a customer,
  * under a seat-level optimistic lock.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class RegisterBookingUseCase(
     private val bookableRepository: BookableRepository,

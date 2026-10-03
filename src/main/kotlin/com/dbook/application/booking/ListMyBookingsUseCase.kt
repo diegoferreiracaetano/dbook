@@ -6,6 +6,7 @@ import com.dbook.domain.review.Review
 import com.dbook.domain.review.ReviewRepository
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 /**
@@ -19,6 +20,7 @@ data class BookingWithDetails(val booking: Booking, val seat: Seat, val review: 
  * ([GET /bookings][com.dbook.presentation.booking.BookingController.list]).
  * Never returns another customer's bookings: always filtered by [customerId].
  */
+@Observed(name = "dbook.usecase")
 @Service
 class ListMyBookingsUseCase(
     private val bookingRepository: BookingRepository,

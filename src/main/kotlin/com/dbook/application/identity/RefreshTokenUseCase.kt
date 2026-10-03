@@ -4,10 +4,12 @@ import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.RefreshTokenRepository
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import java.time.Instant
 
 /** Exchanges a valid refresh token for a new access/refresh pair — single-use rotation, see [execute]. */
+@Observed(name = "dbook.usecase")
 @Service
 class RefreshTokenUseCase(
     private val refreshTokenRepository: RefreshTokenRepository,

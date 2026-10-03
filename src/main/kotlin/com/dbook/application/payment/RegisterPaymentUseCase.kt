@@ -6,6 +6,7 @@ import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.payment.IdempotencyKeyReusedException
 import com.dbook.domain.payment.Payment
 import com.dbook.domain.payment.PaymentRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -31,6 +32,7 @@ data class RegisterPaymentCommand(
  * Confirms every booking (see [com.dbook.domain.booking.Booking.confirm]) only after the
  * [Payment] itself is persisted, so a confirmed booking always points at a real payment.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class RegisterPaymentUseCase(
     private val bookingRepository: BookingRepository,

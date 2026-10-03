@@ -50,6 +50,10 @@ booking-expiration:
     # long polling: SQS holds the call up to this long waiting for a message
     wait-seconds: 20
 management:
+  observations:
+    annotations:
+      # makes @Observed work: each annotated use case gets a timer (and, later, a trace span)
+      enabled: true
   server:
     # Operational endpoints live on their own port, never on the public one: the ECS task
     # (see terraform/modules/ecs) and the Dockerfile only expose 8080, so Prometheus scrapes

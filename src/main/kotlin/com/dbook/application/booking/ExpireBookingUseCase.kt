@@ -3,6 +3,7 @@ package com.dbook.application.booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.identity.Role
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 /**
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
  * purpose: SQS delivers at least once, and the booking may have been paid (or cancelled) in
  * the meantime — in both cases there is nothing left to expire and this simply returns.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class ExpireBookingUseCase(
     private val bookingRepository: BookingRepository,

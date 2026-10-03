@@ -5,6 +5,7 @@ import com.dbook.domain.ai.AiSuggestionLogRepository
 import com.dbook.domain.ai.AiSuggestionResult
 import com.dbook.domain.ai.AiSuggestionService
 import com.dbook.domain.catalog.FlightRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 data class SuggestFlightsCommand(
@@ -16,6 +17,7 @@ data class SuggestFlightsCommand(
  * Suggests flights for a natural-language [SuggestFlightsCommand.query], grounded in
  * currently active flights. Never books or decides on its own — see [execute].
  */
+@Observed(name = "dbook.usecase")
 @Service
 class SuggestFlightsUseCase(
     private val flightRepository: FlightRepository,

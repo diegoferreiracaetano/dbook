@@ -5,6 +5,7 @@ import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserAlreadyExistsException
 import com.dbook.domain.identity.UserRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 data class RegisterUserCommand(
@@ -14,6 +15,7 @@ data class RegisterUserCommand(
 )
 
 /** Registers a new [User], always as [Role.CLIENT] — see the inline note on [execute] for why. */
+@Observed(name = "dbook.usecase")
 @Service
 class RegisterUserUseCase(
     private val userRepository: UserRepository,

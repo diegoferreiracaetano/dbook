@@ -30,6 +30,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("software.amazon.awssdk:bedrockruntime:2.28.29")
     implementation("software.amazon.awssdk:sqs:2.28.29")

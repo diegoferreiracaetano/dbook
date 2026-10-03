@@ -8,10 +8,12 @@ import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.identity.Role
 import com.dbook.domain.seating.SeatRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /** Cancels a PENDING [Booking] and releases its [com.dbook.domain.seating.Seat] back to AVAILABLE. */
+@Observed(name = "dbook.usecase")
 @Service
 class CancelBookingUseCase(
     private val bookingRepository: BookingRepository,

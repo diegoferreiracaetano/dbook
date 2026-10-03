@@ -3,6 +3,7 @@ package com.dbook.application.identity
 import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.UserRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 data class LoginCommand(
@@ -11,6 +12,7 @@ data class LoginCommand(
 )
 
 /** Authenticates by email/password and issues a fresh access/refresh token pair. */
+@Observed(name = "dbook.usecase")
 @Service
 class LoginUseCase(
     private val userRepository: UserRepository,

@@ -1,6 +1,7 @@
 package com.dbook.application.catalog
 
 import com.dbook.domain.catalog.FlightRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -12,6 +13,7 @@ private const val LOOKAHEAD_DAYS = 60L
  * authentication required. Backs the "from $X" price shown on destination cards, without the
  * mobile client guessing at nearby dates one `GET /flights/search` call at a time.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class GetLowestPriceForDestinationUseCase(
     private val flightRepository: FlightRepository,

@@ -12,6 +12,7 @@ import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.seatLayoutFor
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -38,6 +39,7 @@ private val ROW_LETTERS = ('A'..'Z').toList()
  * [RegisterFlightCommand.aircraftType], so different aircraft really do get different
  * layouts (2+2, 3+3, 3+4+3...). Requires ADMIN.
  */
+@Observed(name = "dbook.usecase")
 @Service
 class RegisterFlightUseCase(
     private val flightRepository: FlightRepository,

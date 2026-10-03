@@ -6,6 +6,7 @@ import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.review.Review
 import com.dbook.domain.review.ReviewRepository
+import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -22,6 +23,7 @@ data class CreateReviewCommand(
  * per booking.
  */
 
+@Observed(name = "dbook.usecase")
 @Service
 class CreateReviewUseCase(
     private val bookingRepository: BookingRepository,
