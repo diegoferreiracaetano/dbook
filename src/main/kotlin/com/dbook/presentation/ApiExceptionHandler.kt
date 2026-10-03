@@ -6,6 +6,7 @@ import com.dbook.domain.AirlineNotFoundException
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookingNotFoundException
+import com.dbook.domain.DuplicateIdempotencyKeyException
 import com.dbook.domain.IdempotencyKeyReusedException
 import com.dbook.domain.InvalidCredentialsException
 import com.dbook.domain.InvalidTokenException
@@ -62,6 +63,7 @@ class ApiExceptionHandler {
         mapOf("error" to (ex.message ?: "Idempotency-Key reused"))
 
     @ExceptionHandler(
+        DuplicateIdempotencyKeyException::class,
         OptimisticLockingFailureException::class,
         IllegalStateException::class,
         UserAlreadyExistsException::class,

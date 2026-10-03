@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.persistence
 
+import com.dbook.domain.DuplicateIdempotencyKeyException
 import com.dbook.domain.Payment
 import com.dbook.domain.PaymentRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -13,7 +14,7 @@ class PaymentRepositoryAdapter(
         try {
             paymentJpaRepository.save(payment.toJpaEntity()).toDomain()
         } catch (ex: DataIntegrityViolationException) {
-            throw IllegalStateException("A payment with this Idempotency-Key is already being processed", ex)
+            throw DuplicateIdempotencyKeyException(ex)
         }
 
     override fun findByCustomerIdAndIdempotencyKey(

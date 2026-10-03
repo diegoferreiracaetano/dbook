@@ -6,6 +6,7 @@ import com.dbook.application.RegisterBookingCommand
 import com.dbook.application.RegisterBookingUseCase
 import com.dbook.application.RegisterFlightCommand
 import com.dbook.application.RegisterFlightUseCase
+import com.dbook.application.RegisterPaymentCommand
 import com.dbook.application.RegisterPaymentUseCase
 import com.dbook.application.RegisterUserCommand
 import com.dbook.application.RegisterUserUseCase
@@ -14,6 +15,7 @@ import com.dbook.domain.SeatClass
 import com.dbook.domain.SeatRepository
 import com.dbook.domain.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.jdbc.core.JdbcTemplate
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
@@ -46,6 +48,9 @@ abstract class BookingConcurrencyFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var seatRepository: SeatRepository
+
+    @Autowired
+    lateinit var jdbcTemplate: JdbcTemplate
 
     /** @return the id of a freshly registered user. */
     protected fun registerUser(): Long {
@@ -87,6 +92,21 @@ abstract class BookingConcurrencyFixture : AbstractIntegrationTest() {
             registerBookingUseCase.execute(RegisterBookingCommand(bookableId, seatId, userId)).id,
         )
 
+    /** Pays [bookingId] as [userId]; repeating the same [idempotencyKey] is a retry of the same request. */
+    protected fun pay(
+        bookingId: Long,
+        userId: Long,
+        idempotencyKey: String = "key-1",
+    ) = registerPaymentUseCase.execute(
+        RegisterPaymentCommand(
+            listOf(bookingId),
+            cardLast4 = "4242",
+            cardholderName = "Race User",
+            requestingUserId = userId,
+            idempotencyKey = idempotencyKey,
+        ),
+    )
+
     /**
      * Releases every operation at the same instant, each on its own thread.
      *
@@ -94,20 +114,25 @@ abstract class BookingConcurrencyFixture : AbstractIntegrationTest() {
      * (an optimistic-lock failure, wrapped by Spring's proxy chain) isn't asserted on
      * purpose — the count already proves the concurrency-control property.
      */
-    protected fun race(vararg operations: () -> Unit): Int {
+    protected fun race(vararg operations: () -> Unit): Int = outcomesOf(operations).count { it == null }
+
+    /** Like [race], but returns what each operation threw (null when it succeeded), in order. */
+    protected fun raceOutcomes(vararg operations: () -> Unit): List<Throwable?> = outcomesOf(operations)
+
+    private fun outcomesOf(operations: Array<out () -> Unit>): List<Throwable?> {
         val start = CountDownLatch(1)
         val executor = Executors.newFixedThreadPool(operations.size)
         val results =
             operations.map { operation ->
-                executor.submit<Boolean> {
+                executor.submit<Throwable?> {
                     start.await()
-                    runCatching { operation() }.isSuccess
+                    runCatching { operation() }.exceptionOrNull()
                 }
             }
         start.countDown()
-        val successes = results.count { it.get(10, TimeUnit.SECONDS) }
+        val outcomes = results.map { it.get(10, TimeUnit.SECONDS) }
         executor.shutdown()
-        return successes
+        return outcomes
     }
 
     private companion object {

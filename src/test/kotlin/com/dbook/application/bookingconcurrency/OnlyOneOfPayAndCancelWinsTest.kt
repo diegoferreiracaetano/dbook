@@ -1,6 +1,5 @@
 package com.dbook.application.bookingconcurrency
 
-import com.dbook.application.RegisterPaymentCommand
 import com.dbook.domain.BookingStatus
 import com.dbook.domain.Role
 import com.dbook.domain.SeatStatus
@@ -31,19 +30,6 @@ class OnlyOneOfPayAndCancelWinsTest : BookingConcurrencyFixture() {
             assertSeatMatchesBooking(bookingId, seatId)
         }
     }
-
-    private fun pay(
-        bookingId: Long,
-        userId: Long,
-    ) = registerPaymentUseCase.execute(
-        RegisterPaymentCommand(
-            listOf(bookingId),
-            cardLast4 = "4242",
-            cardholderName = "Race User",
-            requestingUserId = userId,
-            idempotencyKey = "key-1",
-        ),
-    )
 
     private fun assertSeatMatchesBooking(
         bookingId: Long,
