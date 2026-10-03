@@ -18,6 +18,7 @@ Idioma: docs (`README.md`, `CHECKLIST.md`, este arquivo) e commits em **portugu�
 | Spring Boot | 3.3.4 (web, data-jpa, security, websocket, data-redis) |
 | Persistência | PostgreSQL 16 + Flyway (`src/main/resources/db/migration`, hoje V1–V24), `ddl-auto: validate`, `open-in-view: false` |
 | Tempo real | STOMP/WebSocket + Redis Pub/Sub (Redis 7) |
+| Observabilidade | Spring Boot Actuator + Micrometer (registro Prometheus). Endpoints em `/actuator/*` na **porta de gestão 8081** (nunca na 8080 pública): `health/liveness`, `health/readiness` (db + redis), `metrics`, `prometheus` |
 | Fila | AWS SQS via SDK direto (`sqs` 2.28.29, mesma versão do Bedrock; sem Spring Cloud AWS) — expiração de reservas `PENDING` (M20); LocalStack local |
 | Auth | JWT (jjwt 0.12.6) stateless, refresh token rotativo, BCrypt |
 | IA | AWS Bedrock (`bedrockruntime` 2.28.29) + rate limit com bucket4j 8.10.1 |

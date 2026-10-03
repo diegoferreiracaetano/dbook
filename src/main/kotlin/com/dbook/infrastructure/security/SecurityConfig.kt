@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.security
 
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -45,6 +46,10 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    // Actuator (health probes, Prometheus) is served on its own management port,
+                    // which is never exposed publicly. With a separate port this matcher only
+                    // matches there — on the public port the same paths stay authenticated.
+                    .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
                     .requestMatchers(
                         "/health",
                         "/auth/register",

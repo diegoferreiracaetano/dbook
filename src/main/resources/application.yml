@@ -49,3 +49,23 @@ booking-expiration:
     enabled: true
     # long polling: SQS holds the call up to this long waiting for a message
     wait-seconds: 20
+management:
+  server:
+    # Operational endpoints live on their own port, never on the public one: the ECS task
+    # (see terraform/modules/ecs) and the Dockerfile only expose 8080, so Prometheus scrapes
+    # and health probes reach 8081 from inside the network only.
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        # not ready to receive traffic when a dependency is down
+        readiness:
+          include: readinessState,db,redis
