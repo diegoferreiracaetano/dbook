@@ -37,3 +37,10 @@ ai:
     # (needs bedrock:ListFoundationModels, which this lab's IAM denies) or the Bedrock
     # console before relying on this in a real environment, and update this value.
     model-id: anthropic.claude-3-5-sonnet-20241022-v2:0
+aws:
+  sqs:
+    region: us-east-1
+    # LocalStack only. In AWS leave it empty (AWS_SQS_ENDPOINT=) so the SDK resolves the real endpoint.
+    endpoint: http://localhost:4566
+booking-expiration:
+  queue-url: http://localhost:4566/000000000000/dbook-booking-expiration
