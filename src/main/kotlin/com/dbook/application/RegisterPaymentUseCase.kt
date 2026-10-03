@@ -2,19 +2,28 @@ package com.dbook.application
 
 import com.dbook.domain.BookingNotFoundException
 import com.dbook.domain.BookingRepository
+import com.dbook.domain.IdempotencyKeyReusedException
 import com.dbook.domain.NotBookingOwnerException
 import com.dbook.domain.Payment
 import com.dbook.domain.PaymentRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.security.MessageDigest
+import java.util.HexFormat
 
 data class RegisterPaymentCommand(
     val bookingIds: List<Long>,
     val cardLast4: String,
     val cardholderName: String,
     val requestingUserId: Long,
-)
+    val idempotencyKey: String,
+) {
+    fun fingerprint(): String {
+        val canonical = "${bookingIds.sorted().joinToString(",")}|$cardLast4|$cardholderName"
+        return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.toByteArray()))
+    }
+}
 
 /**
  * Pays for one or more PENDING [com.dbook.domain.Booking]s in a single transaction —
@@ -29,6 +38,26 @@ class RegisterPaymentUseCase(
 ) {
     @Transactional
     fun execute(command: RegisterPaymentCommand): Payment {
+        val fingerprint = command.fingerprint()
+        val previous =
+            paymentRepository.findByCustomerIdAndIdempotencyKey(command.requestingUserId, command.idempotencyKey)
+        return if (previous == null) pay(command, fingerprint) else replay(previous, fingerprint)
+    }
+
+    private fun replay(
+        previous: Payment,
+        fingerprint: String,
+    ): Payment {
+        if (previous.requestFingerprint != fingerprint) {
+            throw IdempotencyKeyReusedException()
+        }
+        return previous
+    }
+
+    private fun pay(
+        command: RegisterPaymentCommand,
+        fingerprint: String,
+    ): Payment {
         val bookings =
             command.bookingIds.map { bookingId ->
                 val booking =
@@ -48,6 +77,8 @@ class RegisterPaymentUseCase(
                     amount = amount,
                     cardLast4 = command.cardLast4,
                     cardholderName = command.cardholderName,
+                    idempotencyKey = command.idempotencyKey,
+                    requestFingerprint = fingerprint,
                 ),
             )
 

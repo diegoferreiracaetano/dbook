@@ -6,6 +6,7 @@ import com.dbook.domain.AirlineNotFoundException
 import com.dbook.domain.AirportNotFoundException
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookingNotFoundException
+import com.dbook.domain.IdempotencyKeyReusedException
 import com.dbook.domain.InvalidCredentialsException
 import com.dbook.domain.InvalidTokenException
 import com.dbook.domain.NotBookingOwnerException
@@ -15,6 +16,7 @@ import com.dbook.domain.UserNotFoundException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -44,6 +46,20 @@ class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleMalformedRequest(): Map<String, String> = mapOf("error" to "Malformed request body")
+
+    // Same trap as the malformed body above: left alone, Spring answers with sendError(400),
+    // which forwards to /error and gets rejected as 401 before reaching the client.
+    @ExceptionHandler(MissingRequestHeaderException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleMissingHeader(ex: MissingRequestHeaderException): Map<String, String> =
+        mapOf("error" to "Missing request header: ${ex.headerName}")
+
+    // 422, not 409: the request itself is wrong (a key can only ever mean one request), as
+    // opposed to a conflict with the current state of a resource.
+    @ExceptionHandler(IdempotencyKeyReusedException::class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    fun handleIdempotencyKeyReused(ex: IdempotencyKeyReusedException): Map<String, String> =
+        mapOf("error" to (ex.message ?: "Idempotency-Key reused"))
 
     @ExceptionHandler(
         OptimisticLockingFailureException::class,

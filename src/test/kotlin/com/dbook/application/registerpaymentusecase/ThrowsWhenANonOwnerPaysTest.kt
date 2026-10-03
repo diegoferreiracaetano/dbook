@@ -15,6 +15,7 @@ class ThrowsWhenANonOwnerPaysTest : RegisterPaymentUseCaseFixture() {
                     cardLast4 = "4242",
                     cardholderName = "Jane Doe",
                     requestingUserId = 999,
+                    idempotencyKey = "key-1",
                 ),
             )
         }

@@ -41,6 +41,7 @@ class OnlyOneOfPayAndCancelWinsTest : BookingConcurrencyFixture() {
             cardLast4 = "4242",
             cardholderName = "Race User",
             requestingUserId = userId,
+            idempotencyKey = "key-1",
         ),
     )
 

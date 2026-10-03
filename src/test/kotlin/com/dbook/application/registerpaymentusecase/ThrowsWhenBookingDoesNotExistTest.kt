@@ -15,6 +15,7 @@ class ThrowsWhenBookingDoesNotExistTest : RegisterPaymentUseCaseFixture() {
                     cardLast4 = "4242",
                     cardholderName = "Jane Doe",
                     requestingUserId = ownerId,
+                    idempotencyKey = "key-1",
                 ),
             )
         }

@@ -1,5 +1,6 @@
 package com.dbook.application.registerpaymentusecase
 
+import com.dbook.application.RegisterPaymentCommand
 import com.dbook.application.RegisterPaymentUseCase
 import com.dbook.domain.Airline
 import com.dbook.domain.Airport
@@ -112,4 +113,10 @@ abstract class RegisterPaymentUseCaseFixture {
         )
     protected val paymentRepository = FakePaymentRepository()
     protected val useCase = RegisterPaymentUseCase(bookingRepository, paymentRepository)
+
+    protected fun command(
+        bookingIds: List<Long> = listOf(outboundBookingId),
+        requestingUserId: Long = ownerId,
+        idempotencyKey: String = "key-1",
+    ) = RegisterPaymentCommand(bookingIds, "4242", "Jane Doe", requestingUserId, idempotencyKey)
 }
