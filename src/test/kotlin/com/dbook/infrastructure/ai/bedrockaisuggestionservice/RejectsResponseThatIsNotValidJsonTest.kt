@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.ai.bedrockaisuggestionservice
 
-import com.dbook.domain.AiResponseParsingException
+import com.dbook.domain.ai.AiResponseParsingException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

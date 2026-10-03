@@ -1,0 +1,8 @@
+package com.dbook.domain.catalog
+
+/** Persistence port for [Airport], a reference/lookup table seeded via Flyway migrations. */
+interface AirportRepository {
+    fun findByIataCode(iataCode: String): Airport?
+
+    fun findAll(): List<Airport>
+}

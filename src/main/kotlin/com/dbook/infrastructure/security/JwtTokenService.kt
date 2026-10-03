@@ -1,8 +1,8 @@
 package com.dbook.infrastructure.security
 
-import com.dbook.domain.Role
-import com.dbook.domain.TokenService
-import com.dbook.domain.User
+import com.dbook.domain.identity.Role
+import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.User
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts

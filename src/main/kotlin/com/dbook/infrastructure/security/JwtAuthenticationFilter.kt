@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.security
 
-import com.dbook.domain.TokenService
+import com.dbook.domain.identity.TokenService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

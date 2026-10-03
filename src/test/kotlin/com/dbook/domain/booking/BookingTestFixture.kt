@@ -1,9 +1,9 @@
 package com.dbook.domain.booking
 
-import com.dbook.domain.Airline
-import com.dbook.domain.Airport
-import com.dbook.domain.Flight
-import com.dbook.domain.SeatClass
+import com.dbook.domain.catalog.Airline
+import com.dbook.domain.catalog.Airport
+import com.dbook.domain.catalog.Flight
+import com.dbook.domain.catalog.SeatClass
 import java.math.BigDecimal
 import java.time.LocalDateTime
 

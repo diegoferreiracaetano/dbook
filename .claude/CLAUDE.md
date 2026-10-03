@@ -1,6 +1,6 @@
 # DBook (backend)
 
-API de reservas em Kotlin + Spring Boot. Hoje só voos (`Flight`), mas o domínio foi modelado pra receber hotéis: tudo que é reservável estende `Bookable` (`domain/Bookable.kt`) e uma reserva (`Booking`) aponta pra um `Bookable` + um `Seat`. O cliente é o app Flutter em `../dbook-mobile`.
+API de reservas em Kotlin + Spring Boot. Hoje só voos (`Flight`), mas o domínio foi modelado pra receber hotéis: tudo que é reservável estende `Bookable` (`domain/catalog/Bookable.kt`) e uma reserva (`Booking`) aponta pra um `Bookable` + um `Seat`. O cliente é o app Flutter em `../dbook-mobile`.
 
 Contexto do dono: especialista em Android/KMP que está aprendendo Kotlin + Spring **fazendo**. Ao introduzir um conceito de Spring/JPA novo, explique em uma ou duas frases por que ele existe (analogia com Android/KMP quando ajudar) e siga o ritmo do `CHECKLIST.md`: um item por vez, explicar antes, confirmar depois de testar.
 
@@ -27,7 +27,7 @@ Idioma: docs (`README.md`, `CHECKLIST.md`, este arquivo) e commits em **portugu�
 | Testes | JUnit 5 + `kotlin-test-junit5`, Spring Boot Test (MockMvc, Mockito via `@MockBean`), Testcontainers 1.20.4 (fixado de propósito) |
 | Corrotinas | **não usadas** — MVC bloqueante. Não adicione `kotlinx-coroutines` |
 
-## Arquitetura (camadas planas em `com.dbook`)
+## Arquitetura (camadas em `com.dbook`, com subpacotes por conceito)
 
 ```
 presentation  → application → domain ← infrastructure
@@ -38,17 +38,18 @@ Regras de dependência, **verificadas no código** (0 violações hoje — mante
 - `domain/` não importa Spring nem JPA. Contém entidades/invariantes, **portas** (`interface XxxRepository`, `PasswordHasher`, `TokenService`, `AvailabilityBroadcaster`, `AiSuggestionService`) e exceções de domínio.
 - `application/` = um `@Service` por caso de uso (`XxxUseCase.execute(...)`), com o `XxxCommand` (data class) no mesmo arquivo. Só conhece `domain` (e Spring p/ `@Service`/`@Transactional`).
 - `presentation/` = `@RestController`s + DTOs `XxxRequest`/`XxxResponse` (`companion fun from(...)`) + `ApiExceptionHandler`. Não importa `infrastructure`.
-- `infrastructure/` = adapters das portas: `persistence` (`XxxRepositoryAdapter` + `XxxJpaEntity` + `XxxJpaRepository` + `Mappers.kt`), `security` (JWT), `messaging` (Redis/STOMP), `ai` (Bedrock), `web` (interceptor de rate limit). Não importa `application`.
+- `infrastructure/` = adapters das portas: `persistence` (`XxxRepositoryAdapter` + `XxxJpaEntity` + `XxxJpaRepository` + `XxxMappers.kt`, por conceito), `security` (JWT), `messaging` (Redis/STOMP), `ai` (Bedrock), `web` (interceptor de rate limit). Não importa `application`.
 - Consumidor de fila (`BookingExpirationConsumer`) é adapter de **entrada**, como um controller: mora em `presentation/` e chama use case; `infrastructure/` só tem o lado que *publica* (`SqsBookingExpirationScheduler`).
 - `config/` = configuração transversal (hoje só `OpenApiConfig`).
-- Pacotes são **planos por camada** (sem subpacote por feature). Não crie `feature/x/...`.
+- **Cada camada se divide em subpacotes por conceito** (decisão de 2026-10-03, quando `domain/` chegou a 47 arquivos soltos): `domain/<conceito>/`, `application/<conceito>/`, `presentation/<conceito>/`, `infrastructure/persistence/<conceito>/`. Os 7 conceitos: `catalog` (Flight, Airport, Airline, Bookable — onde entraria Hotel), `seating` (Seat, SeatLayout), `booking` (Booking, expiração, disponibilidade em tempo real), `payment`, `review`, `identity` (User, token, refresh, hash de senha) e `ai`. O que atravessa conceitos (`ApiExceptionHandler`, `HealthController`, `SecurityExtensions`, `TransactionSupport`) vai em `common/`. A camada continua sendo o 1º nível — **não** crie `<conceito>/domain`, `<conceito>/application`... (opção avaliada e descartada: os conceitos compartilham o mesmo banco e têm relações JPA entre si, então módulos completos ainda não se pagam; se um dia um conceito for extraído, esta divisão já o deixa separado). Conceito novo = pasta nova nas camadas em que ele tiver arquivos; arquivo novo vai na pasta do conceito dono.
+- Dependências entre conceitos (hoje, no `domain/`): só `booking → catalog` e `ai → catalog`; `seating`, `payment`, `review`, `identity` e `catalog` não dependem de nenhum outro e se referenciam por id (`bookableId`, `bookingId`). Mantenha **sem ciclos**.
 
 ## Convenções de nome
 
 - `XxxUseCase` / `XxxCommand` · porta `XxxRepository` (domain) → `XxxRepositoryAdapter` (infra) · `XxxJpaEntity` · `XxxJpaRepository` · `XxxController` · `XxxRequest` / `XxxResponse` · `XxxNotFoundException` (domain).
 - Migration: `V<N>__snake_case.sql` (próxima livre: V25). PK `BIGSERIAL`. Nunca edite migration já aplicada — crie a próxima.
 - Entidades JPA **não** são `data class` (equals/hashCode em associações lazy é armadilha) — por isso `LongParameterList.constructorThreshold` é 15 no detekt.
-- Mappers domínio↔JPA ficam em `Mappers.kt`; agregado novo com mappers próprios vai pra arquivo próprio (precedente: `PaymentMappers.kt`, criado porque `Mappers.kt` estourou `TooManyFunctions` — extraiu em vez de subir o threshold).
+- Mappers domínio↔JPA ficam em `XxxMappers.kt` na pasta do conceito (`persistence/booking/BookingMappers.kt`, ...), um arquivo por conceito — o `Mappers.kt` único estourou `TooManyFunctions` e foi dividido em vez de subir o threshold. Um mapper que precisa converter entidade de outro conceito importa a função dele (ex.: `BookingMappers` importa `catalog.toDomain`).
 
 ## Regras para criar/alterar uma feature
 
@@ -94,7 +95,7 @@ docker compose up -d                 # Postgres + Redis (+ LocalStack) p/ rodar 
 ./gradlew ktlintCheck detekt         # estilo + análise estática (rápido, rode sempre)
 ./gradlew ktlintFormat               # corrige formatação
 ./gradlew test                       # todos os testes
-./gradlew test --tests 'com.dbook.application.cancelbookingusecase.*'   # um pacote
+./gradlew test --tests 'com.dbook.application.booking.cancelbookingusecase.*'   # um pacote
 ./gradlew check                      # o que o CI roda: test + ktlint + detekt(Main/Test) + JaCoCo ≥ 75%
 ./gradlew jacocoTestReport           # build/reports/jacoco/test/html/index.html
 ```

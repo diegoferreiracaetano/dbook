@@ -1,6 +1,5 @@
 package com.dbook.domain.booking
 
-import com.dbook.domain.Booking
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

@@ -1,7 +1,5 @@
 package com.dbook.domain.booking
 
-import com.dbook.domain.Booking
-import com.dbook.domain.BookingStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

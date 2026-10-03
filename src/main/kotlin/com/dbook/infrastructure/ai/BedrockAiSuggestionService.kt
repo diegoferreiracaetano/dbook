@@ -1,11 +1,11 @@
 package com.dbook.infrastructure.ai
 
-import com.dbook.domain.AiResponseParsingException
-import com.dbook.domain.AiServiceUnavailableException
-import com.dbook.domain.AiSuggestion
-import com.dbook.domain.AiSuggestionResult
-import com.dbook.domain.AiSuggestionService
-import com.dbook.domain.Flight
+import com.dbook.domain.ai.AiResponseParsingException
+import com.dbook.domain.ai.AiServiceUnavailableException
+import com.dbook.domain.ai.AiSuggestion
+import com.dbook.domain.ai.AiSuggestionResult
+import com.dbook.domain.ai.AiSuggestionService
+import com.dbook.domain.catalog.Flight
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper

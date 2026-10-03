@@ -1,6 +1,5 @@
 package com.dbook.domain.review
 
-import com.dbook.domain.Review
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

@@ -39,7 +39,7 @@ Objetivo: qualquer mudança nova parecer escrita pela mesma pessoa que escreveu 
    }
    ```
    Injeção **por construtor** com portas do `domain`. Nada de `@Autowired` em código de produção.
-3. **Infrastructure** — `XxxJpaEntity` (classe comum, `var`, defaults; PK `IDENTITY`), `XxxJpaRepository : JpaRepository`, `XxxRepositoryAdapter : XxxRepository` (`@Repository`), mappers `toDomain()`/`toJpaEntity()` em `Mappers.kt` (ou arquivo próprio se estourar 16 funções). Relacionamento por referência: `bookableJpaRepository.getReferenceById(id)` no `save` (ver `BookingRepositoryAdapter`).
+3. **Infrastructure** — `XxxJpaEntity` (classe comum, `var`, defaults; PK `IDENTITY`), `XxxJpaRepository : JpaRepository`, `XxxRepositoryAdapter : XxxRepository` (`@Repository`), mappers `toDomain()`/`toJpaEntity()` em `XxxMappers.kt` na pasta do conceito (`persistence/<conceito>/`). Relacionamento por referência: `bookableJpaRepository.getReferenceById(id)` no `save` (ver `BookingRepositoryAdapter`).
 4. **Migration** — `src/main/resources/db/migration/V<N>__snake_case.sql`, `BIGSERIAL PRIMARY KEY`. Coluna nova `NOT NULL` em tabela com dados: adicione nullable → `UPDATE` (backfill) → `SET NOT NULL` (ver `V19__add_aircraft_type_to_flight.sql`).
 5. **Presentation** — controller fino + DTOs:
    ```kotlin

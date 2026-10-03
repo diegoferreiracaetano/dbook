@@ -23,7 +23,7 @@ Regra prática: **suba o menor contexto que prova a regra.** Regra de negócio n
 
 - **Um `@Test` por classe.** Classe descreve o cenário: `ThrowsWhenANonOwnerCancelsTest`, `PaysBothLegsOfARoundTripTogetherTest`, `RejectsABlankEmailTest`.
 - Método em backticks: `` `given <contexto> when <ação> then <resultado>` ``. O nome **é** a documentação — sem comentário no corpo explicando o óbvio.
-- Pacote de teste = pacote do sujeito em minúsculas: `com.dbook.application.cancelbookingusecase`, `com.dbook.presentation.flightadmincontroller`, `com.dbook.domain.payment`.
+- Pacote de teste = pacote do sujeito em minúsculas: `com.dbook.application.booking.cancelbookingusecase`, `com.dbook.presentation.catalog.flightadmincontroller`, `com.dbook.domain.payment` — o teste fica na pasta do **conceito** do sujeito, igual à produção.
 - Setup compartilhado → `abstract class XxxFixture` no mesmo pacote (o detekt exclui `UnnecessaryAbstractClass` em teste, de propósito).
 
 ## Exemplos reais
@@ -116,7 +116,7 @@ ktlint + detekt rodam em `src/test` também. Imports: lexicográficos com `java`
 
 ```bash
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
-./gradlew test --tests 'com.dbook.application.cancelbookingusecase.*'   # estreito primeiro
+./gradlew test --tests 'com.dbook.application.booking.cancelbookingusecase.*'   # estreito primeiro
 ./gradlew test                                                          # tudo
 ./gradlew ktlintCheck detekt
 ./gradlew jacocoTestReport                       # build/reports/jacoco/test/html/index.html

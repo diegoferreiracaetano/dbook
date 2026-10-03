@@ -1,0 +1,31 @@
+package com.dbook.application.identity
+
+import com.dbook.domain.identity.InvalidTokenException
+import com.dbook.domain.identity.RefreshTokenRepository
+import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.UserRepository
+import org.springframework.stereotype.Service
+import java.time.Instant
+
+/** Exchanges a valid refresh token for a new access/refresh pair — single-use rotation, see [execute]. */
+@Service
+class RefreshTokenUseCase(
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val userRepository: UserRepository,
+    private val tokenService: TokenService,
+    private val issueTokenPairService: IssueTokenPairService,
+) {
+    // Rotation: a valid refresh token is revoked the moment it's exchanged — it's
+    // single-use. An already invalid one (unknown, expired or already revoked) is just
+    // rejected, with no extra write.
+    fun execute(refreshToken: String): TokenPair {
+        val stored = refreshTokenRepository.findByTokenHash(tokenService.hashToken(refreshToken))
+        if (stored == null || !stored.isValid(Instant.now())) {
+            throw InvalidTokenException()
+        }
+        refreshTokenRepository.revoke(requireNotNull(stored.id) { "A found refresh token must be persisted" })
+
+        val user = userRepository.findById(stored.userId) ?: throw InvalidTokenException()
+        return issueTokenPairService.issueFor(user)
+    }
+}

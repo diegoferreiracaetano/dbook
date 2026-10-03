@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.security
 
-import com.dbook.domain.PasswordHasher
+import com.dbook.domain.identity.PasswordHasher
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Component
 

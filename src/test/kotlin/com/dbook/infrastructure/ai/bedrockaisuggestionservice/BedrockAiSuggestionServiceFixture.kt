@@ -1,9 +1,9 @@
 package com.dbook.infrastructure.ai.bedrockaisuggestionservice
 
-import com.dbook.domain.Airline
-import com.dbook.domain.Airport
-import com.dbook.domain.Flight
-import com.dbook.domain.SeatClass
+import com.dbook.domain.catalog.Airline
+import com.dbook.domain.catalog.Airport
+import com.dbook.domain.catalog.Flight
+import com.dbook.domain.catalog.SeatClass
 import com.dbook.infrastructure.ai.BedrockAiSuggestionService
 import com.fasterxml.jackson.databind.ObjectMapper
 import software.amazon.awssdk.regions.Region

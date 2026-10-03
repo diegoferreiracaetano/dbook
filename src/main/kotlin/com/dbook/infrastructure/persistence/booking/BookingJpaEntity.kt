@@ -1,0 +1,38 @@
+package com.dbook.infrastructure.persistence.booking
+
+import com.dbook.domain.booking.BookingStatus
+import com.dbook.infrastructure.persistence.catalog.BookableJpaEntity
+import com.dbook.infrastructure.persistence.payment.PaymentJpaEntity
+import com.dbook.infrastructure.persistence.seating.SeatJpaEntity
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
+import jakarta.persistence.Version
+
+@Entity
+@Table(name = "booking")
+class BookingJpaEntity(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    @ManyToOne
+    @JoinColumn(name = "bookable_id")
+    var bookable: BookableJpaEntity,
+    @ManyToOne
+    @JoinColumn(name = "seat_id")
+    var seat: SeatJpaEntity,
+    var customerId: Long = 0,
+    @Enumerated(EnumType.STRING)
+    var status: BookingStatus = BookingStatus.PENDING,
+    @ManyToOne
+    @JoinColumn(name = "payment_id")
+    var payment: PaymentJpaEntity? = null,
+    @Version
+    var version: Long = 0,
+)

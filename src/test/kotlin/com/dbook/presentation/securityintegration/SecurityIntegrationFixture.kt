@@ -1,13 +1,13 @@
 package com.dbook.presentation.securityintegration
 
 import com.dbook.AbstractIntegrationTest
-import com.dbook.application.RegisterFlightCommand
-import com.dbook.application.RegisterFlightUseCase
-import com.dbook.domain.Role
-import com.dbook.domain.SeatClass
-import com.dbook.domain.SeatRepository
-import com.dbook.domain.User
-import com.dbook.domain.UserRepository
+import com.dbook.application.catalog.RegisterFlightCommand
+import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.identity.Role
+import com.dbook.domain.identity.User
+import com.dbook.domain.identity.UserRepository
+import com.dbook.domain.seating.SeatRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc

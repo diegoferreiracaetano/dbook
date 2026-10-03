@@ -22,18 +22,30 @@ M1-M8 e M10 completos. Ideias registradas pra depois: script de seed de dados, i
 
 ## Arquitetura
 
-Clean Architecture, em camadas por pacote:
+Clean Architecture, em camadas por pacote, cada camada dividida em **subpacotes por conceito**:
 
 ```
 com.dbook
 ├── domain            # Entidades e regras de negócio puras. Zero dependência de Spring/JPA.
-│                      # Define as "portas" (interfaces) que a infraestrutura implementa.
-├── application       # Casos de uso — orquestram domínio + portas.
+│   ├── catalog/      #   Flight, Airport, Airline, Bookable  (onde entraria Hotel)
+│   ├── seating/      #   Seat, SeatLayout
+│   ├── booking/      #   Booking, expiração, disponibilidade em tempo real
+│   ├── payment/      #   Payment, idempotência
+│   ├── review/       #   Review
+│   ├── identity/     #   User, token, refresh, hash de senha
+│   └── ai/           #   sugestões de voo
+├── application       # Casos de uso — orquestram domínio + portas. Mesmos conceitos
+│                      # (+ common/ com o helper de afterCommit).
 ├── infrastructure
-│   └── persistence   # Entidades JPA, repositórios Spring Data, adapters e mappers
-│                      # domínio <-> JPA.
-└── presentation      # Controllers REST, DTOs de request/response, exception handler.
+│   ├── persistence/  # Entidades JPA, repositórios Spring Data, adapters e mappers
+│   │                  # domínio <-> JPA — por conceito.
+│   ├── messaging/    # availability/ (Redis + STOMP) e expiration/ (SQS)
+│   └── security/ ai/ web/
+└── presentation      # Controllers REST, DTOs de request/response — por conceito
+                       # (+ common/ com o exception handler).
 ```
+
+A camada continua sendo o primeiro nível (a regra de dependência é por camada); o conceito é o segundo. Dentro do `domain/` só existem duas dependências entre conceitos (`booking → catalog` e `ai → catalog`), sem ciclos.
 
 `Bookable` é a abstração central do domínio: `Flight` (e futuramente `Accommodation`, para hotéis) especializa `Bookable`. A persistência usa herança JPA `JOINED` (tabela própria por especialização) para evitar colunas nulas quando o segundo tipo reservável for adicionado.
 

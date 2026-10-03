@@ -467,6 +467,20 @@ Problema real: se a resposta de um pagamento se perde (timeout, rede móvel ruim
 - [x] 21.5 README: `POST /payments` documenta o header obrigatório, os códigos `400/409/422` e a seção de idempotência; M21 no roadmap
 - [x] 21.6 **App mobile** (repositório `dbook_mobile`, M22 de lá): gera um UUID por tentativa de pagamento e o reaproveita nas retentativas com os mesmos dados. Validado com o `PaymentRepositoryImpl` real do app contra este backend: o retry com a mesma chave devolveu o mesmo `id`, e a chave reutilizada com outro cartão voltou 422
 
+## M22 — Pacotes por conceito (reorganização, sem mudança de comportamento) ✅
+
+Problema: com 156 arquivos de produção, as camadas planas deixaram `domain/` com 47 arquivos soltos (`persistence/` 36, `presentation/` 34), enquanto os testes já estavam organizados por assunto. Decisão do dono (2026-10-03), entre duas opções avaliadas: **A** — subpacotes por conceito dentro de cada camada (escolhida) — e **B** — um módulo por conceito com as camadas dentro (descartada: os conceitos compartilham o banco e têm relações JPA entre si, então o ganho de modularidade ainda não existe; vale reavaliar se um conceito for extraído, ex. hotéis).
+
+Medição que decidiu o desenho: o domínio se divide em 7 conceitos (`catalog`, `seating`, `booking`, `payment`, `review`, `identity`, `ai`) com **só 2 dependências entre eles** (`booking → catalog`, `ai → catalog`; o resto se liga por id) e sem ciclos.
+
+- [x] 22.1 Produção: `domain/`, `application/`, `presentation/`, `infrastructure/persistence/<conceito>/` e `infrastructure/messaging/{availability,expiration}/`; o que atravessa conceitos (`ApiExceptionHandler`, `HealthController`, `SecurityExtensions`, `TransactionSupport`) em `common/`. `Mappers.kt` (que misturava 5 conceitos) dividido em `CatalogMappers`, `BookingMappers`, `SeatMappers`, `IdentityMappers`, `AiSuggestionLogMappers`. `security/`, `ai/` e `web/` ficaram como estavam (já pequenos e coesos)
+- [x] 22.2 Testes acompanham a produção: a pasta do teste fica no conceito do sujeito (`application/booking/cancelbookingusecase`, `presentation/catalog/flightadmincontroller`, ...); `presentation/securityintegration` (atravessa todos os endpoints) ficou onde estava
+- [x] 22.3 Feito por script (movimentação com `git mv`, reescrita de `package`/`import` e imports que eram implícitos por estarem no mesmo pacote) — 266 arquivos movidos, 262 reconhecidos como renomeação pelo Git, histórico preservado. Nenhuma linha de lógica mudou
+- [x] 22.4 Revisão do resultado, não só "compilou": cada adapter/mapper importava `toDomain`/`toJpaEntity` de todos os 7 conceitos (ruído de 6 a 12 imports por arquivo); removidos os estrangeiros e o compilador exigiu **um** (`BookingMappers` → `catalog.toDomain`). Um KDoc ficou 8 caracteres maior com o pacote novo e estourou o detekt: quebrado em duas linhas
+- [x] `./gradlew check` verde: **145 testes, 0 falhas, 0 puladas**, ktlint, detekt e JaCoCo ≥ 75% — os mesmos testes de antes
+- [x] `CLAUDE.md`, skills e README atualizados (a regra "pacotes planos por camada" foi trocada)
+- [ ] Teste de arquitetura automático (ArchUnit): as regras de camadas e a ausência de ciclos entre conceitos hoje são "verificadas no código" só à mão — proposto como item separado
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

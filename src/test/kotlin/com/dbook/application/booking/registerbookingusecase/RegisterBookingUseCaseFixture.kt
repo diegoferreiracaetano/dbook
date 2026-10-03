@@ -1,0 +1,183 @@
+package com.dbook.application.booking.registerbookingusecase
+
+import com.dbook.application.booking.RegisterBookingCommand
+import com.dbook.application.booking.RegisterBookingUseCase
+import com.dbook.domain.booking.AvailabilityBroadcaster
+import com.dbook.domain.booking.Booking
+import com.dbook.domain.booking.BookingExpirationScheduler
+import com.dbook.domain.booking.BookingRepository
+import com.dbook.domain.catalog.Airline
+import com.dbook.domain.catalog.Airport
+import com.dbook.domain.catalog.Bookable
+import com.dbook.domain.catalog.BookableRepository
+import com.dbook.domain.catalog.Flight
+import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.seating.Seat
+import com.dbook.domain.seating.SeatNotFoundException
+import com.dbook.domain.seating.SeatRepository
+import com.dbook.domain.seating.SeatStatus
+import org.springframework.transaction.support.TransactionSynchronizationManager
+import java.math.BigDecimal
+import java.time.Duration
+import java.time.LocalDateTime
+
+class FakeBookableRepository(private val bookables: List<Bookable>) : BookableRepository {
+    override fun findById(id: Long): Bookable? = bookables.find { it.id == id }
+}
+
+class FakeSeatRepository(seats: List<Seat>) : SeatRepository {
+    val store = seats.associateBy { requireNotNull(it.id) }.toMutableMap()
+
+    override fun findById(id: Long): Seat? = store[id]
+
+    override fun findByBookableId(bookableId: Long): List<Seat> = store.values.filter { it.bookableId == bookableId }
+
+    override fun countAvailable(bookableId: Long): Int =
+        store.values.count { it.bookableId == bookableId && it.status == SeatStatus.AVAILABLE }
+
+    override fun saveAll(seats: List<Seat>): List<Seat> {
+        seats.forEach { store[requireNotNull(it.id)] = it }
+        return seats
+    }
+
+    override fun reserve(seatId: Long): Seat {
+        val seat = store[seatId] ?: throw SeatNotFoundException(seatId)
+        check(seat.status == SeatStatus.AVAILABLE) { "Seat is not available: $seatId" }
+        val reserved = Seat(seat.id, seat.bookableId, seat.label, SeatStatus.RESERVED)
+        store[seatId] = reserved
+        return reserved
+    }
+
+    override fun release(seatId: Long): Seat {
+        val seat = store[seatId] ?: throw SeatNotFoundException(seatId)
+        val released = Seat(seat.id, seat.bookableId, seat.label, SeatStatus.AVAILABLE)
+        store[seatId] = released
+        return released
+    }
+}
+
+class FakeBookingRepository : BookingRepository {
+    val saved = mutableListOf<Booking>()
+
+    override fun findById(id: Long): Booking? = saved.find { it.id == id }
+
+    override fun findByCustomerId(customerId: Long): List<Booking> = saved.filter { it.customerId == customerId }
+
+    override fun save(booking: Booking): Booking {
+        val withId =
+            if (booking.id == null) {
+                Booking(saved.size + 1L, booking.bookable, booking.seatId, booking.customerId, booking.status)
+            } else {
+                booking
+            }
+        saved.removeAll { it.id == withId.id }
+        saved += withId
+        return withId
+    }
+}
+
+class RecordingBookingExpirationScheduler : BookingExpirationScheduler {
+    val scheduled = mutableListOf<Pair<Long, Duration>>()
+
+    override fun scheduleExpiration(
+        bookingId: Long,
+        after: Duration,
+    ) {
+        scheduled += bookingId to after
+    }
+}
+
+class RecordingAvailabilityBroadcaster : AvailabilityBroadcaster {
+    var lastBookableId: Long? = null
+    var lastAvailableCapacity: Int? = null
+
+    override fun broadcast(
+        bookableId: Long,
+        availableCapacity: Int,
+    ) {
+        lastBookableId = bookableId
+        lastAvailableCapacity = availableCapacity
+    }
+}
+
+// Shared "given": one Flight (bookableId) with one AVAILABLE seat (seatId), plus a seat
+// belonging to a different bookable (otherBookableSeatId) for the mismatch scenario.
+abstract class RegisterBookingUseCaseFixture {
+    protected val bookableId = 1L
+    protected val seatId = 10L
+    protected val otherBookableSeatId = 20L
+
+    private val airline = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
+    private val origin =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
+        )
+    private val destination =
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
+        )
+    private val flight =
+        Flight(
+            id = bookableId,
+            title = "GRU-GIG",
+            price = BigDecimal("500.00"),
+            totalCapacity = 1,
+            availableCapacity = 1,
+            flightNumber = "DB1234",
+            airline = airline,
+            origin = origin,
+            destination = destination,
+            departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
+            arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
+            seatClass = SeatClass.ECONOMY,
+            aircraftType = "Airbus A320",
+        )
+
+    protected val bookableRepository = FakeBookableRepository(listOf(flight))
+    protected val seatRepository =
+        FakeSeatRepository(
+            listOf(Seat(seatId, bookableId, "1A"), Seat(otherBookableSeatId, bookableId = 2L, label = "1A")),
+        )
+    protected val bookingRepository = FakeBookingRepository()
+    protected val availabilityBroadcaster = RecordingAvailabilityBroadcaster()
+    protected val bookingExpirationScheduler = RecordingBookingExpirationScheduler()
+
+    protected val useCase =
+        RegisterBookingUseCase(
+            bookableRepository,
+            seatRepository,
+            bookingRepository,
+            availabilityBroadcaster,
+            bookingExpirationScheduler,
+        )
+
+    protected fun command(
+        bookableIdOverride: Long = bookableId,
+        seatIdOverride: Long = seatId,
+    ) = RegisterBookingCommand(bookableId = bookableIdOverride, seatId = seatIdOverride, customerId = 1L)
+
+    // execute() calls afterCommit(), which needs an active transaction synchronization even
+    // outside a real Spring transaction — this fakes just enough of it for a unit test.
+    protected fun withTransactionSynchronization(block: () -> Unit) {
+        TransactionSynchronizationManager.initSynchronization()
+        try {
+            block()
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization()
+        }
+    }
+}

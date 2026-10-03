@@ -1,0 +1,47 @@
+package com.dbook.presentation.catalog
+
+import com.dbook.application.catalog.RegisterFlightCommand
+import com.dbook.application.catalog.RegisterFlightUseCase
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+/** `POST /admin/flights` — ADMIN only. */
+@RestController
+@RequestMapping("/admin/flights")
+@Tag(name = "Flights (admin)", description = "Flight registration")
+@SecurityRequirement(name = "bearerAuth")
+class FlightAdminController(
+    private val registerFlightUseCase: RegisterFlightUseCase,
+) {
+    @Operation(summary = "Registers a flight, resolving origin/destination by IATA code (ADMIN only)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    fun register(
+        @RequestBody request: RegisterFlightRequest,
+    ): ResponseEntity<FlightResponse> {
+        val flight =
+            registerFlightUseCase.execute(
+                RegisterFlightCommand(
+                    flightNumber = request.flightNumber,
+                    airlineIataCode = request.airlineIataCode,
+                    originIataCode = request.originIataCode,
+                    destinationIataCode = request.destinationIataCode,
+                    departureTime = request.departureTime,
+                    arrivalTime = request.arrivalTime,
+                    seatClass = request.seatClass,
+                    price = request.price,
+                    totalCapacity = request.totalCapacity,
+                    aircraftType = request.aircraftType,
+                ),
+            )
+        return ResponseEntity.status(HttpStatus.CREATED).body(FlightResponse.from(flight))
+    }
+}
