@@ -19,4 +19,6 @@ class PaymentJpaEntity(
     var amount: BigDecimal = BigDecimal.ZERO,
     var cardLast4: String = "",
     var cardholderName: String = "",
+    var idempotencyKey: String? = null,
+    var requestFingerprint: String? = null,
 )

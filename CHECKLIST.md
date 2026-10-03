@@ -456,6 +456,16 @@ Problema real: uma `Booking` `PENDING` já tirou o assento de circulação e nad
 - [ ] 20.6 Outbox transacional: gravar o evento na mesma transação da reserva e publicar por um relay, fechando a janela de perda do *dual write* (queda entre o commit e o envio à SQS)
 - [ ] Pagamento assíncrono (gateway que confirma depois) e `Idempotency-Key` no `POST /payments`
 
+## M21 — Idempotência no `POST /payments` 🚧
+
+Problema real: se a resposta de um pagamento se perde (timeout, rede móvel ruim) e o app tenta de novo, a segunda chamada falha com 409 — as reservas já estão `CONFIRMED` — embora o pagamento tenha sido feito. Com um header `Idempotency-Key` (um UUID por tentativa, gerado pelo cliente) a retentativa devolve o resultado da primeira em vez de falhar ou cobrar duas vezes. Chave nova paga normalmente; mesma chave e mesmo pedido devolve o pagamento original; mesma chave com pedido diferente é 422; duas requisições iguais ao mesmo tempo, o índice único decide e o perdedor recebe 409. A chave é por usuário. Guardada na própria tabela `payment` (sem tabela genérica: só valeria com um 2º uso real).
+
+- [x] 21.1 Persistência: migration `V25__add_idempotency_to_payment.sql` (`idempotency_key`, `request_fingerprint`, índice único `(customer_id, idempotency_key)` — colunas anuláveis, pagamentos antigos ficam sem chave), campos no `Payment` (chave validada: 1 a 64 caracteres, não em branco), na entidade e nos mappers, `PaymentRepository.findByCustomerIdAndIdempotencyKey`. O adapter traduz a violação do índice único em `IllegalStateException` (409) — é o que torna seguras duas requisições iguais em corrida
+- [ ] 21.2 Use case: replay e rejeição de chave reutilizada + header no controller e handlers (400 / 422)
+- [ ] 21.3 Teste de controller (`@WebMvcTest`) e Swagger
+- [ ] 21.4 Integração: retry via HTTP devolve o mesmo pagamento; duas requisições simultâneas com a mesma chave criam um só pagamento
+- [ ] 21.5 README e, em seguida, o app mobile (gerar o UUID e reaproveitá-lo nas retentativas do mesmo pagamento) — com o header obrigatório o app atual recebe 400 até ser atualizado
+
 ## Ideias futuras (fora da numeração M1-M9)
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.

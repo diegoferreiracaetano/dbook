@@ -30,10 +30,24 @@ class FakePaymentRepository : PaymentRepository {
     val saved = mutableListOf<Payment>()
 
     override fun save(payment: Payment): Payment {
-        val withId = Payment(nextId++, payment.customerId, payment.amount, payment.cardLast4, payment.cardholderName)
+        val withId =
+            Payment(
+                id = nextId++,
+                customerId = payment.customerId,
+                amount = payment.amount,
+                cardLast4 = payment.cardLast4,
+                cardholderName = payment.cardholderName,
+                idempotencyKey = payment.idempotencyKey,
+                requestFingerprint = payment.requestFingerprint,
+            )
         saved += withId
         return withId
     }
+
+    override fun findByCustomerIdAndIdempotencyKey(
+        customerId: Long,
+        idempotencyKey: String,
+    ): Payment? = saved.find { it.customerId == customerId && it.idempotencyKey == idempotencyKey }
 }
 
 // Shared "given": two PENDING bookings owned by ownerId, on two different flights

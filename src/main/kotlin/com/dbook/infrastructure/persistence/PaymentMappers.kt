@@ -9,6 +9,8 @@ fun PaymentJpaEntity.toDomain(): Payment =
         amount = amount,
         cardLast4 = cardLast4,
         cardholderName = cardholderName,
+        idempotencyKey = idempotencyKey,
+        requestFingerprint = requestFingerprint,
     )
 
 fun Payment.toJpaEntity(): PaymentJpaEntity =
@@ -18,4 +20,6 @@ fun Payment.toJpaEntity(): PaymentJpaEntity =
         amount = amount,
         cardLast4 = cardLast4,
         cardholderName = cardholderName,
+        idempotencyKey = idempotencyKey,
+        requestFingerprint = requestFingerprint,
     )
