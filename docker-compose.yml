@@ -23,9 +23,10 @@ services:
     ports:
       - "4566:4566"
     environment:
-      SERVICES: s3,dynamodb,ecr,ecs,ec2,iam,rds,secretsmanager,sts
+      SERVICES: s3,dynamodb,ecr,ecs,ec2,iam,rds,secretsmanager,sts,sqs
     volumes:
       - dbook_localstack_data:/var/lib/localstack
+      - ./scripts/localstack-init:/etc/localstack/init/ready.d
 
 volumes:
   dbook_pgdata:
