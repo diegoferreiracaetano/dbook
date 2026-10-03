@@ -34,7 +34,7 @@ presentation  → application → domain ← infrastructure
    (HTTP)        (use cases)   (regras + portas)   (adapters)
 ```
 
-Regras de dependência, **verificadas no código** (0 violações hoje — mantenha):
+Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/test/kotlin/com/dbook/architecture/` — uma regra por classe; quebrar uma reprova o `check`):
 - `domain/` não importa Spring nem JPA. Contém entidades/invariantes, **portas** (`interface XxxRepository`, `PasswordHasher`, `TokenService`, `AvailabilityBroadcaster`, `AiSuggestionService`) e exceções de domínio.
 - `application/` = um `@Service` por caso de uso (`XxxUseCase.execute(...)`), com o `XxxCommand` (data class) no mesmo arquivo. Só conhece `domain` (e Spring p/ `@Service`/`@Transactional`).
 - `presentation/` = `@RestController`s + DTOs `XxxRequest`/`XxxResponse` (`companion fun from(...)`) + `ApiExceptionHandler`. Não importa `infrastructure`.
@@ -42,7 +42,7 @@ Regras de dependência, **verificadas no código** (0 violações hoje — mante
 - Consumidor de fila (`BookingExpirationConsumer`) é adapter de **entrada**, como um controller: mora em `presentation/` e chama use case; `infrastructure/` só tem o lado que *publica* (`SqsBookingExpirationScheduler`).
 - `config/` = configuração transversal (hoje só `OpenApiConfig`).
 - **Cada camada se divide em subpacotes por conceito** (decisão de 2026-10-03, quando `domain/` chegou a 47 arquivos soltos): `domain/<conceito>/`, `application/<conceito>/`, `presentation/<conceito>/`, `infrastructure/persistence/<conceito>/`. Os 7 conceitos: `catalog` (Flight, Airport, Airline, Bookable — onde entraria Hotel), `seating` (Seat, SeatLayout), `booking` (Booking, expiração, disponibilidade em tempo real), `payment`, `review`, `identity` (User, token, refresh, hash de senha) e `ai`. O que atravessa conceitos (`ApiExceptionHandler`, `HealthController`, `SecurityExtensions`, `TransactionSupport`) vai em `common/`. A camada continua sendo o 1º nível — **não** crie `<conceito>/domain`, `<conceito>/application`... (opção avaliada e descartada: os conceitos compartilham o mesmo banco e têm relações JPA entre si, então módulos completos ainda não se pagam; se um dia um conceito for extraído, esta divisão já o deixa separado). Conceito novo = pasta nova nas camadas em que ele tiver arquivos; arquivo novo vai na pasta do conceito dono.
-- Dependências entre conceitos (hoje, no `domain/`): só `booking → catalog` e `ai → catalog`; `seating`, `payment`, `review`, `identity` e `catalog` não dependem de nenhum outro e se referenciam por id (`bookableId`, `bookingId`). Mantenha **sem ciclos**.
+- Dependências entre conceitos (hoje, no `domain/`): só `booking → catalog` e `ai → catalog`; `seating`, `payment`, `review`, `identity` e `catalog` não dependem de nenhum outro e se referenciam por id (`bookableId`, `bookingId`). Mantenha **sem ciclos** (teste `DomainConceptsAreFreeOfCyclesTest`). Na persistência existe um acoplamento conhecido e aceito: `catalog` → `seating` (o `availableCapacity` do voo é derivado da contagem de assentos livres, então os adapters do catálogo consultam o `SeatJpaRepository`); está declarado como exceção em `PersistenceConceptsAreFreeOfCyclesTest` — qualquer outro ciclo novo reprova o build.
 
 ## Convenções de nome
 
