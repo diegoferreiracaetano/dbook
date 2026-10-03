@@ -9,7 +9,7 @@ class ThrowsWhenBookingDoesNotExistTest : RegisterPaymentUseCaseFixture() {
     @Test
     fun `given a bookingId that doesn't exist when paying then it throws BookingNotFoundException`() {
         assertFailsWith<BookingNotFoundException> {
-            useCase.execute(
+            executeCommitted(
                 RegisterPaymentCommand(
                     bookingIds = listOf(999),
                     cardLast4 = "4242",

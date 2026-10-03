@@ -9,7 +9,7 @@ class ThrowsWhenANonOwnerPaysTest : RegisterPaymentUseCaseFixture() {
     @Test
     fun `given another user's booking when a non-owner pays for it then it throws NotBookingOwnerException`() {
         assertFailsWith<NotBookingOwnerException> {
-            useCase.execute(
+            executeCommitted(
                 RegisterPaymentCommand(
                     bookingIds = listOf(outboundBookingId),
                     cardLast4 = "4242",

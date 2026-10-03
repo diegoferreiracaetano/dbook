@@ -7,7 +7,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 
 abstract class BookingExpirationConsumerFixture : ExpireBookingUseCaseFixture() {
     protected fun consumerFor(queueUrl: String) =
-        BookingExpirationConsumer(LocalStackSqs.client, expireBookingUseCase, ObjectMapper(), queueUrl, waitSeconds = 1)
+        BookingExpirationConsumer(
+            LocalStackSqs.client,
+            expireBookingUseCase,
+            ObjectMapper(),
+            meterRegistry,
+            queueUrl,
+            waitSeconds = 1,
+        )
 
     // longer than the 1 s visibility timeout the queues below use: a message that was NOT
     // deleted would be visible again by now

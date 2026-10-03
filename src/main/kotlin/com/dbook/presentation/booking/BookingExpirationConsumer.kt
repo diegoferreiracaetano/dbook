@@ -1,7 +1,9 @@
 package com.dbook.presentation.booking
 
 import com.dbook.application.booking.ExpireBookingUseCase
+import com.dbook.application.common.countOutcome
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.MeterRegistry
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -23,6 +25,7 @@ class BookingExpirationConsumer(
     private val sqsClient: SqsClient,
     private val expireBookingUseCase: ExpireBookingUseCase,
     private val objectMapper: ObjectMapper,
+    private val meterRegistry: MeterRegistry,
     @Value("\${booking-expiration.queue-url}") private val queueUrl: String,
     @Value("\${booking-expiration.consumer.wait-seconds:20}") private val waitSeconds: Int,
 ) {
@@ -51,6 +54,7 @@ class BookingExpirationConsumer(
             expireBookingUseCase.execute(bookingIdOf(message.body()))
             sqsClient.deleteMessage { it.queueUrl(queueUrl).receiptHandle(message.receiptHandle()) }
         } catch (ex: Exception) {
+            meterRegistry.countOutcome("dbook.booking.expiration", "failed")
             log.error("Failed to process booking expiration message {}", message.messageId(), ex)
         }
     }

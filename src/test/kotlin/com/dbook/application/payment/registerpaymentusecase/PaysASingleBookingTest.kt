@@ -10,7 +10,7 @@ class PaysASingleBookingTest : RegisterPaymentUseCaseFixture() {
     @Test
     fun `given one PENDING booking when paid then the payment is saved for its price and the booking is CONFIRMED`() {
         val payment =
-            useCase.execute(
+            executeCommitted(
                 RegisterPaymentCommand(
                     bookingIds = listOf(outboundBookingId),
                     cardLast4 = "4242",

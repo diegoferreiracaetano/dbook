@@ -11,7 +11,7 @@ class ThrowsWhenABookingIsNotPendingTest : RegisterPaymentUseCaseFixture() {
         bookingRepository.save(cancelled)
 
         assertFailsWith<IllegalStateException> {
-            useCase.execute(
+            executeCommitted(
                 RegisterPaymentCommand(
                     bookingIds = listOf(outboundBookingId),
                     cardLast4 = "4242",

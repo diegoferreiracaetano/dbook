@@ -1,8 +1,10 @@
 package com.dbook.application.booking
 
+import com.dbook.application.common.countOutcome
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.identity.Role
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
@@ -16,14 +18,19 @@ import org.springframework.stereotype.Service
 class ExpireBookingUseCase(
     private val bookingRepository: BookingRepository,
     private val cancelBookingUseCase: CancelBookingUseCase,
+    private val meterRegistry: MeterRegistry,
 ) {
     fun execute(bookingId: Long) {
-        val booking = bookingRepository.findById(bookingId) ?: return
-        if (booking.status != BookingStatus.PENDING) return
+        val booking = bookingRepository.findById(bookingId)
+        if (booking == null || booking.status != BookingStatus.PENDING) {
+            meterRegistry.countOutcome("dbook.booking.expiration", "ignored")
+            return
+        }
 
         // Cancels on behalf of the booking's own owner, which passes the ownership check
         // without needing ADMIN. If a payment commits between the check above and this call,
         // the cancel fails and the message is redelivered — the next attempt finds it paid.
         cancelBookingUseCase.execute(bookingId, booking.customerId, Role.CLIENT)
+        meterRegistry.countOutcome("dbook.booking.expiration", "expired")
     }
 }

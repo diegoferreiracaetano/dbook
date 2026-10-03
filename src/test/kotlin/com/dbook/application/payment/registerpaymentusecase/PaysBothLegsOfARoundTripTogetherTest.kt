@@ -10,7 +10,7 @@ class PaysBothLegsOfARoundTripTogetherTest : RegisterPaymentUseCaseFixture() {
     @Test
     fun `given two PENDING bookings when paid together then the amount sums both legs and both are CONFIRMED`() {
         val payment =
-            useCase.execute(
+            executeCommitted(
                 RegisterPaymentCommand(
                     bookingIds = listOf(outboundBookingId, returnBookingId),
                     cardLast4 = "4242",

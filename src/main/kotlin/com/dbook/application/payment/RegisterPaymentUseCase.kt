@@ -1,11 +1,14 @@
 package com.dbook.application.payment
 
+import com.dbook.application.common.afterCommit
+import com.dbook.application.common.countOutcome
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.payment.IdempotencyKeyReusedException
 import com.dbook.domain.payment.Payment
 import com.dbook.domain.payment.PaymentRepository
+import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,6 +40,7 @@ data class RegisterPaymentCommand(
 class RegisterPaymentUseCase(
     private val bookingRepository: BookingRepository,
     private val paymentRepository: PaymentRepository,
+    private val meterRegistry: MeterRegistry,
 ) {
     @Transactional
     fun execute(command: RegisterPaymentCommand): Payment {
@@ -53,6 +57,7 @@ class RegisterPaymentUseCase(
         if (previous.requestFingerprint != fingerprint) {
             throw IdempotencyKeyReusedException()
         }
+        meterRegistry.countOutcome("dbook.payment", "replayed")
         return previous
     }
 
@@ -86,6 +91,10 @@ class RegisterPaymentUseCase(
 
         val paymentId = requireNotNull(payment.id) { "A saved Payment must have an id" }
         bookings.forEach { booking -> bookingRepository.save(booking.confirm(paymentId)) }
+
+        // after the commit, not here: a payment that is rolled back (e.g. it lost the race against a
+        // cancellation) never happened, so it must not be counted as created
+        afterCommit { meterRegistry.countOutcome("dbook.payment", "created") }
 
         return payment
     }

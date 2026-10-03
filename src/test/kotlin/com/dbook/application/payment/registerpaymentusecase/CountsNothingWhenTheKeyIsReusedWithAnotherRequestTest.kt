@@ -5,14 +5,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class ThrowsWhenTheKeyIsReusedWithADifferentRequestTest : RegisterPaymentUseCaseFixture() {
+class CountsNothingWhenTheKeyIsReusedWithAnotherRequestTest : RegisterPaymentUseCaseFixture() {
     @Test
-    fun `given a round trip paid with a key when retried in another booking order then it is the same request`() {
+    fun `given a key reused for another request when it is rejected then nothing new is counted`() {
         executeCommitted(command(bookingIds = listOf(outboundBookingId)))
 
         assertFailsWith<IdempotencyKeyReusedException> {
             executeCommitted(command(bookingIds = listOf(returnBookingId)))
         }
-        assertEquals(1, paymentRepository.saved.size)
+
+        assertEquals(1.0, counted("dbook.payment", "created"))
+        assertEquals(0.0, counted("dbook.payment", "replayed"))
     }
 }

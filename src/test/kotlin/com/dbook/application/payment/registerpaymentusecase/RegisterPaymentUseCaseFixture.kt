@@ -10,6 +10,8 @@ import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.payment.Payment
 import com.dbook.domain.payment.PaymentRepository
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -112,7 +114,28 @@ abstract class RegisterPaymentUseCaseFixture {
             ),
         )
     protected val paymentRepository = FakePaymentRepository()
-    protected val useCase = RegisterPaymentUseCase(bookingRepository, paymentRepository)
+    protected val meterRegistry = SimpleMeterRegistry()
+    protected val useCase = RegisterPaymentUseCase(bookingRepository, paymentRepository, meterRegistry)
+
+    // execute() registers an afterCommit callback, which needs an active transaction
+    // synchronization even outside a real Spring transaction. This fakes just enough of it
+    // and then runs the callbacks the way a successful commit would.
+    protected fun executeCommitted(command: RegisterPaymentCommand): Payment {
+        TransactionSynchronizationManager.initSynchronization()
+        try {
+            val payment = useCase.execute(command)
+            TransactionSynchronizationManager.getSynchronizations().forEach { it.afterCommit() }
+            return payment
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization()
+        }
+    }
+
+    /** How many times the counter [name] was incremented for [outcome] (0 if it never was). */
+    protected fun counted(
+        name: String,
+        outcome: String,
+    ): Double = meterRegistry.find(name).tag("outcome", outcome).counter()?.count() ?: 0.0
 
     protected fun command(
         bookingIds: List<Long> = listOf(outboundBookingId),
