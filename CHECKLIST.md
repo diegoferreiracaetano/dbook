@@ -436,7 +436,7 @@ irmão mais próximo (`Payment`/`RegisterPaymentUseCase`/`PaymentController`).
 - [x] Testado de ponta a ponta de novo: `/auth/register`, `/payments` e `/reviews` com corpo incompleto → `400` certinho; requisição sem token nenhum continua `401` de verdade
 - [x] README atualizado
 
-## M20 — Expiração de reservas pendentes (fila SQS) 🚧
+## M20 — Expiração de reservas pendentes (fila SQS) ✅
 
 Problema real: uma `Booking` `PENDING` já tirou o assento de circulação e nada a expira — quem abandona o pagamento prende o assento para sempre. Solução planejada: mensagem com atraso (SQS, via LocalStack) que cancela a reserva se ela ainda estiver `PENDING`, com DLQ e consumidor idempotente. Pagamento continua síncrono (não há gateway real; webhook/pagamento assíncrono fica como evolução).
 
@@ -447,8 +447,14 @@ Problema real: uma `Booking` `PENDING` já tirou o assento de circulação e nad
 - [x] 20.3b `RegisterBookingUseCase` agenda a expiração em `afterCommit` (15 min, `BOOKING_EXPIRATION`), registrada **antes** do broadcast: uma exceção num callback de `afterCommit` pula os seguintes, e a expiração é o que libera o assento (o broadcast é só best-effort). `RecordingBookingExpirationScheduler` (fake) e dois cenários (agenda depois do commit; não agenda se a transação não confirma). `@MockBean BookingExpirationScheduler` no `AbstractIntegrationTest`: sem SQS no CI, cada reserva criada nos testes de integração tentaria alcançar uma. Revisão pegou um bug que os testes não pegam: o broadcast ficou registrado duas vezes (o fake só guarda o último valor)
 - [x] 20.4a `ExpireBookingUseCase`: cancela a reserva que continua `PENDING` reaproveitando o `CancelBookingUseCase` (age em nome do dono, `Role.CLIENT`, sem precisar de ADMIN) — não duplica a lógica de cancelar/liberar assento/avisar disponibilidade. **Idempotente**: reserva inexistente ou que já não está `PENDING` (paga/cancelada) vira no-op, o que torna inofensiva a entrega duplicada da SQS. Se um pagamento confirmar entre a checagem e o cancelamento, o cancelamento falha e a mensagem é reentregue (a próxima tentativa encontra a reserva paga). A reserva expirada fica `CANCELLED` (sem status `EXPIRED`, para não mexer no contrato com o app). Testes reaproveitam o fixture do cancelamento
 - [x] 20.4b `BookingExpirationConsumer` (`presentation`, é o lado que *recebe*, como um controller — `infrastructure` não pode importar `application`): `@Scheduled` com long polling, lê o `bookingId` pelo nome do campo (evita a armadilha do Jackson com data class de um parâmetro) e chama `ExpireBookingUseCase`. **Só apaga a mensagem se processou**; falha fica na fila → reentrega após o `VisibilityTimeout` → DLQ depois de `maxReceiveCount` (captura ampla com `@Suppress` justificado: uma mensagem venenosa não pode derrubar o loop). Interruptor `booking-expiration.consumer.enabled` (desligado em `src/test/resources/application.properties`; sem ele os testes de Spring consultariam a fila de desenvolvimento). `@EnableScheduling` na aplicação. `LocalStackSqs` compartilhado nos testes (um LocalStack por JVM). Testes: expira e apaga; reserva já paga é no-op e apaga; mensagem venenosa vai para a DLQ
-- [ ] 20.5 Terraform do módulo SQS (validado só por `terraform plan`, sem conta AWS) + README
-- [ ] 20.6 (opcional) Outbox transacional: gravar o evento na mesma transação da reserva e publicar por um relay, fechando a janela de perda do *dual write*
+- [x] Validado de ponta a ponta com a aplicação de verdade (`bootRun` + Postgres/Redis/LocalStack): criar a reserva deixa 1 mensagem atrasada na fila (`ApproximateNumberOfMessagesDelayed` 0 → 1); uma mensagem sem atraso para o mesmo `bookingId` leva a reserva a `CANCELLED` e o assento a `AVAILABLE` em poucos segundos (`GET /bookings` confirma); uma reserva **paga** que recebe a mensagem continua `CONFIRMED` com o assento `RESERVED`
+- [x] `./gradlew check` (ktlint + detekt + testes de integração com Testcontainers + JaCoCo ≥ 75%) verde
+- [x] README com a seção "Expiração de reservas (SQS)" e o diagrama `docs/booking-expiration.svg` (desenhado à mão e renderizado antes de entrar no repositório)
+
+**Fora do M20 (evolução, não feito):**
+- [ ] 20.5 Terraform do módulo SQS — sem conta AWS persistente só seria validado por `terraform plan`
+- [ ] 20.6 Outbox transacional: gravar o evento na mesma transação da reserva e publicar por um relay, fechando a janela de perda do *dual write* (queda entre o commit e o envio à SQS)
+- [ ] Pagamento assíncrono (gateway que confirma depois) e `Idempotency-Key` no `POST /payments`
 
 ## Ideias futuras (fora da numeração M1-M9)
 

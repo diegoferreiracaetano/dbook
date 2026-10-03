@@ -18,6 +18,7 @@ Idioma: docs (`README.md`, `CHECKLIST.md`, este arquivo) e commits em **portugu�
 | Spring Boot | 3.3.4 (web, data-jpa, security, websocket, data-redis) |
 | Persistência | PostgreSQL 16 + Flyway (`src/main/resources/db/migration`, hoje V1–V24), `ddl-auto: validate`, `open-in-view: false` |
 | Tempo real | STOMP/WebSocket + Redis Pub/Sub (Redis 7) |
+| Fila | AWS SQS via SDK direto (`sqs` 2.28.29, mesma versão do Bedrock; sem Spring Cloud AWS) — expiração de reservas `PENDING` (M20); LocalStack local |
 | Auth | JWT (jjwt 0.12.6) stateless, refresh token rotativo, BCrypt |
 | IA | AWS Bedrock (`bedrockruntime` 2.28.29) + rate limit com bucket4j 8.10.1 |
 | Docs da API | springdoc-openapi 2.6.0 (Swagger UI) |
@@ -38,6 +39,7 @@ Regras de dependência, **verificadas no código** (0 violações hoje — mante
 - `application/` = um `@Service` por caso de uso (`XxxUseCase.execute(...)`), com o `XxxCommand` (data class) no mesmo arquivo. Só conhece `domain` (e Spring p/ `@Service`/`@Transactional`).
 - `presentation/` = `@RestController`s + DTOs `XxxRequest`/`XxxResponse` (`companion fun from(...)`) + `ApiExceptionHandler`. Não importa `infrastructure`.
 - `infrastructure/` = adapters das portas: `persistence` (`XxxRepositoryAdapter` + `XxxJpaEntity` + `XxxJpaRepository` + `Mappers.kt`), `security` (JWT), `messaging` (Redis/STOMP), `ai` (Bedrock), `web` (interceptor de rate limit). Não importa `application`.
+- Consumidor de fila (`BookingExpirationConsumer`) é adapter de **entrada**, como um controller: mora em `presentation/` e chama use case; `infrastructure/` só tem o lado que *publica* (`SqsBookingExpirationScheduler`).
 - `config/` = configuração transversal (hoje só `OpenApiConfig`).
 - Pacotes são **planos por camada** (sem subpacote por feature). Não crie `feature/x/...`.
 
