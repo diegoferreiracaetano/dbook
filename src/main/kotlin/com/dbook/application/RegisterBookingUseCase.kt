@@ -4,11 +4,13 @@ import com.dbook.domain.AvailabilityBroadcaster
 import com.dbook.domain.BookableNotFoundException
 import com.dbook.domain.BookableRepository
 import com.dbook.domain.Booking
+import com.dbook.domain.BookingExpirationScheduler
 import com.dbook.domain.BookingRepository
 import com.dbook.domain.SeatNotFoundException
 import com.dbook.domain.SeatRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
 
 data class RegisterBookingCommand(
     val bookableId: Long,
@@ -26,6 +28,7 @@ class RegisterBookingUseCase(
     private val seatRepository: SeatRepository,
     private val bookingRepository: BookingRepository,
     private val availabilityBroadcaster: AvailabilityBroadcaster,
+    private val bookingExpirationScheduler: BookingExpirationScheduler,
 ) {
     @Transactional
     fun execute(command: RegisterBookingCommand): Booking {
@@ -49,10 +52,23 @@ class RegisterBookingUseCase(
         val saved = bookingRepository.save(booking)
 
         // only after the transaction actually commits — a rollback past this point
-        // shouldn't leave WebSocket subscribers believing a reservation that never happened
+        // must not leave an expiration scheduled for a booking that never existed.
+        // First on purpose: an exception in one afterCommit callback skips the next ones,
+        // and the broadcast is best-effort while the expiration is what frees the seat.
+        afterCommit {
+            bookingExpirationScheduler.scheduleExpiration(requireNotNull(saved.id), BOOKING_EXPIRATION)
+        }
+        // same reason for the broadcast: WebSocket subscribers shouldn't believe a
+        // reservation that never happened
         afterCommit {
             availabilityBroadcaster.broadcast(command.bookableId, seatRepository.countAvailable(command.bookableId))
         }
+
         return saved
+    }
+
+    private companion object {
+        // how long a PENDING booking holds its seat; 15 min is also the most SQS can delay
+        val BOOKING_EXPIRATION: Duration = Duration.ofMinutes(15)
     }
 }

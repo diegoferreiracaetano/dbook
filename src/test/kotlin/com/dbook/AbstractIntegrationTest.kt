@@ -1,6 +1,8 @@
 package com.dbook
 
+import com.dbook.domain.BookingExpirationScheduler
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.GenericContainer
@@ -18,6 +20,9 @@ import org.testcontainers.containers.PostgreSQLContainer
 @Suppress("UtilityClassWithPublicConstructor", "UnnecessaryAbstractClass")
 @SpringBootTest
 abstract class AbstractIntegrationTest {
+    @MockBean
+    lateinit var bookingExpirationScheduler: BookingExpirationScheduler
+
     companion object {
         private val postgres =
             PostgreSQLContainer("postgres:16-alpine")

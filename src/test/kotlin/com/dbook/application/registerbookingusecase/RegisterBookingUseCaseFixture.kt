@@ -8,6 +8,7 @@ import com.dbook.domain.AvailabilityBroadcaster
 import com.dbook.domain.Bookable
 import com.dbook.domain.BookableRepository
 import com.dbook.domain.Booking
+import com.dbook.domain.BookingExpirationScheduler
 import com.dbook.domain.BookingRepository
 import com.dbook.domain.Flight
 import com.dbook.domain.Seat
@@ -17,6 +18,7 @@ import com.dbook.domain.SeatRepository
 import com.dbook.domain.SeatStatus
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal
+import java.time.Duration
 import java.time.LocalDateTime
 
 class FakeBookableRepository(private val bookables: List<Bookable>) : BookableRepository {
@@ -71,6 +73,17 @@ class FakeBookingRepository : BookingRepository {
         saved.removeAll { it.id == withId.id }
         saved += withId
         return withId
+    }
+}
+
+class RecordingBookingExpirationScheduler : BookingExpirationScheduler {
+    val scheduled = mutableListOf<Pair<Long, Duration>>()
+
+    override fun scheduleExpiration(
+        bookingId: Long,
+        after: Duration,
+    ) {
+        scheduled += bookingId to after
     }
 }
 
@@ -141,8 +154,16 @@ abstract class RegisterBookingUseCaseFixture {
         )
     protected val bookingRepository = FakeBookingRepository()
     protected val availabilityBroadcaster = RecordingAvailabilityBroadcaster()
+    protected val bookingExpirationScheduler = RecordingBookingExpirationScheduler()
+
     protected val useCase =
-        RegisterBookingUseCase(bookableRepository, seatRepository, bookingRepository, availabilityBroadcaster)
+        RegisterBookingUseCase(
+            bookableRepository,
+            seatRepository,
+            bookingRepository,
+            availabilityBroadcaster,
+            bookingExpirationScheduler,
+        )
 
     protected fun command(
         bookableIdOverride: Long = bookableId,
