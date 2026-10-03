@@ -30,6 +30,7 @@ class OpenApiConfig {
             }
             openApi.paths["/bookings/{id}/cancel"]?.post?.exampleFor("id", 1)
             openApi.paths["/bookables/{id}/seats"]?.get?.exampleFor("id", 1)
+            openApi.paths["/payments"]?.post?.exampleFor("Idempotency-Key", "3f2b8c1e-6a4d-4e7a-9d1b-5c8e2a7f0b94")
         }
 
     private fun Operation.exampleFor(
