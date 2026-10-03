@@ -212,10 +212,19 @@ Paga uma ou mais reservas `PENDING` do usuário autenticado de uma vez só (ex.:
 curl -X POST localhost:8080/payments \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <accessToken>" \
+  -H "Idempotency-Key: 3f2b8c1e-6a4d-4e7a-9d1b-5c8e2a7f0b94" \
   -d '{"bookingIds": [1, 2], "cardLast4": "4242", "cardholderName": "Jane Doe"}'
 ```
 
-Retorna `201` com o pagamento criado (`amount` já somando todas as reservas), `401` sem token, `403` se alguma reserva não pertencer a quem está pagando, `404` se algum `bookingId` não existir, ou `409` se alguma reserva não estiver `PENDING` (já confirmada ou cancelada).
+O header **`Idempotency-Key` é obrigatório**: um UUID gerado pelo cliente, **um por tentativa de pagamento** (de 1 a 64 caracteres). Retorna `201` com o pagamento criado (`amount` já somando todas as reservas), `400` sem o header ou com uma chave inválida, `401` sem token, `403` se alguma reserva não pertencer a quem está pagando, `404` se algum `bookingId` não existir, `409` se alguma reserva não estiver `PENDING` ou se outra requisição com a mesma chave ainda está em andamento, ou `422` se a chave já foi usada para um pedido diferente.
+
+**Idempotência.** Se a resposta se perde (timeout, rede móvel ruim) e o app tenta de novo, a retentativa **com a mesma chave devolve o pagamento original** (mesmo `201`, mesmo `id`), sem cobrar de novo. Sem a chave, essa segunda chamada seria um `409`, porque as reservas já estão `CONFIRMED`, mesmo com o dinheiro já cobrado.
+
+- **Mesma chave e mesmo pedido** (as reservas, o cartão e o nome; a ordem das reservas não importa): devolve o pagamento original, sem tocar nas reservas.
+- **Mesma chave e pedido diferente:** `422`, porque uma chave só pode significar um pedido.
+- **Duas requisições iguais ao mesmo tempo:** um índice único `(customer_id, idempotency_key)` decide; quem perde recebe `409` e, se tentar de novo, cai no caso do replay.
+- **A chave vale por usuário:** outro usuário com a mesma chave não enxerga o pagamento do primeiro.
+- A chave e uma impressão digital do pedido (SHA-256) ficam na própria tabela `payment` (migration `V25`); pagamentos anteriores a ela ficam sem chave.
 
 ### `POST /reviews` (autenticado)
 Avalia uma reserva `CONFIRMED` do usuário autenticado — nota de 1 a 5 e comentário (obrigatório). Só quem fez a reserva pode avaliá-la, só depois de `CONFIRMED` (não dá pra avaliar antes de pagar), e só uma vez por reserva.
@@ -389,5 +398,6 @@ Esses últimos usam [Testcontainers](https://testcontainers.com/) (`AbstractInte
 - ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /bookables/{id}/seats`, `seatId` obrigatório em `POST /bookings`)
 - ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
 - ✅ **M20 — Expiração de reservas pendentes** (fila SQS com atraso de 15 min no LocalStack, consumidor idempotente com DLQ, lock otimista na `Booking` contra a corrida pagar × expirar — Terraform da SQS e outbox ficaram como evolução)
+- ✅ **M21 — Idempotência no pagamento** (`Idempotency-Key` obrigatório em `POST /payments`: a retentativa devolve o pagamento original, chave reutilizada com outro pedido é 422, corrida entre requisições iguais resolvida pelo índice único — o teste de corrida achou um 500 real causado pela tradução de exceções do Spring em `@Repository`; falta ajustar o app mobile para enviar o header)
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).
