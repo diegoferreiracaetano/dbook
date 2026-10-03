@@ -2,8 +2,10 @@ package com.dbook
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
+@EnableScheduling
 class DbookApplication
 
 @Suppress("SpreadOperator") // standard Spring Boot Kotlin bootstrap idiom, runs once at startup
