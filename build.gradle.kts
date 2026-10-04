@@ -59,7 +59,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.20.4")
     testImplementation("org.testcontainers:postgresql:1.20.4")
     testImplementation("com.tngtech.archunit:archunit:1.3.0")
-    testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
+    testImplementation("io.micrometer:micrometer-tracing-test")
     testImplementation("org.testcontainers:localstack:1.20.4")
 }
 

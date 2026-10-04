@@ -48,6 +48,17 @@ services:
     depends_on:
       - loki
 
+  # --- Metrics: scrapes the app's /actuator/prometheus every 15 s ---------------------------
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # already there on Docker Desktop; needed on Linux
+
   grafana:
     image: grafana/grafana:11.2.0
     profiles: ["observability"]
@@ -60,8 +71,11 @@ services:
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
     volumes:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/etc/grafana/dashboards:ro
     depends_on:
       - loki
+      - prometheus
+      - jaeger
 
   # --- Traces: where the app sends its spans (OTLP over HTTP, port 4318) -----------------------
   jaeger:

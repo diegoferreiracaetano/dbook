@@ -29,8 +29,8 @@ class ContinuesTheTraceOfTheRequestThatScheduledItTest : BookingExpirationConsum
 
         withTransactionSynchronization { consumerFor(queueUrl, tracing.tracer, tracing.propagator).poll() }
 
-        val consume = tracing.exporter.finishedSpanItems.single { it.name == "booking-expiration consume" }
-        assertEquals(request.context().traceId(), consume.traceId)
-        assertEquals(request.context().spanId(), consume.parentSpanId)
+        val consume = tracing.tracer.spans.single { it.name == "booking-expiration consume" }
+        assertEquals(request.context().traceId(), consume.context().traceId())
+        assertEquals(request.context().spanId(), consume.context().parentId())
     }
 }

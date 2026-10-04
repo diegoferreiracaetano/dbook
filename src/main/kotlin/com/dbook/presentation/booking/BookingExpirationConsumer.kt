@@ -61,7 +61,7 @@ class BookingExpirationConsumer(
     private fun process(message: Message) {
         val span = continuedSpan(message).start()
         try {
-            tracer.withSpan(span).use {
+            tracer.withSpan(span).use { _ ->
                 try {
                     expireBookingUseCase.execute(bookingIdOf(message.body()))
                     sqsClient.deleteMessage { it.queueUrl(queueUrl).receiptHandle(message.receiptHandle()) }

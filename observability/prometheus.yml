@@ -1,0 +1,9 @@
+# Scrapes the app's management port (never exposed publicly). The app runs on the host
+# (./gradlew bootRun), so from inside the container it is host.docker.internal.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: dbook
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8081"]

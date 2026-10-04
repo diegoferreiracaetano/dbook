@@ -2,9 +2,8 @@ package com.dbook.presentation.booking.bookingexpirationconsumer
 
 import com.dbook.LocalStackSqs
 import com.dbook.TracingTestSupport
-import io.opentelemetry.api.trace.SpanId
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class StartsANewTraceForAMessageWithoutTraceContextTest : BookingExpirationConsumerFixture() {
     @Test
@@ -15,7 +14,7 @@ class StartsANewTraceForAMessageWithoutTraceContextTest : BookingExpirationConsu
 
         withTransactionSynchronization { consumerFor(queueUrl, tracing.tracer, tracing.propagator).poll() }
 
-        val consume = tracing.exporter.finishedSpanItems.single { it.name == "booking-expiration consume" }
-        assertEquals(SpanId.getInvalid(), consume.parentSpanId)
+        val consume = tracing.tracer.spans.single { it.name == "booking-expiration consume" }
+        assertTrue(consume.context().parentId().isNullOrEmpty(), "unexpected parent: ${consume.context().parentId()}")
     }
 }
