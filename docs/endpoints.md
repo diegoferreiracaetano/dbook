@@ -30,6 +30,16 @@ Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`
 | `RATE_LIMITED` | 429 | limite de uso da IA |
 | `AI_RESPONSE_INVALID` / `AI_UNAVAILABLE` | 502 / 503 | modelo de IA |
 
+## `GET /v1/admin/audit` (requer a permissão `AUDIT_READ`)
+A trilha de ações administrativas, do mais novo para o mais antigo, **por cursor**. Detalhes em [Auditoria](auditoria.md).
+
+```bash
+curl "localhost:8080/v1/admin/audit?action=FLIGHT_CREATED&size=20" \
+  -H "Authorization: Bearer <accessToken-de-um-SUPER_ADMIN>"
+```
+
+Filtros opcionais: `actorId`, `action` (`FLIGHT_CREATED`, `BOOKING_CANCELLED_BY_STAFF`, `ACCESS_DENIED`), `targetType`, `targetId`, `outcome` (`SUCCESS`/`DENIED`), `from`/`to` (ISO-8601), `cursor` e `size` (1–100, padrão 50). Retorna `200` com `{"items": [...], "nextCursor": "..."}` (`nextCursor` é `null` na última página; cada item traz ator, ação, alvo, `before`/`after` e o `requestId`/`traceId`/`ip` da requisição), `401` sem token, `403` sem `AUDIT_READ` e `400` (`VALIDATION_FAILED`) para filtro, cursor ou tamanho inválidos.
+
 ## Portal administrativo: sessão (`/v1/admin/auth/*`)
 Detalhes e exemplos em [Autenticação](autenticacao.md#portal-administrativo-sessão).
 

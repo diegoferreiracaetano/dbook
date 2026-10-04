@@ -3,12 +3,14 @@ package com.dbook.presentation.catalog
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
 import com.dbook.presentation.common.ApiPaths
+import com.dbook.presentation.common.currentActor
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -27,10 +29,12 @@ class FlightAdminController(
     @PostMapping
     fun register(
         @RequestBody request: RegisterFlightRequest,
+        authentication: Authentication,
     ): ResponseEntity<FlightResponse> {
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
+                    actor = authentication.currentActor(),
                     flightNumber = request.flightNumber,
                     airlineIataCode = request.airlineIataCode,
                     originIataCode = request.originIataCode,

@@ -13,6 +13,7 @@ import com.dbook.domain.seating.SeatNotFoundException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.validation.BindException
 import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -44,6 +45,16 @@ class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleMalformedRequest(): ErrorResponse = ErrorResponse("Malformed request body", ErrorCode.MALFORMED_REQUEST)
+
+    // A query parameter that cannot be read (an unknown enum value, a malformed date) fails the binding of the
+    // request object; same sendError(400) trap as above, so it is answered here.
+    @ExceptionHandler(BindException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleBindingFailure(ex: BindException): ErrorResponse =
+        ErrorResponse(
+            ex.bindingResult.fieldErrors.firstOrNull()?.let { "Invalid value for '${it.field}'" } ?: "Invalid request",
+            ErrorCode.VALIDATION_FAILED,
+        )
 
     // Same trap as the malformed body above: left alone, Spring answers with sendError(400),
     // which forwards to /error and gets rejected as 401 before reaching the client.

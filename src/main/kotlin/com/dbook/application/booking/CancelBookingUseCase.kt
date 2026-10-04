@@ -1,11 +1,16 @@
 package com.dbook.application.booking
 
 import com.dbook.application.common.afterCommit
+import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.audit.AuditEvent
+import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
+import com.dbook.domain.booking.toAuditSnapshot
+import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Permission.BOOKING_CANCEL_ANY
 import com.dbook.domain.identity.Role
 import com.dbook.domain.seating.SeatRepository
@@ -20,6 +25,7 @@ class CancelBookingUseCase(
     private val bookingRepository: BookingRepository,
     private val seatRepository: SeatRepository,
     private val availabilityBroadcaster: AvailabilityBroadcaster,
+    private val auditLog: AuditLog,
 ) {
     // A CLIENT may only cancel their own booking; whoever holds BOOKING_CANCEL_ANY can cancel any booking.
     // Without this check, authentication alone wouldn't actually protect a booking
@@ -41,10 +47,28 @@ class CancelBookingUseCase(
             requireNotNull(booking.bookable.id) { "A persisted Booking must reference a persisted Bookable" }
         seatRepository.release(booking.seatId)
         val saved = bookingRepository.save(cancelled)
+        if (booking.customerId != requestingUserId) {
+            recordStaffCancellation(booking, saved, Actor(requestingUserId, requestingUserRole))
+        }
 
         afterCommit {
             availabilityBroadcaster.broadcast(bookableId, seatRepository.countAvailable(bookableId))
         }
         return saved
     }
+
+    // reaching here with someone else's booking means the caller holds BOOKING_CANCEL_ANY: that is staff action
+    private fun recordStaffCancellation(
+        before: Booking,
+        after: Booking,
+        actor: Actor,
+    ) = auditLog.record(
+        AuditEvent(
+            actor = actor,
+            action = AuditAction.BOOKING_CANCELLED_BY_STAFF,
+            targetId = requireNotNull(before.id).toString(),
+            before = before.toAuditSnapshot(),
+            after = after.toAuditSnapshot(),
+        ),
+    )
 }

@@ -6,7 +6,7 @@ import kotlin.test.Test
 class DomainConceptsOnlyDependOnTheAllowedOnesTest : ArchitectureFixture() {
     // The only references between concepts in the domain today. Anything else must go by id
     // (bookableId, bookingId...), which is what keeps the concepts separable.
-    private val allowed = mapOf("booking" to setOf("catalog"), "ai" to setOf("catalog"))
+    private val allowed = mapOf("booking" to setOf("catalog"), "ai" to setOf("catalog"), "audit" to setOf("identity"))
 
     @Test
     @Suppress("SpreadOperator")

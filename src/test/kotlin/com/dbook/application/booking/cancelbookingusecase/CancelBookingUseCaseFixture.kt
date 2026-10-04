@@ -1,5 +1,6 @@
 package com.dbook.application.booking.cancelbookingusecase
 
+import com.dbook.application.audit.FakeAuditLog
 import com.dbook.application.booking.CancelBookingUseCase
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
@@ -124,7 +125,8 @@ abstract class CancelBookingUseCaseFixture {
     protected val seatRepository = FakeSeatRepository(listOf(Seat(seatId, bookableId, "1A", SeatStatus.RESERVED)))
     protected val bookingRepository = FakeBookingRepository(listOf(Booking(bookingId, flight, seatId, ownerId)))
     protected val availabilityBroadcaster = RecordingAvailabilityBroadcaster()
-    protected val useCase = CancelBookingUseCase(bookingRepository, seatRepository, availabilityBroadcaster)
+    protected val auditLog = FakeAuditLog()
+    protected val useCase = CancelBookingUseCase(bookingRepository, seatRepository, availabilityBroadcaster, auditLog)
 
     // execute() calls afterCommit(), which needs an active transaction synchronization even
     // outside a real Spring transaction — this fakes just enough of it for a unit test.

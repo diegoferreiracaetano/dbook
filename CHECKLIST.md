@@ -628,20 +628,34 @@ Problema: existia um único papel `ADMIN`, sem permissão fina, sem como bloquea
 - [x] Mutação: regra ArchUnit; (a regra de `hasAuthority` foi pega por teste de integração real)
 - [x] Docs e instruções do projeto atualizadas
 
-## M26 — Auditoria e envelope de paginação 📋
+## M26 — Auditoria ✅
 
-Problema: ações administrativas (alterar voo, cancelar reserva de outro, bloquear cliente) precisam deixar rastro **imutável** e consultável — requisito de qualquer CRM e de LGPD (prestação de contas).
+Problema: ações administrativas (cadastrar voo, cancelar a reserva de outra pessoa) precisam deixar rastro **imutável** e consultável — requisito de qualquer CRM e de prestação de contas (LGPD). Feito em 2026-10-04, **por autorização expressa do dono** ("pode fazer as alterações"), depois de o desenho ter sido mostrado e aprovado; nada commitado ainda.
 
-- [ ] 26.1 Migration `V28__create_audit_log.sql`: `audit_log` (`id`, `occurred_at timestamptz`, `actor_id`, `actor_email` (cópia — o rastro sobrevive à anonimização do ator), `actor_role`, `action`, `outcome` (`SUCCESS`/`DENIED`), `target_type`, `target_id`, `before jsonb`, `after jsonb`, `reason`, `request_id`, `trace_id`, `ip`, `user_agent`). Índices: `(target_type, target_id, occurred_at desc)`, `(actor_id, occurred_at desc)`, `(occurred_at desc, id desc)`. **Append-only no banco:** gatilho que lança erro em `UPDATE`/`DELETE` (teste prova)
-- [ ] 26.2 Domínio: `AuditEvent`, `AuditAction` (enum: `FLIGHT_CREATED`, `BOOKING_CANCELLED_BY_STAFF`, ...), porta `AuditLog.record(event)` e porta `AuditContextProvider` (requestId, traceId, ip, userAgent — implementada na infraestrutura lendo MDC/`RequestContextHolder`, para o `application` não conhecer HTTP)
-- [ ] 26.3 **Decisão (ADR):** auditoria **explícita no caso de uso**, dentro da `@Transactional` (se a mudança falha, não há registro; se o registro falha, a mudança desfaz) — não AOP, que esconderia o que é auditado e não vê o "antes". Tentativas **negadas** (403) entram pelo `JsonAccessDeniedHandler` com `outcome=DENIED`
-- [ ] 26.4 **Foto "antes/depois" por lista permitida** (`toAuditSnapshot()` no domínio): só campos explícitos; **nunca** senha, hash, token, `Authorization` ou dado de cartão (teste que tenta auditar `User` e verifica a ausência de `passwordHash`)
-- [ ] 26.5 Retrofit das ações admin existentes: `RegisterFlightUseCase` e o cancelamento por staff em `CancelBookingUseCase` (ator ≠ dono)
-- [ ] 26.6 **Envelope de paginação** (`presentation/common/PageResponse`): `{items, page, size, totalElements, totalPages}` para listas navegáveis e `{items, nextCursor}` (keyset por `(occurred_at, id)`) para listas que só crescem (auditoria, notificações). `size` máximo 100 (`400` acima), `sort` só por lista permitida. Será reutilizado por M30–M32
-- [ ] 26.7 `GET /v1/admin/audit` (`AUDIT_READ`) com filtros (`actor`, `action`, `targetType`, `targetId`, `from`, `to`, `outcome`) e keyset
-- [ ] 26.8 Observabilidade: métrica `dbook.admin.action{action,outcome}`; linha de log estruturada com `auditId`, **sem** PII; consulta de exemplo no Loki em `docs/observabilidade.md` (do `traceId` do registro ao trace no Jaeger — o que o CRM mostra ao suporte)
-- [ ] 26.9 Testes: atomicidade (rollback não deixa registro; falha ao auditar desfaz a mudança), imutabilidade pelo banco, lista permitida, retrofit, filtros, keyset estável com `occurred_at` repetido, `DENIED` registrado. Verificar por mutação os três mais importantes
-- [ ] 26.10 Docs: `docs/auditoria.md` (o que é auditado, formato, retenção — particionamento mensal descrito, **não** implementado —, base legal LGPD, como consultar), `endpoints.md`, `CLAUDE.md` (regra "caso de uso admin chama `AuditLog`"), `README.md`
+- [x] 26.1 Migration `V28__create_audit_log.sql`: `audit_log` com índices por alvo, ator e `(occurred_at desc, id desc)`; **append-only no banco** (gatilho que recusa `UPDATE`, `DELETE` e `TRUNCATE`; teste prova). Sem `actor_email` e sem chave estrangeira para `app_user` (o registro nunca deve ser bloqueado nem sofrer cascata por mudança em usuário)
+- [x] 26.2 Novo conceito `audit`: `AuditEvent` (só dado de negócio), `AuditAction` (já declara o tipo do alvo: `FLIGHT_CREATED` → `FLIGHT`), `AuditOutcome`, `AuditEntry`/`AuditContext`, portas `AuditLog` (escrita) e `AuditLogReader` (leitura, separadas), `Actor` em `identity`. **Sem a porta `AuditContextProvider` do plano**: o `request_id`, o `trace_id`, o IP e o user agent são acrescentados pelo adaptador (`RequestAuditContext`, lendo MDC e a requisição), porque o caso de uso não conhece HTTP
+- [x] 26.3 Auditoria **explícita no caso de uso**, dentro da `@Transactional` (o adaptador entra na transação de quem o chama: teste de *rollback* conjunto). Tentativas **negadas** em `/v1/admin/**` entram pelo `JsonAccessDeniedHandler` como `ACCESS_DENIED`/`DENIED`; falhar ao gravá-las nunca muda a resposta (continua 403)
+- [x] 26.4 "Antes/depois" por **lista permitida** (`Flight.toAuditSnapshot()`, `Booking.toAuditSnapshot()`; datas como texto), testadas campo a campo
+- [x] 26.5 Retrofit: `RegisterFlightUseCase` (recebe o `Actor` no comando) e o cancelamento por staff em `CancelBookingUseCase` (só quando o ator **não** é o dono; o dono cancelando a própria reserva não é ação administrativa)
+- [x] 26.6 Paginação **só por cursor** (`occurred_at`, `id`; opaco para o cliente, `AuditCursorCodec`), `CursorPageResponse` em `presentation/common`. **O envelope por página (`PageResponse` com `totalElements`) do plano ficou para o M30**, quando houver o 2º uso real
+- [x] 26.7 `GET /v1/admin/audit` (`AUDIT_READ`) com filtros opcionais (`actorId`, `action`, `targetType`, `targetId`, `outcome`, `from`, `to`), `size` 1–100. Parâmetro inválido vira `400 VALIDATION_FAILED` (handler novo de `BindException`, que evita o desvio para `/error`)
+- [x] 26.8 Métrica `dbook_admin_action_total{action,outcome}` e uma linha de log estruturada por registro (sem dado pessoal). **Documentado em `docs/observabilidade.md` também o `dbook_auth_login_total` do M25**, que estava faltando
+- [x] 26.9 Testes: 274 no total (de 249), 0 falhas. Domínio (evento, snapshots), aplicação (busca, voo e cancelamento gravam; voo recusado e dono **não** gravam), codec do cursor, persistência (ida e volta do estado, imutabilidade, páginas 2/2/1 sem lacuna nem repetição, filtros, *rollback*) e integração de ponta a ponta (voo criado, tentativa negada, cancelamento por staff com antes e depois, paginação por HTTP, leitura só com `AUDIT_READ`, consulta inválida). **Mutação:** sem o `auditLog.record` do voo, ou com a condição do cancelamento invertida, os testes reprovam
+- [x] 26.10 Docs: `docs/auditoria.md` (novo), `endpoints.md`, `observabilidade.md`, `testes-e-qualidade.md`, `README.md` (mapa e roadmap, com o M25 que faltava), `.claude/CLAUDE.md` (8 conceitos, `audit → identity`, regra "ação administrativa grava `AuditEvent`", migration V29)
+
+**O que a execução ensinou:**
+- **Entidade com colunas JSON precisa ser `@Immutable`.** Sem isso, depois do `INSERT` o Hibernate achava a linha "suja" (o JSON relido não bate com o gravado: `BigDecimal("500.00")` vira outro valor) e emitia um `UPDATE`, que o gatilho recusava — e **todo cadastro de voo falhava**, derrubando 19 testes. Marcar `@Immutable` é a correção certa, e também o que a trilha é.
+- Detekt: a entidade chegou a 15 parâmetros no construtor (limite do projeto); o contexto da requisição virou `@Embedded` (`AuditContextColumns`).
+- Os `check` anteriores só ficam confiáveis com o Docker aberto (sem ele, todo teste de integração cai).
+
+**Fora do escopo (de propósito):** retenção/particionamento da tabela; auditar a **leitura** de dado pessoal (M30); bloquear usuário e demais ações administrativas (cada uma entra com o seu marco: M28, M30, M31, M32); IP atrás de balanceador (`X-Forwarded-For` confiável, junto com o limite de login).
+
+**Checklist de fechamento do M26:**
+- [x] Itens 26.1–26.10 revisados
+- [x] Clean Code / SOLID: portas de escrita e leitura separadas, o caso de uso não conhece HTTP, ação carrega o tipo do alvo, nada especulativo (sem envelope por página, sem `actor_email`)
+- [x] `./gradlew check` com **exit 0** (274 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos
+- [x] Docs e instruções do projeto atualizados
 
 ## M27 — Preço congelado na reserva (dívida técnica) 📋
 

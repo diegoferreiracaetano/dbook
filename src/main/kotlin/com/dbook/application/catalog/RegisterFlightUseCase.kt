@@ -1,5 +1,8 @@
 package com.dbook.application.catalog
 
+import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.audit.AuditEvent
+import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.AirlineNotFoundException
 import com.dbook.domain.catalog.AirlineRepository
@@ -9,6 +12,8 @@ import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.FlightRepository
 import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.catalog.toAuditSnapshot
+import com.dbook.domain.identity.Actor
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.seatLayoutFor
@@ -19,6 +24,7 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class RegisterFlightCommand(
+    val actor: Actor,
     val flightNumber: String,
     val airlineIataCode: String,
     val originIataCode: String,
@@ -46,6 +52,7 @@ class RegisterFlightUseCase(
     private val airlineRepository: AirlineRepository,
     private val airportRepository: AirportRepository,
     private val seatRepository: SeatRepository,
+    private val auditLog: AuditLog,
 ) {
     @Transactional
     fun execute(command: RegisterFlightCommand): Flight {
@@ -73,9 +80,19 @@ class RegisterFlightUseCase(
         seatRepository.saveAll(generateSeatMap(bookableId, command.totalCapacity, command.aircraftType))
 
         // availableCapacity is derived from the seats just generated above, not from `saved`
-        return requireNotNull(flightRepository.findById(bookableId)) {
-            "Flight $bookableId was just saved but could not be reloaded"
-        }
+        val registered =
+            requireNotNull(flightRepository.findById(bookableId)) {
+                "Flight $bookableId was just saved but could not be reloaded"
+            }
+        auditLog.record(
+            AuditEvent(
+                actor = command.actor,
+                action = AuditAction.FLIGHT_CREATED,
+                targetId = bookableId.toString(),
+                after = registered.toAuditSnapshot(),
+            ),
+        )
+        return registered
     }
 
     private fun resolveAirline(iataCode: String): Airline =

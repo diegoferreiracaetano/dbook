@@ -5,6 +5,8 @@ import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.identity.LoginCommand
 import com.dbook.application.identity.RegisterUserCommand
 import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.identity.Actor
+import com.dbook.domain.identity.Role
 import com.dbook.infrastructure.messaging.availability.AvailabilityUpdate
 import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.StompHeaders
@@ -32,6 +34,7 @@ class PushesAnAvailabilityUpdateOverWebsocketTest : AvailabilityBroadcastFixture
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
+                    actor = Actor(id = 1, role = Role.SUPER_ADMIN),
                     flightNumber = "DBW${(10000..99999).random()}",
                     airlineIataCode = "LA",
                     originIataCode = "GRU",

@@ -87,6 +87,8 @@ Três origens:
 |---|---|---|
 | `dbook_payment_total` | `outcome` = `created`, `replayed` | quantos pagamentos são novos e quantas retentativas a idempotência absorveu |
 | `dbook_booking_expiration_total` | `outcome` = `expired`, `ignored`, `failed` | o que a fila de expiração fez com cada mensagem (`ignored` = já paga ou inexistente; `failed` = vai para a DLQ) |
+| `dbook_auth_login_total` | `outcome` = `success`, `invalid_credentials`, `blocked`, `rate_limited`; `audience` = `client`, `staff` | como os logins terminam, por porta de entrada: um pico de `invalid_credentials` ou `rate_limited` é tentativa de adivinhar senha |
+| `dbook_admin_action_total` | `action` (ex.: `FLIGHT_CREATED`, `ACCESS_DENIED`), `outcome` = `SUCCESS`, `DENIED` | ações administrativas feitas e negadas; cada uma tem um registro na trilha de [auditoria](auditoria.md) |
 | `dbook_booking_pending` (gauge) | — | **quantas reservas estão `PENDING` agora**: assentos presos esperando pagamento. Se só cresce, a expiração não está funcionando |
 
 Detalhes que importam:

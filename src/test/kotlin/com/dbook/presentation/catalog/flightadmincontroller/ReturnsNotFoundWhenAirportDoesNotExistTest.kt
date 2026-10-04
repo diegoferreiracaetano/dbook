@@ -13,6 +13,7 @@ class ReturnsNotFoundWhenAirportDoesNotExistTest : FlightAdminControllerFixture(
             .willThrow(AirportNotFoundException("GRU"))
 
         mockMvc.post("/v1/admin/flights") {
+            principal = authentication
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
         }.andExpect {

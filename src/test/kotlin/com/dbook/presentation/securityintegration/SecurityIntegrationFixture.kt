@@ -6,10 +6,12 @@ import com.dbook.application.catalog.RegisterFlightUseCase
 import com.dbook.application.identity.BlockUserCommand
 import com.dbook.application.identity.BlockUserUseCase
 import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import com.dbook.domain.seating.SeatRepository
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.Cookie
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,6 +20,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.ResultActionsDsl
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -156,6 +159,17 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
     protected fun errorCodeOf(result: MvcResult): String =
         objectMapper.readTree(result.response.contentAsString)["code"].asText()
 
+    protected fun userIdOf(email: String): Long = requireNotNull(userRepository.findByEmail(email)?.id)
+
+    protected fun auditEntries(
+        token: String,
+        query: String,
+    ): JsonNode =
+        objectMapper.readTree(
+            mockMvc.get("/v1/admin/audit?$query") { header("Authorization", "Bearer $token") }
+                .andReturn().response.contentAsString,
+        )["items"]
+
     protected fun validFlightRequestBody(): String =
         objectMapper.writeValueAsString(
             mapOf(
@@ -177,6 +191,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         val flight =
             registerFlightUseCase.execute(
                 RegisterFlightCommand(
+                    actor = Actor(id = 1, role = Role.SUPER_ADMIN),
                     flightNumber = "DBS${(10000..99999).random()}",
                     airlineIataCode = "LA",
                     originIataCode = "GRU",

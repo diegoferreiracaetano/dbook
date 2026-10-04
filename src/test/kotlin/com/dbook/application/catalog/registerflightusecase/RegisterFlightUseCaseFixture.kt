@@ -1,5 +1,6 @@
 package com.dbook.application.catalog.registerflightusecase
 
+import com.dbook.application.audit.FakeAuditLog
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
 import com.dbook.domain.catalog.Airline
@@ -9,6 +10,8 @@ import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.FlightRepository
 import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.identity.Actor
+import com.dbook.domain.identity.Role
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.SeatStatus
@@ -124,12 +127,15 @@ abstract class RegisterFlightUseCaseFixture {
         )
     protected val flightRepository = FakeFlightRepository()
     protected val seatRepository = FakeSeatRepository()
+    protected val auditLog = FakeAuditLog()
+    protected val admin = Actor(id = 1, role = Role.SUPER_ADMIN)
     protected val useCase =
         RegisterFlightUseCase(
             flightRepository,
             FakeAirlineRepository(listOf(latam)),
             FakeAirportRepository(listOf(gru, gig)),
             seatRepository,
+            auditLog,
         )
 
     protected fun command(
@@ -139,6 +145,7 @@ abstract class RegisterFlightUseCaseFixture {
         aircraftType: String = "Airbus A320",
         totalCapacity: Int = 180,
     ) = RegisterFlightCommand(
+        actor = admin,
         flightNumber = "DB1234",
         airlineIataCode = airline,
         originIataCode = origin,

@@ -5,6 +5,8 @@ import com.dbook.application.catalog.RegisterFlightUseCase
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.identity.Actor
+import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
 import com.dbook.presentation.catalog.FlightAdminController
@@ -15,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.test.web.servlet.MockMvc
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -41,6 +45,10 @@ abstract class FlightAdminControllerFixture {
     lateinit var userRepository: UserRepository
 
     protected val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
+
+    // the caller handed to the controller directly, instead of through a JWT (see PaymentControllerFixture)
+    protected val authentication =
+        UsernamePasswordAuthenticationToken("1", null, listOf(SimpleGrantedAuthority("ROLE_SUPER_ADMIN")))
 
     protected val gru =
         Airport(
@@ -82,6 +90,7 @@ abstract class FlightAdminControllerFixture {
 
     protected val expectedCommand =
         RegisterFlightCommand(
+            actor = Actor(id = 1, role = Role.SUPER_ADMIN),
             flightNumber = request.flightNumber,
             airlineIataCode = request.airlineIataCode,
             originIataCode = request.originIataCode,
