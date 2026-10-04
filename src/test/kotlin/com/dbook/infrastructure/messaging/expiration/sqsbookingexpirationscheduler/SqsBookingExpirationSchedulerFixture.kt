@@ -3,6 +3,8 @@ package com.dbook.infrastructure.messaging.expiration.sqsbookingexpirationschedu
 import com.dbook.LocalStackSqs
 import com.dbook.infrastructure.messaging.expiration.SqsBookingExpirationScheduler
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.tracing.Tracer
+import io.micrometer.tracing.propagation.Propagator
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.Message
 import java.net.URI
@@ -16,7 +18,7 @@ abstract class SqsBookingExpirationSchedulerFixture {
     protected fun schedulerFor(
         queueUrl: String,
         client: SqsClient = sqsClient,
-    ) = SqsBookingExpirationScheduler(client, ObjectMapper(), queueUrl)
+    ) = SqsBookingExpirationScheduler(client, ObjectMapper(), Tracer.NOOP, Propagator.NOOP, queueUrl)
 
     protected fun receive(
         queueUrl: String,

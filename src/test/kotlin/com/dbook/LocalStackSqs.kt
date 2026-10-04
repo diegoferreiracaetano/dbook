@@ -71,4 +71,13 @@ object LocalStackSqs {
         client.receiveMessage {
             it.queueUrl(queueUrl).waitTimeSeconds(waitSeconds).maxNumberOfMessages(10)
         }.messages()
+
+    /** Like [receive], but also brings the message attributes (e.g. the trace context). */
+    fun receiveWithAttributes(
+        queueUrl: String,
+        waitSeconds: Int,
+    ): List<Message> =
+        client.receiveMessage {
+            it.queueUrl(queueUrl).waitTimeSeconds(waitSeconds).maxNumberOfMessages(10).messageAttributeNames("All")
+        }.messages()
 }
