@@ -10,7 +10,7 @@ Uma reserva nasce `PENDING` e já tira o assento de circulação. Sem esta fila,
 
 Como funciona:
 
-1. `POST /bookings` cria a reserva e, **depois do commit** (`afterCommit`), agenda uma mensagem `{"bookingId": N}` na fila `dbook-booking-expiration` com `DelaySeconds = 900`. A mensagem fica invisível durante os 15 minutos.
+1. `POST /v1/bookings` cria a reserva e, **depois do commit** (`afterCommit`), agenda uma mensagem `{"bookingId": N}` na fila `dbook-booking-expiration` com `DelaySeconds = 900`. A mensagem fica invisível durante os 15 minutos.
 2. Quando ela fica visível, o `BookingExpirationConsumer` (`@Scheduled`, long polling) a lê e chama o `ExpireBookingUseCase`.
 3. O use case é **idempotente**: se a reserva não existe mais ou já não está `PENDING` (foi paga ou cancelada), não faz nada. Se ainda está `PENDING`, reaproveita o `CancelBookingUseCase`, que cancela, libera o assento e avisa a disponibilidade em tempo real.
 4. A mensagem só é **apagada depois de processada**. Se algo falha, ela não é apagada: a SQS a entrega de novo após 30 s (`VisibilityTimeout`) e, depois de 3 falhas (`maxReceiveCount`), a move para a **DLQ** (`dbook-booking-expiration-dlq`), onde pode ser inspecionada sem travar a fila principal.

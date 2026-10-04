@@ -7,7 +7,7 @@ import kotlin.test.Test
 class ReviewEndpointRequiresAuthenticationTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when posting a review then it returns 401`() {
-        mockMvc.post("/reviews") {
+        mockMvc.post("/v1/reviews") {
             contentType = MediaType.APPLICATION_JSON
             content = "{}"
         }.andExpect { status { isUnauthorized() } }

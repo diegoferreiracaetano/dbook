@@ -57,9 +57,10 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 
 1. Ache o caso de uso mais parecido e siga a mesma forma (ex.: pagar reservas → `RegisterPaymentUseCase`, espelho de `CancelBookingUseCase`).
 2. Ordem: regra no **domain** (`init { require(...) }` / `check(...)`) → porta → use case → adapter/entidade/migration → controller + DTOs → testes → docs.
-3. Endpoint autenticado por padrão: só o que está em `SecurityConfig.permitAll()` é público. Recurso do usuário logado usa `authentication.currentUserId()` (`presentation/SecurityExtensions.kt`) — **nunca** aceite `userId`/`customerId` no corpo. ADMIN: `@PreAuthorize("hasRole('ADMIN')")`.
-4. Todo controller novo: `@Tag`, `@Operation`, `@SecurityRequirement(name = "bearerAuth")` (se autenticado) e `@Schema(example = ...)` nos Requests.
-5. Fechar um marco = atualizar `docs/endpoints.md` (endpoints novos), o documento do assunto em `docs/` e o `README.md` (só o mapa e o roadmap) **e** `CHECKLIST.md` (seção `## Mn — ...` com itens numerados + checklist de fechamento). É a memória do projeto.
+3. **Todo controller de negócio fica sob uma versão da API**: `@RequestMapping("${ApiPaths.V1}/recurso")` (`presentation/common/ApiPaths.kt`) — só os operacionais (`/health`, `/ws`, Swagger, actuator) ficam sem versão. A versão vive **só na `presentation`** (controllers e DTOs): use case e domínio não sabem que ela existe. Rota pública nova entra na lista de `SecurityConfig` como `/v1/...`. O teste `EveryApiControllerIsVersionedTest` reprova controller sem versão. Mudança que **quebra** cliente (remover/renomear campo, tipo, tornar algo obrigatório, mudar status) pede `/v2`; acrescentar campo opcional não. Ver `docs/versionamento.md`.
+4. Endpoint autenticado por padrão: só o que está em `SecurityConfig.permitAll()` é público. Recurso do usuário logado usa `authentication.currentUserId()` (`presentation/SecurityExtensions.kt`) — **nunca** aceite `userId`/`customerId` no corpo. ADMIN: `@PreAuthorize("hasRole('ADMIN')")`.
+5. Todo controller novo: `@Tag`, `@Operation`, `@SecurityRequirement(name = "bearerAuth")` (se autenticado) e `@Schema(example = ...)` nos Requests.
+6. Fechar um marco = atualizar `docs/endpoints.md` (endpoints novos), o documento do assunto em `docs/` e o `README.md` (só o mapa e o roadmap) **e** `CHECKLIST.md` (seção `## Mn — ...` com itens numerados + checklist de fechamento). É a memória do projeto.
 
 ## Tratamento de erros
 
@@ -92,7 +93,7 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
 
 docker compose up -d                 # Postgres + Redis (+ LocalStack) p/ rodar localmente
 ./gradlew bootRun                    # sobe em :8080 (Flyway migra sozinho)
-./scripts/seed-flights.sh 300        # popula voos via POST /admin/flights
+./scripts/seed-flights.sh 300        # popula voos via POST /v1/admin/flights
 
 ./gradlew ktlintCheck detekt         # estilo + análise estática (rápido, rode sempre)
 ./gradlew ktlintFormat               # corrige formatação

@@ -2,6 +2,7 @@ package com.dbook.presentation.payment
 
 import com.dbook.application.payment.RegisterPaymentCommand
 import com.dbook.application.payment.RegisterPaymentUseCase
+import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /payments` — authenticated; pays for one or more of the caller's own PENDING bookings at once. */
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("${ApiPaths.V1}/payments")
 @Tag(name = "Payments", description = "Payment and confirmation of PENDING bookings")
 @SecurityRequirement(name = "bearerAuth")
 class PaymentController(

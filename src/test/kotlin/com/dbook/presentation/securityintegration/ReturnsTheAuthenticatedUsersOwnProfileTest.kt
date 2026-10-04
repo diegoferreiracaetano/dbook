@@ -9,7 +9,7 @@ class ReturnsTheAuthenticatedUsersOwnProfileTest : SecurityIntegrationFixture() 
         val email = uniqueEmail()
         val token = registerAndLogin(email, name = "Diego Ferreira")
 
-        mockMvc.get("/users/me") {
+        mockMvc.get("/v1/users/me") {
             header("Authorization", "Bearer $token")
         }.andExpect {
             status { isOk() }

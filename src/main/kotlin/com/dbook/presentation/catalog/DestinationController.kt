@@ -1,6 +1,7 @@
 package com.dbook.presentation.catalog
 
 import com.dbook.application.catalog.GetFeaturedDestinationsUseCase
+import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
  * no hardcoded airport data of its own.
  */
 @RestController
-@RequestMapping("/destinations")
+@RequestMapping("${ApiPaths.V1}/destinations")
 @Tag(name = "Destinations (public)", description = "Featured destinations with real pricing and ratings")
 class DestinationController(
     private val getFeaturedDestinationsUseCase: GetFeaturedDestinationsUseCase,

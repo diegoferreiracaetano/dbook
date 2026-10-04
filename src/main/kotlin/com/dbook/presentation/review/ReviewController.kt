@@ -2,6 +2,7 @@ package com.dbook.presentation.review
 
 import com.dbook.application.review.CreateReviewCommand
 import com.dbook.application.review.CreateReviewUseCase
+import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /reviews` — authenticated; rates one of the caller's own CONFIRMED bookings. */
 @RestController
-@RequestMapping("/reviews")
+@RequestMapping("${ApiPaths.V1}/reviews")
 @Tag(name = "Reviews", description = "rates one of the caller's own CONFIRMED booking")
 @SecurityRequirement(name = "bearerAuth")
 class ReviewController(

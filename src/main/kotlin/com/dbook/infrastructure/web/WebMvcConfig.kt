@@ -9,6 +9,6 @@ class WebMvcConfig(
     private val aiRateLimitInterceptor: AiRateLimitInterceptor,
 ) : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
-        registry.addInterceptor(aiRateLimitInterceptor).addPathPatterns("/ai/**")
+        registry.addInterceptor(aiRateLimitInterceptor).addPathPatterns("/v1/ai/**")
     }
 }

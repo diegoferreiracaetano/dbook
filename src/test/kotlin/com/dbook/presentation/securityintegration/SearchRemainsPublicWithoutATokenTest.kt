@@ -6,7 +6,7 @@ import kotlin.test.Test
 class SearchRemainsPublicWithoutATokenTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when searching flights then it returns 200`() {
-        mockMvc.get("/flights/search") {
+        mockMvc.get("/v1/flights/search") {
             param("origin", "GRU")
             param("destination", "GIG")
             param("date", "2027-01-01")

@@ -9,7 +9,7 @@ class AnObservedUseCaseIsTimedTest : ObservabilityFixture() {
     fun `given an observed use case when it runs through the api then prometheus reports its timer`() {
         val email = "obs${(1..999_999_999).random()}@example.com"
         val registration =
-            postToApi("/auth/register", """{"email":"$email","password":"s3cret-password","name":"Obs"}""")
+            postToApi("/v1/auth/register", """{"email":"$email","password":"s3cret-password","name":"Obs"}""")
         assertEquals(201, registration.statusCode())
 
         val scrape = getFromManagement("/actuator/prometheus").body()

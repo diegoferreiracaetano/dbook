@@ -20,7 +20,7 @@ class RetryingAPaymentWithTheSameKeyReturnsTheSamePaymentTest : SecurityIntegrat
         val token = registerAndLogin(uniqueEmail())
         val (bookableId, seatId) = registerFlightWithOneSeat()
         val bookingResult =
-            mockMvc.post("/bookings") {
+            mockMvc.post("/v1/bookings") {
                 header("Authorization", "Bearer $token")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId, "seatId" to seatId))
@@ -42,7 +42,7 @@ class RetryingAPaymentWithTheSameKeyReturnsTheSamePaymentTest : SecurityIntegrat
         bookingId: Long,
         key: String,
     ): String =
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             header("Authorization", "Bearer $token")
             header("Idempotency-Key", key)
             contentType = MediaType.APPLICATION_JSON

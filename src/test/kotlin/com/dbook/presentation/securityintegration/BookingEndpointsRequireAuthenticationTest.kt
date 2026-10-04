@@ -8,7 +8,7 @@ import kotlin.test.Test
 class BookingEndpointsRequireAuthenticationTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when posting a booking then it returns 401`() {
-        mockMvc.post("/bookings") {
+        mockMvc.post("/v1/bookings") {
             contentType = MediaType.APPLICATION_JSON
             content = "{}"
         }.andExpect { status { isUnauthorized() } }
@@ -16,6 +16,6 @@ class BookingEndpointsRequireAuthenticationTest : SecurityIntegrationFixture() {
 
     @Test
     fun `given no token when listing my bookings then it returns 401`() {
-        mockMvc.get("/bookings").andExpect { status { isUnauthorized() } }
+        mockMvc.get("/v1/bookings").andExpect { status { isUnauthorized() } }
     }
 }

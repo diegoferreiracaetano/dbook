@@ -43,7 +43,7 @@ Objetivo: qualquer mudança nova parecer escrita pela mesma pessoa que escreveu 
 4. **Migration** — `src/main/resources/db/migration/V<N>__snake_case.sql`, `BIGSERIAL PRIMARY KEY`. Coluna nova `NOT NULL` em tabela com dados: adicione nullable → `UPDATE` (backfill) → `SET NOT NULL` (ver `V19__add_aircraft_type_to_flight.sql`).
 5. **Presentation** — controller fino + DTOs:
    ```kotlin
-   @RestController @RequestMapping("/payments")
+   @RestController @RequestMapping("${ApiPaths.V1}/payments")
    @Tag(name = "Payments", description = "...") @SecurityRequirement(name = "bearerAuth")
    class PaymentController(private val registerPaymentUseCase: RegisterPaymentUseCase) {
        @Operation(summary = "Pays for the given bookings, confirming each of them")

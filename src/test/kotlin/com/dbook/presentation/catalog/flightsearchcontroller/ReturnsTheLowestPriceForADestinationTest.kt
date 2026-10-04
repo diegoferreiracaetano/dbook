@@ -10,7 +10,7 @@ class ReturnsTheLowestPriceForADestinationTest : FlightSearchControllerFixture()
     fun `given a destination with flights when getting the lowest price then it returns 200 with the price`() {
         given(getLowestPriceForDestinationUseCase.execute("GIG")).willReturn(BigDecimal("450.00"))
 
-        mockMvc.get("/flights/lowest-price") {
+        mockMvc.get("/v1/flights/lowest-price") {
             param("destination", "GIG")
         }.andExpect {
             status { isOk() }

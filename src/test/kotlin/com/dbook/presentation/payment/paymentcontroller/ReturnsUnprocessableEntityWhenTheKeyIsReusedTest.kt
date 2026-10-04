@@ -11,7 +11,7 @@ class ReturnsUnprocessableEntityWhenTheKeyIsReusedTest : PaymentControllerFixtur
     fun `given a key already used for another request when posting a payment then it returns 422`() {
         given(registerPaymentUseCase.execute(expectedCommand)).willThrow(IdempotencyKeyReusedException())
 
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             principal = authentication
             header("Idempotency-Key", idempotencyKey)
             contentType = MediaType.APPLICATION_JSON

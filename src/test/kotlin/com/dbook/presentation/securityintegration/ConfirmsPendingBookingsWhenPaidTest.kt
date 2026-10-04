@@ -12,7 +12,7 @@ class ConfirmsPendingBookingsWhenPaidTest : SecurityIntegrationFixture() {
         val (bookableId, seatId) = registerFlightWithOneSeat()
 
         val bookingResult =
-            mockMvc.post("/bookings") {
+            mockMvc.post("/v1/bookings") {
                 header("Authorization", "Bearer $token")
                 header("Idempotency-Key", "test-payment-key")
                 contentType = MediaType.APPLICATION_JSON
@@ -20,7 +20,7 @@ class ConfirmsPendingBookingsWhenPaidTest : SecurityIntegrationFixture() {
             }.andReturn()
         val bookingId = objectMapper.readTree(bookingResult.response.contentAsString)["id"].asLong()
 
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             header("Authorization", "Bearer $token")
             header("Idempotency-Key", "test-payment-key")
             contentType = MediaType.APPLICATION_JSON
@@ -40,7 +40,7 @@ class ConfirmsPendingBookingsWhenPaidTest : SecurityIntegrationFixture() {
             jsonPath("$.status") { value("CONFIRMED") }
         }
 
-        mockMvc.get("/bookings") {
+        mockMvc.get("/v1/bookings") {
             header("Authorization", "Bearer $token")
             header("Idempotency-Key", "test-payment-key")
         }.andExpect {

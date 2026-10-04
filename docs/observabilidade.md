@@ -23,8 +23,8 @@ Existem três tipos de sinal, e cada um responde a uma pergunta diferente:
 | Pilar | Pergunta que responde | Exemplo neste projeto |
 |---|---|---|
 | **Métricas** | *Está bom ou ruim? Quanto? Está piorando?* | pedidos por segundo, latência p95, quantas reservas estão pendentes agora |
-| **Logs** | *O que aconteceu, exatamente?* | `GET /bookings -> 200 in 134 ms`, com o usuário e o id da requisição |
-| **Traces** | *Por onde a requisição passou e onde demorou?* | `POST /bookings` → segurança → caso de uso → 4 consultas SQL |
+| **Logs** | *O que aconteceu, exatamente?* | `GET /v1/bookings -> 200 in 134 ms`, com o usuário e o id da requisição |
+| **Traces** | *Por onde a requisição passou e onde demorou?* | `POST /v1/bookings` → segurança → caso de uso → 4 consultas SQL |
 
 Sozinho, cada um é limitado: a métrica diz que **algo** está lento mas não **qual** requisição; o log diz o que houve numa requisição mas não mostra o tempo de cada etapa; o trace mostra as etapas mas é amostrado. O valor está em **ligá-los**: um painel de métrica mostra o pico → um log mostra a requisição problemática → o `traceId` dessa linha abre o trace completo. Foi isso que se montou aqui.
 
@@ -101,14 +101,14 @@ A aplicação loga em formatos escolhidos por **perfil do Spring**:
 
 | Perfil | O que faz |
 |---|---|
-| *(nenhum)* | linha legível: `21:10:06.286 INFO [requestId] [trace=...] [user=33] ... - GET /bookings -> 200 in 134 ms` |
+| *(nenhum)* | linha legível: `21:10:06.286 INFO [requestId] [trace=...] [user=33] ... - GET /v1/bookings -> 200 in 134 ms` |
 | `json` | **um objeto JSON por linha** (é o que o Terraform do ECS ativa) |
 | `logfile` | também grava `logs/dbook.json`, com rotação (50 MB ou diária, 7 dias, teto de 500 MB), para o Promtail ler |
 
 Cada requisição ganha um **`requestId`** e termina com **uma linha de acesso**. No JSON:
 
 ```json
-{"@timestamp":"2026-10-03T21:10:06.28-03:00","level":"INFO","message":"GET /bookings -> 200 in 134 ms",
+{"@timestamp":"2026-10-03T21:10:06.28-03:00","level":"INFO","message":"GET /v1/bookings -> 200 in 134 ms",
  "requestId":"demo-bookings-1","traceId":"426051cdbe04b92450adb9be7cc60ccb","spanId":"b7ad6b7169203331",
  "userId":"33","status":200,"duration_ms":134,"app":"dbook", "logger_name":"...RequestLoggingFilter", ...}
 ```
@@ -123,10 +123,10 @@ Cada requisição ganha um **`requestId`** e termina com **uma linha de acesso**
 
 - Os **spans são sempre criados**, então o `traceId` está em toda linha de log mesmo sem coletor.
 - O **envio** dos spans é *opt-in*, pelo perfil `tracing`. Sem coletor, o exportador enchia o log de `Failed to export spans`.
-- Um `POST /bookings` gera uma árvore assim (18 spans, vista de verdade no Jaeger):
+- Um `POST /v1/bookings` gera uma árvore assim (18 spans, vista de verdade no Jaeger):
 
 ```
-http post /bookings
+http post /v1/bookings
   security filterchain before → authorize request
   secured request
     register-booking-use-case#execute
@@ -138,7 +138,7 @@ http post /bookings
 - **Propagação pela fila SQS:** a expiração roda 15 minutos depois, em outra thread. O contexto do trace viaja no **atributo `traceparent` da mensagem**, e o consumidor abre o span `booking-expiration consume` como filho do que agendou. Resultado, num único trace:
 
 ```
-http post /bookings
+http post /v1/bookings
 booking-expiration consume
   expire-booking-use-case#execute
     cancel-booking-use-case#execute

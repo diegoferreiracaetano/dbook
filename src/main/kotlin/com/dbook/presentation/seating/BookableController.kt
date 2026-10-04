@@ -1,6 +1,7 @@
 package com.dbook.presentation.seating
 
 import com.dbook.application.seating.GetSeatMapUseCase
+import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `GET /bookables/{id}/seats` — public, no authentication required (same spirit as `/flights/search`). */
 @RestController
-@RequestMapping("/bookables")
+@RequestMapping("${ApiPaths.V1}/bookables")
 @Tag(name = "Bookables (public)", description = "Public seat map lookup")
 class BookableController(
     private val getSeatMapUseCase: GetSeatMapUseCase,

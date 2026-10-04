@@ -4,10 +4,10 @@
 
 Busca em linguagem natural, auditada e com limite de uso.
 
-`POST /ai/suggestions` (autenticado) recebe um pedido em linguagem natural e devolve voos sugeridos, sempre a partir dos voos realmente ativos no banco — a IA **nunca** cria, altera ou confirma uma reserva sozinha, só sugere.
+`POST /v1/ai/suggestions` (autenticado) recebe um pedido em linguagem natural e devolve voos sugeridos, sempre a partir dos voos realmente ativos no banco — a IA **nunca** cria, altera ou confirma uma reserva sozinha, só sugere.
 
 ```bash
-curl -X POST localhost:8080/ai/suggestions \
+curl -X POST localhost:8080/v1/ai/suggestions \
   -H "Content-Type: application/json" -H "Authorization: Bearer <accessToken>" \
   -d '{"query": "voos baratos pra o Rio mês que vem"}'
 ```

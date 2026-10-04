@@ -69,7 +69,7 @@ Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à
 ./scripts/seed-flights.sh 1000   # cria 1000 voos; padrão é 1000 se omitido
 ```
 
-Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 9 aeroportos seedados via `POST /admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
+Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 9 aeroportos seedados via `POST /v1/admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
 
 ## Documentação da API (Swagger)
 
@@ -85,6 +85,7 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 | Documento | O que tem |
 |---|---|
 | [Endpoints](docs/endpoints.md) | todos os endpoints, com `curl` de exemplo e os códigos de status |
+| [Versionamento da API](docs/versionamento.md) | por que e como a API é versionada (`/v1`), o que é mudança que quebra, como lançar uma `v2` e aposentar a antiga |
 | [Autenticação](docs/autenticacao.md) | registro, login, refresh de token rotativo, papéis e rotas públicas |
 | [Observabilidade](docs/observabilidade.md) | **o conceito, o que foi usado, como foi implementado, onde acessar** e roteiros para investigar problemas (métricas, logs, tracing) |
 | [Expiração de reservas (SQS)](docs/expiracao-de-reservas.md) | como uma reserva pendente é cancelada sozinha, com diagrama |
@@ -105,10 +106,10 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
 - 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
-- ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /bookables/{id}/seats`, `seatId` obrigatório em `POST /bookings`)
-- ✅ **M19 — Avaliação de reserva** (`Review`, `POST /reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
+- ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /v1/bookables/{id}/seats`, `seatId` obrigatório em `POST /v1/bookings`)
+- ✅ **M19 — Avaliação de reserva** (`Review`, `POST /v1/reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /v1/bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
 - ✅ **M20 — Expiração de reservas pendentes** (fila SQS com atraso de 15 min no LocalStack, consumidor idempotente com DLQ, lock otimista na `Booking` contra a corrida pagar × expirar — Terraform da SQS e outbox ficaram como evolução)
-- ✅ **M21 — Idempotência no pagamento** (`Idempotency-Key` obrigatório em `POST /payments`: a retentativa devolve o pagamento original, chave reutilizada com outro pedido é 422, corrida entre requisições iguais resolvida pelo índice único — o teste de corrida achou um 500 real causado pela tradução de exceções do Spring em `@Repository`)
+- ✅ **M21 — Idempotência no pagamento** (`Idempotency-Key` obrigatório em `POST /v1/payments`: a retentativa devolve o pagamento original, chave reutilizada com outro pedido é 422, corrida entre requisições iguais resolvida pelo índice único — o teste de corrida achou um 500 real causado pela tradução de exceções do Spring em `@Repository`)
 - ✅ **M22 — Pacotes por conceito** (domain/application/presentation/persistence divididos em `catalog`, `seating`, `booking`, `payment`, `review`, `identity`, `ai`; regras de arquitetura verificadas por testes ArchUnit)
 - ✅ **M23 — Observabilidade** (health liveness/readiness e métricas Prometheus numa porta de gestão separada; `@Observed` em todos os casos de uso; métricas de negócio e o gauge de reservas pendentes; logs em JSON com `requestId`/`userId`/`traceId`; tracing com OpenTelemetry que atravessa a fila SQS; Prometheus + Loki + Jaeger + Grafana locais com dashboard — ver [docs/observabilidade.md](docs/observabilidade.md))
 

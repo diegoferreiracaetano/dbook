@@ -30,14 +30,14 @@ AIRLINES=("LA" "AD" "G3" "AA" "DL" "UA")
 AIRCRAFT_TYPES=("Embraer E195" "Airbus A320" "Boeing 777")
 
 echo "Registering seed admin user..."
-curl -s -o /dev/null -X POST "$BASE_URL/auth/register" -H "Content-Type: application/json" \
+curl -s -o /dev/null -X POST "$BASE_URL/v1/auth/register" -H "Content-Type: application/json" \
   -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\",\"name\":\"Seed Admin\"}" || true
 
 echo "Promoting to ADMIN (direct SQL — local dev only)..."
 docker compose exec -T postgres psql -U dbook -d dbook -c \
   "UPDATE app_user SET role = 'ADMIN' WHERE email = '$ADMIN_EMAIL';" > /dev/null
 
-ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" -H "Content-Type: application/json" \
+ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/v1/auth/login" -H "Content-Type: application/json" \
   -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}" \
   | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
 
@@ -82,7 +82,7 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
   capacity=$((RANDOM % 150 + 50))
   flight_number="DBS$(printf '%05d' "$i")"
 
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/admin/flights" \
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/v1/admin/flights" \
     -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
     -d "{
       \"flightNumber\": \"$flight_number\",

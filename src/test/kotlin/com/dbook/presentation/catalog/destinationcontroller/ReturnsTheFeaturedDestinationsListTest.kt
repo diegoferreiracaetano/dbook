@@ -24,7 +24,7 @@ class ReturnsTheFeaturedDestinationsListTest : DestinationControllerFixture() {
         given(getFeaturedDestinationsUseCase.execute())
             .willReturn(listOf(FeaturedDestination(gig, BigDecimal("305.00"), 4.5)))
 
-        mockMvc.get("/destinations").andExpect {
+        mockMvc.get("/v1/destinations").andExpect {
             status { isOk() }
             jsonPath("$[0].iataCode") { value("GIG") }
             jsonPath("$[0].city") { value("Rio de Janeiro") }

@@ -51,19 +51,21 @@ class SecurityConfig(
                     // matches there — on the public port the same paths stay authenticated.
                     .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
                     .requestMatchers(
+                        // operational: outside any API version
                         "/health",
-                        "/auth/register",
-                        "/auth/login",
-                        "/auth/refresh",
-                        "/flights/search",
-                        "/flights/lowest-price",
-                        "/destinations",
-                        "/bookables/*/seats",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         // browsers can't set Authorization on the WS handshake request;
                         // real auth happens on the STOMP CONNECT frame instead (5.7)
                         "/ws/**",
+                        // the public routes of the business API (version 1)
+                        "/v1/auth/register",
+                        "/v1/auth/login",
+                        "/v1/auth/refresh",
+                        "/v1/flights/search",
+                        "/v1/flights/lowest-price",
+                        "/v1/destinations",
+                        "/v1/bookables/*/seats",
                     ).permitAll()
                     .anyRequest().authenticated()
             }.exceptionHandling {

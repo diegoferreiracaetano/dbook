@@ -9,7 +9,7 @@ class AdminEndpointAcceptsAnAdminTokenTest : SecurityIntegrationFixture() {
     fun `given an ADMIN token when posting to admin flights then it returns 201`() {
         val token = registerAdminAndLogin(uniqueEmail())
 
-        mockMvc.post("/admin/flights") {
+        mockMvc.post("/v1/admin/flights") {
             header("Authorization", "Bearer $token")
             contentType = MediaType.APPLICATION_JSON
             content = validFlightRequestBody()

@@ -10,7 +10,7 @@ class ReturnsTheSeatMapTest : BookableControllerFixture() {
     fun `given a bookable with seats when getting its seat map then it returns them`() {
         given(getSeatMapUseCase.execute(1)).willReturn(listOf(Seat(id = 1, bookableId = 1, label = "1A")))
 
-        mockMvc.get("/bookables/1/seats").andExpect {
+        mockMvc.get("/v1/bookables/1/seats").andExpect {
             status { isOk() }
             jsonPath("$[0].label") { value("1A") }
         }

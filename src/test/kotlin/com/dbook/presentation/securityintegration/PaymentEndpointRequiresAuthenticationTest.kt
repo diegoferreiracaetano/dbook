@@ -7,7 +7,7 @@ import kotlin.test.Test
 class PaymentEndpointRequiresAuthenticationTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when posting a payment then it returns 401`() {
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             contentType = MediaType.APPLICATION_JSON
             content = "{}"
         }.andExpect { status { isUnauthorized() } }

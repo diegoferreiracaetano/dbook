@@ -31,7 +31,7 @@ class ReturnsMatchingFlightsTest : FlightSearchControllerFixture() {
         given(searchFlightsUseCase.execute("GRU", "GIG", LocalDate.of(2026, 10, 1)))
             .willReturn(listOf(flight))
 
-        mockMvc.get("/flights/search") {
+        mockMvc.get("/v1/flights/search") {
             param("origin", "GRU")
             param("destination", "GIG")
             param("date", "2026-10-01")

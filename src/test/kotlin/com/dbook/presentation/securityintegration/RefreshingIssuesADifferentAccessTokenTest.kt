@@ -14,7 +14,7 @@ class RefreshingIssuesADifferentAccessTokenTest : SecurityIntegrationFixture() {
         val originalAccessToken = loginAccessToken(email, "s3cret-password")
 
         val refreshResult =
-            mockMvc.post("/auth/refresh") {
+            mockMvc.post("/v1/auth/refresh") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("refreshToken" to refreshToken))
             }.andReturn()

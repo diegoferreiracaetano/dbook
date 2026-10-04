@@ -4,6 +4,7 @@ import com.dbook.application.booking.CancelBookingUseCase
 import com.dbook.application.booking.ListMyBookingsUseCase
 import com.dbook.application.booking.RegisterBookingCommand
 import com.dbook.application.booking.RegisterBookingUseCase
+import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.currentRole
 import com.dbook.presentation.common.currentUserId
 import io.swagger.v3.oas.annotations.Operation
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /bookings`, `GET /bookings`, `/bookings/{id}/cancel` — authenticated; cancel requires owner or ADMIN. */
 @RestController
-@RequestMapping("/bookings")
+@RequestMapping("${ApiPaths.V1}/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
 @SecurityRequirement(name = "bearerAuth")
 class BookingController(

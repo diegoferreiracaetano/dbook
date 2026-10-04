@@ -46,7 +46,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         password: String = "s3cret-password",
         name: String = "Test User",
     ): String {
-        mockMvc.post("/auth/register") {
+        mockMvc.post("/v1/auth/register") {
             contentType = MediaType.APPLICATION_JSON
             content =
                 objectMapper.writeValueAsString(
@@ -61,7 +61,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         password: String,
     ): String {
         val result =
-            mockMvc.post("/auth/login") {
+            mockMvc.post("/v1/auth/login") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("email" to email, "password" to password))
             }.andReturn()
@@ -73,7 +73,7 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         password: String,
     ): String {
         val result =
-            mockMvc.post("/auth/login") {
+            mockMvc.post("/v1/auth/login") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("email" to email, "password" to password))
             }.andReturn()

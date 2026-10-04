@@ -13,7 +13,7 @@ class AdminEndpointRejectsAClientTokenTest : SecurityIntegrationFixture() {
         // runs once Spring MVC has already bound the request body. A malformed body
         // (e.g. "{}") would 400 before authorization is even checked, hiding the thing
         // this test is actually about.
-        mockMvc.post("/admin/flights") {
+        mockMvc.post("/v1/admin/flights") {
             header("Authorization", "Bearer $token")
             contentType = MediaType.APPLICATION_JSON
             content = validFlightRequestBody()

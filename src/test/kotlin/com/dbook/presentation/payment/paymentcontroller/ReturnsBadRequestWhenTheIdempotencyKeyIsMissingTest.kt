@@ -8,7 +8,7 @@ import org.springframework.test.web.servlet.post
 class ReturnsBadRequestWhenTheIdempotencyKeyIsMissingTest : PaymentControllerFixture() {
     @Test
     fun `given no Idempotency-Key header when posting a payment then it returns 400 without paying`() {
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             principal = authentication
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)

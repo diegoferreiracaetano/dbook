@@ -11,7 +11,7 @@ class ReturnsEmptyListWhenNothingMatchesTest : FlightSearchControllerFixture() {
         given(searchFlightsUseCase.execute("GRU", "JFK", LocalDate.of(2026, 10, 1)))
             .willReturn(emptyList())
 
-        mockMvc.get("/flights/search") {
+        mockMvc.get("/v1/flights/search") {
             param("origin", "GRU")
             param("destination", "JFK")
             param("date", "2026-10-01")

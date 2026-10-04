@@ -12,7 +12,7 @@ class AcceptsAPaymentWithAnIdempotencyKeyTest : PaymentControllerFixture() {
         // leave the mock returning null and the request would not come back as 201
         given(registerPaymentUseCase.execute(expectedCommand)).willReturn(payment)
 
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             principal = authentication
             header("Idempotency-Key", idempotencyKey)
             contentType = MediaType.APPLICATION_JSON

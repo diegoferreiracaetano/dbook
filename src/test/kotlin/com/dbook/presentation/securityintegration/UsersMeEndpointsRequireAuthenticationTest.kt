@@ -8,12 +8,12 @@ import kotlin.test.Test
 class UsersMeEndpointsRequireAuthenticationTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when getting the own profile then it returns 401`() {
-        mockMvc.get("/users/me").andExpect { status { isUnauthorized() } }
+        mockMvc.get("/v1/users/me").andExpect { status { isUnauthorized() } }
     }
 
     @Test
     fun `given no token when updating the own name then it returns 401`() {
-        mockMvc.patch("/users/me") {
+        mockMvc.patch("/v1/users/me") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(mapOf("name" to "New Name"))
         }.andExpect { status { isUnauthorized() } }

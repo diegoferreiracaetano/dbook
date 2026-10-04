@@ -2,6 +2,7 @@ package com.dbook.presentation.ai
 
 import com.dbook.application.ai.SuggestFlightsCommand
 import com.dbook.application.ai.SuggestFlightsUseCase
+import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /ai/suggestions` — authenticated; rate-limited to 5/min per user (see `AiRateLimitInterceptor`). */
 @RestController
-@RequestMapping("/ai")
+@RequestMapping("${ApiPaths.V1}/ai")
 @Tag(
     name = "AI",
     description = "Natural-language flight suggestions — advisory only, never books or decides on its own",

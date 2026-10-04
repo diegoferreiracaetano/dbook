@@ -10,7 +10,7 @@ class AClientCanBookWithAValidTokenTest : SecurityIntegrationFixture() {
         val token = registerAndLogin(uniqueEmail())
         val (bookableId, seatId) = registerFlightWithOneSeat()
 
-        mockMvc.post("/bookings") {
+        mockMvc.post("/v1/bookings") {
             header("Authorization", "Bearer $token")
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId, "seatId" to seatId))

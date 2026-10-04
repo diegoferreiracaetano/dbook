@@ -2,6 +2,7 @@ package com.dbook.presentation.catalog
 
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /admin/flights` — ADMIN only. */
 @RestController
-@RequestMapping("/admin/flights")
+@RequestMapping("${ApiPaths.V1}/admin/flights")
 @Tag(name = "Flights (admin)", description = "Flight registration")
 @SecurityRequirement(name = "bearerAuth")
 class FlightAdminController(

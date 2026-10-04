@@ -12,7 +12,7 @@ class ReturnsConflictWhenTheSameKeyIsAlreadyBeingProcessedTest : PaymentControll
         given(registerPaymentUseCase.execute(expectedCommand))
             .willThrow(DuplicateIdempotencyKeyException(IllegalStateException("unique index violated")))
 
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             principal = authentication
             header("Idempotency-Key", idempotencyKey)
             contentType = MediaType.APPLICATION_JSON

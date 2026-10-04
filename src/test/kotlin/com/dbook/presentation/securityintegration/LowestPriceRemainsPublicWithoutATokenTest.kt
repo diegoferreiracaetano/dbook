@@ -11,7 +11,7 @@ import kotlin.test.Test
 class LowestPriceRemainsPublicWithoutATokenTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when getting the lowest price then it is not blocked by auth`() {
-        mockMvc.get("/flights/lowest-price") {
+        mockMvc.get("/v1/flights/lowest-price") {
             param("destination", "LIS")
         }.andExpect { status { isNotFound() } }
     }

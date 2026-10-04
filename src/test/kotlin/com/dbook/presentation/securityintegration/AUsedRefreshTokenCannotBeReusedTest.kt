@@ -11,12 +11,12 @@ class AUsedRefreshTokenCannotBeReusedTest : SecurityIntegrationFixture() {
         registerAndLogin(email)
         val refreshToken = loginRefreshToken(email, "s3cret-password")
 
-        mockMvc.post("/auth/refresh") {
+        mockMvc.post("/v1/auth/refresh") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(mapOf("refreshToken" to refreshToken))
         }.andExpect { status { isOk() } }
 
-        mockMvc.post("/auth/refresh") {
+        mockMvc.post("/v1/auth/refresh") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(mapOf("refreshToken" to refreshToken))
         }.andExpect { status { isUnauthorized() } }

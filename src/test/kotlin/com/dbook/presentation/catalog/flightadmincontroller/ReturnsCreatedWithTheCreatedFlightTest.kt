@@ -29,7 +29,7 @@ class ReturnsCreatedWithTheCreatedFlightTest : FlightAdminControllerFixture() {
             )
         given(registerFlightUseCase.execute(expectedCommand)).willReturn(flight)
 
-        mockMvc.post("/admin/flights") {
+        mockMvc.post("/v1/admin/flights") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
         }.andExpect {

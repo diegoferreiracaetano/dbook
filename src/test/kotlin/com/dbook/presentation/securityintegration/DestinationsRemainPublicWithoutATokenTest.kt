@@ -6,6 +6,6 @@ import kotlin.test.Test
 class DestinationsRemainPublicWithoutATokenTest : SecurityIntegrationFixture() {
     @Test
     fun `given no token when listing destinations then it returns 200`() {
-        mockMvc.get("/destinations").andExpect { status { isOk() } }
+        mockMvc.get("/v1/destinations").andExpect { status { isOk() } }
     }
 }

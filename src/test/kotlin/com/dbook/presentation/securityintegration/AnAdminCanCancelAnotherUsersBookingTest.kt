@@ -12,14 +12,14 @@ class AnAdminCanCancelAnotherUsersBookingTest : SecurityIntegrationFixture() {
         val (bookableId, seatId) = registerFlightWithOneSeat()
 
         val bookingResult =
-            mockMvc.post("/bookings") {
+            mockMvc.post("/v1/bookings") {
                 header("Authorization", "Bearer $ownerToken")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId, "seatId" to seatId))
             }.andReturn()
         val bookingId = objectMapper.readTree(bookingResult.response.contentAsString)["id"].asLong()
 
-        mockMvc.post("/bookings/$bookingId/cancel") {
+        mockMvc.post("/v1/bookings/$bookingId/cancel") {
             header("Authorization", "Bearer $adminToken")
         }.andExpect { status { isOk() } }
     }

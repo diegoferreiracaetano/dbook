@@ -13,7 +13,7 @@ class DestinationsShowTheAverageRatingTest : SecurityIntegrationFixture() {
         bookPayAndReview(registerAndLogin(uniqueEmail()), firstBookableId, firstSeatId, rating = 5)
         bookPayAndReview(registerAndLogin(uniqueEmail()), secondBookableId, secondSeatId, rating = 3)
 
-        mockMvc.get("/destinations").andExpect {
+        mockMvc.get("/v1/destinations").andExpect {
             status { isOk() }
             jsonPath("$[?(@.iataCode == 'NRT')].averageRating") { value(4.0) }
         }
@@ -26,7 +26,7 @@ class DestinationsShowTheAverageRatingTest : SecurityIntegrationFixture() {
         rating: Int,
     ) {
         val bookingResult =
-            mockMvc.post("/bookings") {
+            mockMvc.post("/v1/bookings") {
                 header("Authorization", "Bearer $token")
                 header("Idempotency-Key", "test-payment-key")
                 contentType = MediaType.APPLICATION_JSON
@@ -34,7 +34,7 @@ class DestinationsShowTheAverageRatingTest : SecurityIntegrationFixture() {
             }.andReturn()
         val bookingId = objectMapper.readTree(bookingResult.response.contentAsString)["id"].asLong()
 
-        mockMvc.post("/payments") {
+        mockMvc.post("/v1/payments") {
             header("Authorization", "Bearer $token")
             header("Idempotency-Key", "test-payment-key")
             contentType = MediaType.APPLICATION_JSON
@@ -44,7 +44,7 @@ class DestinationsShowTheAverageRatingTest : SecurityIntegrationFixture() {
                 )
         }
 
-        mockMvc.post("/reviews") {
+        mockMvc.post("/v1/reviews") {
             header("Authorization", "Bearer $token")
             header("Idempotency-Key", "test-payment-key")
             contentType = MediaType.APPLICATION_JSON

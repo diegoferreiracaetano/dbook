@@ -9,7 +9,7 @@ class ReturnsNotFoundWhenNoFlightsExistForTheDestinationTest : FlightSearchContr
     fun `given a destination with no flights when getting the lowest price then it returns 404`() {
         given(getLowestPriceForDestinationUseCase.execute("XXX")).willReturn(null)
 
-        mockMvc.get("/flights/lowest-price") {
+        mockMvc.get("/v1/flights/lowest-price") {
             param("destination", "XXX")
         }.andExpect {
             status { isNotFound() }

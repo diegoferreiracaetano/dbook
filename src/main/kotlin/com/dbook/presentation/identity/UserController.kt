@@ -4,6 +4,7 @@ import com.dbook.application.identity.UpdateUserNameCommand
 import com.dbook.application.identity.UpdateUserNameUseCase
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.identity.UserRepository
+import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.currentUserId
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `GET /users/me`, `PATCH /users/me` — authenticated; always the caller's own profile. */
 @RestController
-@RequestMapping("/users")
+@RequestMapping("${ApiPaths.V1}/users")
 @Tag(name = "Users", description = "The authenticated user's own profile")
 @SecurityRequirement(name = "bearerAuth")
 class UserController(

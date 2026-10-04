@@ -2,6 +2,7 @@ package com.dbook.presentation.catalog
 
 import com.dbook.application.catalog.GetLowestPriceForDestinationUseCase
 import com.dbook.application.catalog.SearchFlightsUseCase
+import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
@@ -14,7 +15,7 @@ import java.time.LocalDate
 
 /** `GET /flights/search`, `GET /flights/lowest-price` — public, no authentication required. */
 @RestController
-@RequestMapping("/flights")
+@RequestMapping("${ApiPaths.V1}/flights")
 @Tag(name = "Flights (public)", description = "Public flight search")
 class FlightSearchController(
     private val searchFlightsUseCase: SearchFlightsUseCase,

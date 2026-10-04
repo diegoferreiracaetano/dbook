@@ -14,20 +14,20 @@ class ReturnsOnlyTheAuthenticatedUsersOwnBookingsTest : SecurityIntegrationFixtu
         val (otherBookableId, otherSeatId) = registerFlightWithOneSeat()
 
         val bookingResult =
-            mockMvc.post("/bookings") {
+            mockMvc.post("/v1/bookings") {
                 header("Authorization", "Bearer $ownerToken")
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(mapOf("bookableId" to ownBookableId, "seatId" to ownSeatId))
             }.andReturn()
         val ownBookingId = objectMapper.readTree(bookingResult.response.contentAsString)["id"].asLong()
 
-        mockMvc.post("/bookings") {
+        mockMvc.post("/v1/bookings") {
             header("Authorization", "Bearer $otherToken")
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(mapOf("bookableId" to otherBookableId, "seatId" to otherSeatId))
         }
 
-        mockMvc.get("/bookings") {
+        mockMvc.get("/v1/bookings") {
             header("Authorization", "Bearer $ownerToken")
         }.andExpect {
             status { isOk() }

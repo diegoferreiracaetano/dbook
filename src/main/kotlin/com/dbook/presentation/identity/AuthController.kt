@@ -5,6 +5,7 @@ import com.dbook.application.identity.LoginUseCase
 import com.dbook.application.identity.RefreshTokenUseCase
 import com.dbook.application.identity.RegisterUserCommand
 import com.dbook.application.identity.RegisterUserUseCase
+import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 
 /** `POST /auth/register`, `/login`, `/refresh` — all public routes (see `SecurityConfig`). */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("${ApiPaths.V1}/auth")
 @Tag(name = "Auth", description = "Registration, login and token refresh")
 class AuthController(
     private val registerUserUseCase: RegisterUserUseCase,
