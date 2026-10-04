@@ -2,6 +2,7 @@ package com.dbook.presentation.catalog.destinationcontroller
 
 import com.dbook.application.catalog.GetFeaturedDestinationsUseCase
 import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.UserRepository
 import com.dbook.presentation.catalog.DestinationController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -27,4 +28,7 @@ abstract class DestinationControllerFixture {
     // dependency still needs to be satisfiable.
     @MockBean
     lateinit var tokenService: TokenService
+
+    @MockBean
+    lateinit var userRepository: UserRepository
 }

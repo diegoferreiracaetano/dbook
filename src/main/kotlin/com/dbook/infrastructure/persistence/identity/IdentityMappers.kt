@@ -10,6 +10,11 @@ fun UserJpaEntity.toDomain(): User =
         passwordHash = passwordHash,
         name = name,
         role = role,
+        status = status,
+        blockedReason = blockedReason,
+        blockedAt = blockedAt,
+        lastLoginAt = lastLoginAt,
+        version = version,
     )
 
 fun User.toJpaEntity(): UserJpaEntity =
@@ -19,6 +24,11 @@ fun User.toJpaEntity(): UserJpaEntity =
         passwordHash = passwordHash,
         name = name,
         role = role,
+        status = status,
+        blockedReason = blockedReason,
+        blockedAt = blockedAt,
+        lastLoginAt = lastLoginAt,
+        version = version,
     )
 
 fun RefreshTokenJpaEntity.toDomain(): RefreshToken =

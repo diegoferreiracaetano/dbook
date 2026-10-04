@@ -6,6 +6,7 @@ import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.UserRepository
 import com.dbook.presentation.catalog.FlightAdminController
 import com.dbook.presentation.catalog.RegisterFlightRequest
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -35,6 +36,9 @@ abstract class FlightAdminControllerFixture {
     // see FlightSearchControllerFixture for why this is still needed despite addFilters = false
     @MockBean
     lateinit var tokenService: TokenService
+
+    @MockBean
+    lateinit var userRepository: UserRepository
 
     protected val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
 

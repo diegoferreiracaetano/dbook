@@ -10,11 +10,11 @@ class RegistersANewUserAsClientWithAHashedPasswordTest : RegisterUserUseCaseFixt
     fun `given a new email when registering then the user is CLIENT with a hashed password`() {
         val user =
             useCase.execute(
-                RegisterUserCommand(email = "diego@example.com", password = "s3cret", name = "Diego"),
+                RegisterUserCommand(email = "diego@example.com", password = "s3cret-password", name = "Diego"),
             )
 
         assertEquals(Role.CLIENT, user.role)
-        assertEquals("hashed:s3cret", user.passwordHash)
+        assertEquals("hashed:s3cret-password", user.passwordHash)
         assertEquals("Diego", user.name)
     }
 }

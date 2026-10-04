@@ -3,16 +3,21 @@ package com.dbook.presentation.securityintegration
 import com.dbook.AbstractIntegrationTest
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.application.identity.BlockUserCommand
+import com.dbook.application.identity.BlockUserUseCase
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import com.dbook.domain.seating.SeatRepository
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.servlet.http.Cookie
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.MvcResult
+import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.post
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -38,6 +43,9 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var seatRepository: SeatRepository
+
+    @Autowired
+    lateinit var blockUserUseCase: BlockUserUseCase
 
     protected fun uniqueEmail() = "user${(1..999_999_999).random()}@example.com"
 
@@ -80,13 +88,29 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         return objectMapper.readTree(result.response.contentAsString)["refreshToken"].asText()
     }
 
-    // No self-promotion endpoint exists on purpose (see README) — promoting a user for
-    // test setup goes straight through the repository, bypassing the public API.
-    protected fun registerAdminAndLogin(
+    // no self-promotion endpoint exists on purpose: test setup promotes through the repository
+    protected fun registerStaffAndLogin(
         email: String,
+        role: Role = Role.SUPER_ADMIN,
         password: String = "s3cret-password",
     ): String {
+        registerStaff(email, role, password)
+        return loginAccessToken(email, password)
+    }
+
+    protected fun registerStaff(
+        email: String,
+        role: Role = Role.SUPER_ADMIN,
+        password: String = "s3cret-password",
+    ) {
         registerAndLogin(email, password)
+        changeRole(email, role)
+    }
+
+    protected fun changeRole(
+        email: String,
+        role: Role,
+    ) {
         val user = requireNotNull(userRepository.findByEmail(email))
         userRepository.save(
             User(
@@ -94,11 +118,43 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
                 email = user.email,
                 passwordHash = user.passwordHash,
                 name = user.name,
-                role = Role.ADMIN,
+                role = role,
+                version = user.version,
             ),
         )
-        return loginAccessToken(email, password)
     }
+
+    protected fun block(
+        email: String,
+        reason: String = "chargeback fraud",
+    ) {
+        blockUserUseCase.execute(BlockUserCommand(requireNotNull(userRepository.findByEmail(email)?.id), reason))
+    }
+
+    protected fun adminLogin(
+        email: String,
+        password: String = "s3cret-password",
+    ): MvcResult =
+        mockMvc.post("/v1/admin/auth/login") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(mapOf("email" to email, "password" to password))
+        }.andReturn()
+
+    /** The value of the refresh cookie a response sets (what the browser would send back). */
+    protected fun refreshCookieOf(result: MvcResult): String =
+        requireNotNull(result.response.getHeader("Set-Cookie")).substringAfter("=").substringBefore(";")
+
+    protected fun adminRefresh(
+        cookieValue: String?,
+        origin: String? = PORTAL_ORIGIN,
+    ): ResultActionsDsl =
+        mockMvc.post("/v1/admin/auth/refresh") {
+            if (origin != null) header("Origin", origin)
+            if (cookieValue != null) cookie(Cookie("dbook_admin_refresh", cookieValue))
+        }
+
+    protected fun errorCodeOf(result: MvcResult): String =
+        objectMapper.readTree(result.response.contentAsString)["code"].asText()
 
     protected fun validFlightRequestBody(): String =
         objectMapper.writeValueAsString(
@@ -136,5 +192,9 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
         val bookableId = requireNotNull(flight.id)
         val seatId = requireNotNull(seatRepository.findByBookableId(bookableId).first().id)
         return bookableId to seatId
+    }
+
+    protected companion object {
+        const val PORTAL_ORIGIN = "http://localhost:3000"
     }
 }

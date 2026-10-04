@@ -3,6 +3,7 @@ package com.dbook.presentation.payment.paymentcontroller
 import com.dbook.application.payment.RegisterPaymentCommand
 import com.dbook.application.payment.RegisterPaymentUseCase
 import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.UserRepository
 import com.dbook.domain.payment.Payment
 import com.dbook.presentation.payment.PaymentController
 import com.dbook.presentation.payment.RegisterPaymentRequest
@@ -29,6 +30,9 @@ abstract class PaymentControllerFixture {
     // see FlightSearchControllerFixture for why this is still needed despite addFilters = false
     @MockBean
     lateinit var tokenService: TokenService
+
+    @MockBean
+    lateinit var userRepository: UserRepository
 
     protected val objectMapper = ObjectMapper()
     protected val userId = 1L

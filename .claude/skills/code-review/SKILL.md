@@ -19,7 +19,7 @@ description: Revisão de código do backend Kotlin/Spring do DBook, focada em pr
 **1. Segurança / autorização (prioridade máxima)**
 - Endpoint novo fora de `SecurityConfig.permitAll()` é autenticado por padrão — ele *deveria* ser público? Ou o contrário: algo sensível entrou em `permitAll`?
 - Recurso do usuário: o use case valida dono (`booking.customerId != requestingUserId → NotBookingOwnerException`)? O id vem de `authentication.currentUserId()` e **não** do corpo/path?
-- ADMIN: `@PreAuthorize("hasRole('ADMIN')")` presente e coberto por teste 401/403?
+- Endpoint admin: `@PreAuthorize("hasAuthority('...')")` presente (nunca `hasRole`) e coberto por teste 401/403?
 - Segredo/credencial em código ou config commitada; log de token/senha; dado sensível na resposta (`passwordHash`, número de cartão — o projeto só guarda `cardLast4`).
 
 **2. Arquitetura**

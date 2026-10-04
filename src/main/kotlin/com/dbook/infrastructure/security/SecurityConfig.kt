@@ -1,5 +1,7 @@
 package com.dbook.infrastructure.security
 
+import com.dbook.config.CorsProperties
+import com.dbook.domain.identity.Permission.ADMIN_PORTAL_ACCESS
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -18,20 +20,17 @@ class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
     private val authenticationEntryPoint: JsonAuthenticationEntryPoint,
     private val accessDeniedHandler: JsonAccessDeniedHandler,
+    private val corsProperties: CorsProperties,
 ) {
-    /**
-     * No frontend is deployed anywhere yet — every origin here is a local dev server
-     * (Flutter web via `flutter run -d web-server`, on whatever port it picks). Revisit
-     * with real origins once something is actually deployed.
-     */
+    // patterns from cors.allowed-origins: today only local dev servers (Flutter web picks any port)
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration =
             CorsConfiguration().apply {
-                allowedOriginPatterns = listOf("http://localhost:*", "http://127.0.0.1:*")
                 allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 allowedHeaders = listOf("*")
                 allowCredentials = true
+                allowedOriginPatterns = corsProperties.allowedOrigins
             }
         return UrlBasedCorsConfigurationSource().apply {
             registerCorsConfiguration("/**", configuration)
@@ -62,11 +61,15 @@ class SecurityConfig(
                         "/v1/auth/register",
                         "/v1/auth/login",
                         "/v1/auth/refresh",
+                        "/v1/admin/auth/login",
+                        "/v1/admin/auth/refresh",
+                        "/v1/admin/auth/logout",
                         "/v1/flights/search",
                         "/v1/flights/lowest-price",
                         "/v1/destinations",
                         "/v1/bookables/*/seats",
                     ).permitAll()
+                    .requestMatchers("/v1/admin/**").hasAuthority(ADMIN_PORTAL_ACCESS.name)
                     .anyRequest().authenticated()
             }.exceptionHandling {
                 it.authenticationEntryPoint(authenticationEntryPoint)

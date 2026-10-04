@@ -16,12 +16,12 @@ Idioma: docs (`README.md`, `docs/*.md`, `CHECKLIST.md`, este arquivo) e commits 
 | JDK | toolchain 21 (Temurin) |
 | Gradle | 8.8 (wrapper) — **não roda em JDK > 22**, por isso o `JAVA_HOME` explícito nos comandos |
 | Spring Boot | 3.3.4 (web, data-jpa, security, websocket, data-redis) |
-| Persistência | PostgreSQL 16 + Flyway (`src/main/resources/db/migration`, hoje V1–V24), `ddl-auto: validate`, `open-in-view: false` |
+| Persistência | PostgreSQL 16 + Flyway (`src/main/resources/db/migration`, hoje V1–V27), `ddl-auto: validate`, `open-in-view: false` |
 | Tempo real | STOMP/WebSocket + Redis Pub/Sub (Redis 7) |
 | Observabilidade | Spring Boot Actuator + Micrometer (registro Prometheus). Endpoints em `/actuator/*` na **porta de gestão 8081** (nunca na 8080 pública): `health/liveness`, `health/readiness` (db + redis), `metrics`, `prometheus` |
 | Logs | Logback + `logstash-logback-encoder`. Perfil `json` = um JSON por linha (produção/ECS); padrão = texto legível. `requestId`/`userId` no MDC (`RequestLoggingFilter`, `JwtAuthenticationFilter`). **Nunca logar** token, `Authorization`, corpo de requisição, query string nem dado de cartão |
 | Fila | AWS SQS via SDK direto (`sqs` 2.28.29, mesma versão do Bedrock; sem Spring Cloud AWS) — expiração de reservas `PENDING` (M20); LocalStack local |
-| Auth | JWT (jjwt 0.12.6) stateless, refresh token rotativo, BCrypt |
+| Auth | JWT (jjwt 0.12.6) stateless, refresh token rotativo, BCrypt. Papéis com **permissões** (`Role.permissions`, só no domínio), conta bloqueável, limite de tentativas de login em Redis, política de senha, sessão do portal admin em cookie `httpOnly` (ver `docs/autenticacao.md`) |
 | IA | AWS Bedrock (`bedrockruntime` 2.28.29) + rate limit com bucket4j 8.10.1 |
 | Docs da API | springdoc-openapi 2.6.0 (Swagger UI) |
 | Lint / estática | ktlint (plugin 12.1.1), detekt 1.23.8 (`config/detekt/detekt.yml`, `maxIssues: 0`) |
@@ -49,7 +49,7 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 ## Convenções de nome
 
 - `XxxUseCase` / `XxxCommand` · porta `XxxRepository` (domain) → `XxxRepositoryAdapter` (infra) · `XxxJpaEntity` · `XxxJpaRepository` · `XxxController` · `XxxRequest` / `XxxResponse` · `XxxNotFoundException` (domain).
-- Migration: `V<N>__snake_case.sql` (próxima livre: V25). PK `BIGSERIAL`. Nunca edite migration já aplicada — crie a próxima.
+- Migration: `V<N>__snake_case.sql` (próxima livre: V28). PK `BIGSERIAL`. Nunca edite migration já aplicada — crie a próxima.
 - Entidades JPA **não** são `data class` (equals/hashCode em associações lazy é armadilha) — por isso `LongParameterList.constructorThreshold` é 15 no detekt.
 - Mappers domínio↔JPA ficam em `XxxMappers.kt` na pasta do conceito (`persistence/booking/BookingMappers.kt`, ...), um arquivo por conceito — o `Mappers.kt` único estourou `TooManyFunctions` e foi dividido em vez de subir o threshold. Um mapper que precisa converter entidade de outro conceito importa a função dele (ex.: `BookingMappers` importa `catalog.toDomain`).
 
@@ -58,7 +58,7 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 1. Ache o caso de uso mais parecido e siga a mesma forma (ex.: pagar reservas → `RegisterPaymentUseCase`, espelho de `CancelBookingUseCase`).
 2. Ordem: regra no **domain** (`init { require(...) }` / `check(...)`) → porta → use case → adapter/entidade/migration → controller + DTOs → testes → docs.
 3. **Todo controller de negócio fica sob uma versão da API**: `@RequestMapping("${ApiPaths.V1}/recurso")` (`presentation/common/ApiPaths.kt`) — só os operacionais (`/health`, `/ws`, Swagger, actuator) ficam sem versão. A versão vive **só na `presentation`** (controllers e DTOs): use case e domínio não sabem que ela existe. Rota pública nova entra na lista de `SecurityConfig` como `/v1/...`. O teste `EveryApiControllerIsVersionedTest` reprova controller sem versão. Mudança que **quebra** cliente (remover/renomear campo, tipo, tornar algo obrigatório, mudar status) pede `/v2`; acrescentar campo opcional não. Ver `docs/versionamento.md`.
-4. Endpoint autenticado por padrão: só o que está em `SecurityConfig.permitAll()` é público. Recurso do usuário logado usa `authentication.currentUserId()` (`presentation/SecurityExtensions.kt`) — **nunca** aceite `userId`/`customerId` no corpo. ADMIN: `@PreAuthorize("hasRole('ADMIN')")`.
+4. Endpoint autenticado por padrão: só o que está em `SecurityConfig.permitAll()` é público. Recurso do usuário logado usa `authentication.currentUserId()` (`presentation/SecurityExtensions.kt`) — **nunca** aceite `userId`/`customerId` no corpo. Endpoint administrativo: `@PreAuthorize("hasAuthority('FLIGHT_WRITE')")` — **sempre uma permissão, nunca um nome de papel** (`Role.permissions` é a tabela de quem tem o quê); `SecurityConfig` já exige `ADMIN_PORTAL_ACCESS` em `/v1/admin/**` e o teste `EveryAdminEndpointDeclaresItsPermissionTest` reprova endpoint `/admin` sem `@PreAuthorize`.
 5. Todo controller novo: `@Tag`, `@Operation`, `@SecurityRequirement(name = "bearerAuth")` (se autenticado) e `@Schema(example = ...)` nos Requests.
 6. Fechar um marco = atualizar `docs/endpoints.md` (endpoints novos), o documento do assunto em `docs/` e o `README.md` (só o mapa e o roadmap) **e** `CHECKLIST.md` (seção `## Mn — ...` com itens numerados + checklist de fechamento). É a memória do projeto.
 

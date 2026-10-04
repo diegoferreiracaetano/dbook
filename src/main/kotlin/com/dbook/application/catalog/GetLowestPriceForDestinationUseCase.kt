@@ -4,6 +4,7 @@ import com.dbook.domain.catalog.FlightRepository
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 private const val LOOKAHEAD_DAYS = 60L
@@ -17,9 +18,10 @@ private const val LOOKAHEAD_DAYS = 60L
 @Service
 class GetLowestPriceForDestinationUseCase(
     private val flightRepository: FlightRepository,
+    private val clock: Clock,
 ) {
     fun execute(destinationIataCode: String): BigDecimal? {
-        val today = LocalDate.now()
+        val today = LocalDate.now(clock)
         return flightRepository.findLowestPrice(destinationIataCode, today, today.plusDays(LOOKAHEAD_DAYS))
     }
 }

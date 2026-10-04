@@ -21,7 +21,9 @@ class JsonAuthenticationEntryPoint(
     ) {
         response.status = HttpServletResponse.SC_UNAUTHORIZED
         response.contentType = MediaType.APPLICATION_JSON_VALUE
-        response.writer.write(objectMapper.writeValueAsString(mapOf("error" to "Authentication required")))
+        response.writer.write(
+            objectMapper.writeValueAsString(mapOf("error" to "Authentication required", "code" to "UNAUTHORIZED")),
+        )
     }
 }
 
@@ -36,6 +38,6 @@ class JsonAccessDeniedHandler(
     ) {
         response.status = HttpServletResponse.SC_FORBIDDEN
         response.contentType = MediaType.APPLICATION_JSON_VALUE
-        response.writer.write(objectMapper.writeValueAsString(mapOf("error" to "Access denied")))
+        response.writer.write(objectMapper.writeValueAsString(mapOf("error" to "Access denied", "code" to "FORBIDDEN")))
     }
 }

@@ -9,13 +9,42 @@ Todos os endpoints da API, com exemplos de `curl` e os códigos de status de cad
 ## `GET /health`
 Confirma que a aplicação está no ar.
 
-## `POST /v1/admin/flights` (requer role `ADMIN`)
+## Formato de erro
+Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`. O app e o portal decidem o que mostrar pelo `code`; a mensagem pode mudar. Acrescentar um código é compatível; renomear ou remover um não é (ver [Versionamento](versionamento.md)).
+
+| `code` | Status | Quando |
+|---|---|---|
+| `VALIDATION_FAILED` | 400 | regra de domínio ou dado inválido (inclui senha fora da política) |
+| `MALFORMED_REQUEST` | 400 | corpo ilegível |
+| `MISSING_HEADER` | 400 | cabeçalho obrigatório ausente (ex.: `Idempotency-Key`) |
+| `UNAUTHORIZED` | 401 | sem token válido |
+| `INVALID_CREDENTIALS` | 401 | e-mail/senha errados (também para um cliente no portal) |
+| `INVALID_TOKEN` | 401 | refresh token inexistente, vencido, usado ou de outra porta de entrada |
+| `FORBIDDEN` | 403 | sem permissão, não é o dono, ou `Origin` não permitido |
+| `ACCOUNT_BLOCKED` | 403 | conta bloqueada (só depois de a senha estar certa) |
+| `NOT_FOUND` | 404 | recurso inexistente |
+| `CONFLICT` | 409 | conflito com o estado atual |
+| `STALE_VERSION` | 409 | outra pessoa alterou o mesmo registro antes (lock otimista) |
+| `IDEMPOTENCY_KEY_REUSED` | 422 | mesma `Idempotency-Key` para outro pedido |
+| `TOO_MANY_ATTEMPTS` | 429 | falhas de login demais (`Retry-After` em segundos) |
+| `RATE_LIMITED` | 429 | limite de uso da IA |
+| `AI_RESPONSE_INVALID` / `AI_UNAVAILABLE` | 502 / 503 | modelo de IA |
+
+## Portal administrativo: sessão (`/v1/admin/auth/*`)
+Detalhes e exemplos em [Autenticação](autenticacao.md#portal-administrativo-sessão).
+
+- `POST /v1/admin/auth/login` (aberta): `{email, password}` → `200 {accessToken}` + cookie de renovação. `401` para senha errada **ou** para quem não é staff, `403 ACCOUNT_BLOCKED`, `429 TOO_MANY_ATTEMPTS`.
+- `POST /v1/admin/auth/refresh` (aberta, exige `Origin` do portal e o cookie): `200 {accessToken}` + cookie novo; `401` sem cookie ou com cookie usado/inválido, `403` com `Origin` ausente ou de outro site.
+- `POST /v1/admin/auth/logout` (aberta, mesmo `Origin`): `204`, revoga o token e apaga o cookie.
+- `GET /v1/admin/auth/me` (staff): `{id, name, email, role, permissions[]}`; `403` para cliente.
+
+## `POST /v1/admin/flights` (requer a permissão `FLIGHT_WRITE`)
 Cadastra um voo, resolvendo companhia/origem/destino por código IATA, e gera automaticamente seu mapa de assentos a partir de `totalCapacity` e `aircraftType` — a quantidade de assentos por fileira (e onde ficam os corredores) vem de `SeatLayout.kt`, a única fonte dessa regra no sistema: `"Embraer E195"` → 2+2 (4/fileira), `"Airbus A320"` → 3+3 (6/fileira, o padrão), `"Boeing 777"` → 3+4+3 (10/fileira, widebody com 2 corredores). Qualquer outro valor cai no 3+3 padrão.
 
 ```bash
 curl -X POST localhost:8080/v1/admin/flights \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <accessToken-de-um-ADMIN>" \
+  -H "Authorization: Bearer <accessToken-de-um-staff-com-FLIGHT_WRITE>" \
   -d '{
     "flightNumber": "DB1234",
     "airlineIataCode": "LA",
@@ -32,7 +61,7 @@ curl -X POST localhost:8080/v1/admin/flights \
 
 `GET /v1/flights/search` e `GET /v1/flights/lowest-price` (e qualquer resposta com `FlightResponse`) devolvem `aircraftType` e `seatLayout` (ex.: `[3, 3]`) já resolvidos — o cliente nunca precisa saber qual avião mapeia pra qual layout, só agrupar os assentos pelo array que chega.
 
-Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não for de um `ADMIN`, ou `404` se o código IATA de companhia/origem/destino não existir.
+Retorna `201` com o voo criado (`availableCapacity` já refletindo os assentos recém-gerados, todos `AVAILABLE`), `401` sem token, `403` se o token não tiver a permissão `FLIGHT_WRITE`, ou `404` se o código IATA de companhia/origem/destino não existir.
 
 ## `GET /v1/flights/search?origin=&destination=&date=`
 Busca voos por rota e data.
@@ -90,15 +119,15 @@ curl -X POST localhost:8080/v1/bookings \
 
 Retorna `201` com a reserva criada, `401` sem token, `400` se o `seatId` não pertencer ao `bookableId` informado, `404` se o `bookableId` ou `seatId` não existirem, ou `409` se o assento não estiver `AVAILABLE` (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o mesmo assento).
 
-## `POST /v1/bookings/{id}/cancel` (autenticado, dono ou ADMIN)
-Cancela uma reserva `PENDING`, liberando o assento de volta a `AVAILABLE`. Só quem criou a reserva (ou um `ADMIN`) pode cancelá-la.
+## `POST /v1/bookings/{id}/cancel` (autenticado, dono ou `BOOKING_CANCEL_ANY`)
+Cancela uma reserva `PENDING`, liberando o assento de volta a `AVAILABLE`. Só quem criou a reserva (ou quem tem a permissão `BOOKING_CANCEL_ANY`) pode cancelá-la.
 
 ```bash
 curl -X POST localhost:8080/v1/bookings/1/cancel \
   -H "Authorization: Bearer <accessToken>"
 ```
 
-Retorna `200` com a reserva `CANCELLED`, `401` sem token, `403` se não for o dono nem `ADMIN`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
+Retorna `200` com a reserva `CANCELLED`, `401` sem token, `403` se não for o dono nem tiver `BOOKING_CANCEL_ANY`, `404` se não existir, ou `409` se a reserva não estiver `PENDING` (já confirmada ou já cancelada).
 
 ## `POST /v1/payments` (autenticado)
 Paga uma ou mais reservas `PENDING` do usuário autenticado de uma vez só (ex.: ida + volta de uma Round Trip, num único pagamento) e as confirma (`CONFIRMED`). Não existe gateway de pagamento real por trás — só os 4 últimos dígitos do cartão e o nome do titular são recebidos e guardados; número completo e CVV nunca chegam ao backend.

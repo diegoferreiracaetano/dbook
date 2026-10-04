@@ -7,7 +7,7 @@ import kotlin.test.Test
 class AdminEndpointAcceptsAnAdminTokenTest : SecurityIntegrationFixture() {
     @Test
     fun `given an ADMIN token when posting to admin flights then it returns 201`() {
-        val token = registerAdminAndLogin(uniqueEmail())
+        val token = registerStaffAndLogin(uniqueEmail())
 
         mockMvc.post("/v1/admin/flights") {
             header("Authorization", "Bearer $token")

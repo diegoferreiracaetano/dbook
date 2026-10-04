@@ -5,6 +5,7 @@ import com.dbook.application.catalog.SearchFlightsUseCase
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.UserRepository
 import com.dbook.presentation.catalog.FlightSearchController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -33,6 +34,9 @@ abstract class FlightSearchControllerFixture {
     // dependency still needs to be satisfiable.
     @MockBean
     lateinit var tokenService: TokenService
+
+    @MockBean
+    lateinit var userRepository: UserRepository
 
     protected val gru =
         Airport(

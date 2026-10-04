@@ -6,6 +6,7 @@ import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
+import com.dbook.domain.identity.Permission.BOOKING_CANCEL_ANY
 import com.dbook.domain.identity.Role
 import com.dbook.domain.seating.SeatRepository
 import io.micrometer.observation.annotation.Observed
@@ -20,7 +21,7 @@ class CancelBookingUseCase(
     private val seatRepository: SeatRepository,
     private val availabilityBroadcaster: AvailabilityBroadcaster,
 ) {
-    // A CLIENT may only cancel their own booking; ADMIN can cancel any booking.
+    // A CLIENT may only cancel their own booking; whoever holds BOOKING_CANCEL_ANY can cancel any booking.
     // Without this check, authentication alone wouldn't actually protect a booking
     // from being cancelled by an unrelated authenticated user.
     @Transactional
@@ -32,7 +33,7 @@ class CancelBookingUseCase(
         val booking =
             bookingRepository.findById(bookingId)
                 ?: throw BookingNotFoundException(bookingId)
-        if (requestingUserRole != Role.ADMIN && booking.customerId != requestingUserId) {
+        if (!requestingUserRole.can(BOOKING_CANCEL_ANY) && booking.customerId != requestingUserId) {
             throw NotBookingOwnerException(bookingId)
         }
         val cancelled = booking.cancel()

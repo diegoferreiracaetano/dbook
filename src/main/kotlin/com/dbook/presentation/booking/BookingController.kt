@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** `POST /bookings`, `GET /bookings`, `/bookings/{id}/cancel` — authenticated; cancel requires owner or ADMIN. */
+/** `POST /bookings`, `GET /bookings`, `/bookings/{id}/cancel`
+ * — authenticated; cancel requires owner or BOOKING_CANCEL_ANY. */
 @RestController
 @RequestMapping("${ApiPaths.V1}/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
@@ -52,7 +53,7 @@ class BookingController(
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingResponse.from(booking))
     }
 
-    @Operation(summary = "Cancels a PENDING booking (owner or ADMIN only), returning the availability")
+    @Operation(summary = "Cancels a PENDING booking (owner or BOOKING_CANCEL_ANY only), returning the availability")
     @PostMapping("/{id}/cancel")
     fun cancel(
         @PathVariable id: Long,

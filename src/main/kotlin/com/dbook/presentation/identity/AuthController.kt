@@ -8,6 +8,7 @@ import com.dbook.application.identity.RegisterUserUseCase
 import com.dbook.presentation.common.ApiPaths
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -40,7 +41,11 @@ class AuthController(
     @PostMapping("/login")
     fun login(
         @RequestBody request: LoginRequest,
-    ): TokenResponse = TokenResponse.from(loginUseCase.execute(LoginCommand(request.email, request.password)))
+        servletRequest: HttpServletRequest,
+    ): TokenResponse =
+        TokenResponse.from(
+            loginUseCase.execute(LoginCommand(request.email, request.password, servletRequest.remoteAddr)),
+        )
 
     @Operation(summary = "Exchanges a refresh token for a new token pair, rotating the old one")
     @PostMapping("/refresh")

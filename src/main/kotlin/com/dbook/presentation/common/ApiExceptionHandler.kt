@@ -1,14 +1,10 @@
 package com.dbook.presentation.common
 
-import com.dbook.domain.ai.AiResponseParsingException
-import com.dbook.domain.ai.AiServiceUnavailableException
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.catalog.AirlineNotFoundException
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.catalog.BookableNotFoundException
-import com.dbook.domain.identity.InvalidCredentialsException
-import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.UserAlreadyExistsException
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.payment.DuplicateIdempotencyKeyException
@@ -33,12 +29,13 @@ class ApiExceptionHandler {
         UserNotFoundException::class,
     )
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleNotFound(ex: RuntimeException): Map<String, String> = mapOf("error" to (ex.message ?: "Not found"))
+    fun handleNotFound(ex: RuntimeException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Not found", ErrorCode.NOT_FOUND)
 
     @ExceptionHandler(IllegalArgumentException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleIllegalArgument(ex: IllegalArgumentException): Map<String, String> =
-        mapOf("error" to (ex.message ?: "Invalid request"))
+    fun handleIllegalArgument(ex: IllegalArgumentException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Invalid request", ErrorCode.VALIDATION_FAILED)
 
     // Without this, Spring falls back to response.sendError(400), which triggers a
     // container-level forward to /error — a path that isn't in SecurityConfig's
@@ -46,50 +43,37 @@ class ApiExceptionHandler {
     // it here keeps the response inside the original request, with our own error body.
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleMalformedRequest(): Map<String, String> = mapOf("error" to "Malformed request body")
+    fun handleMalformedRequest(): ErrorResponse = ErrorResponse("Malformed request body", ErrorCode.MALFORMED_REQUEST)
 
     // Same trap as the malformed body above: left alone, Spring answers with sendError(400),
     // which forwards to /error and gets rejected as 401 before reaching the client.
     @ExceptionHandler(MissingRequestHeaderException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleMissingHeader(ex: MissingRequestHeaderException): Map<String, String> =
-        mapOf("error" to "Missing request header: ${ex.headerName}")
+    fun handleMissingHeader(ex: MissingRequestHeaderException): ErrorResponse =
+        ErrorResponse("Missing request header: ${ex.headerName}", ErrorCode.MISSING_HEADER)
 
     // 422, not 409: the request itself is wrong (a key can only ever mean one request), as
     // opposed to a conflict with the current state of a resource.
     @ExceptionHandler(IdempotencyKeyReusedException::class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    fun handleIdempotencyKeyReused(ex: IdempotencyKeyReusedException): Map<String, String> =
-        mapOf("error" to (ex.message ?: "Idempotency-Key reused"))
+    fun handleIdempotencyKeyReused(ex: IdempotencyKeyReusedException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Idempotency-Key reused", ErrorCode.IDEMPOTENCY_KEY_REUSED)
 
     @ExceptionHandler(
         DuplicateIdempotencyKeyException::class,
-        OptimisticLockingFailureException::class,
         IllegalStateException::class,
         UserAlreadyExistsException::class,
     )
     @ResponseStatus(HttpStatus.CONFLICT)
-    fun handleConflict(ex: Exception): Map<String, String> = mapOf("error" to (ex.message ?: "Conflict"))
+    fun handleConflict(ex: Exception): ErrorResponse = ErrorResponse(ex.message ?: "Conflict", ErrorCode.CONFLICT)
 
-    @ExceptionHandler(InvalidCredentialsException::class, InvalidTokenException::class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun handleUnauthorized(ex: RuntimeException): Map<String, String> = mapOf("error" to (ex.message ?: "Unauthorized"))
+    @ExceptionHandler(OptimisticLockingFailureException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleStaleVersion(ex: OptimisticLockingFailureException): ErrorResponse =
+        ErrorResponse(ex.message ?: "The record was changed by someone else", ErrorCode.STALE_VERSION)
 
-    @ExceptionHandler(NotBookingOwnerException::class)
+    @ExceptionHandler(NotBookingOwnerException::class, ForbiddenOriginException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    fun handleForbidden(ex: NotBookingOwnerException): Map<String, String> =
-        mapOf("error" to (ex.message ?: "Forbidden"))
-
-    // The AI model is an external dependency we don't control the output of — a
-    // malformed/unparseable completion is treated as "we (the gateway) messed up", not
-    // the caller's fault, hence 502 rather than 400.
-    @ExceptionHandler(AiResponseParsingException::class)
-    @ResponseStatus(HttpStatus.BAD_GATEWAY)
-    fun handleAiResponseParsing(ex: AiResponseParsingException): Map<String, String> =
-        mapOf("error" to (ex.message ?: "AI response could not be parsed"))
-
-    @ExceptionHandler(AiServiceUnavailableException::class)
-    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
-    fun handleAiServiceUnavailable(ex: AiServiceUnavailableException): Map<String, String> =
-        mapOf("error" to (ex.message ?: "AI service unavailable"))
+    fun handleForbidden(ex: RuntimeException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Forbidden", ErrorCode.FORBIDDEN)
 }

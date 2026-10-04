@@ -19,14 +19,6 @@ class UpdateUserNameUseCase(
 ) {
     fun execute(command: UpdateUserNameCommand): User {
         val user = userRepository.findById(command.userId) ?: throw UserNotFoundException(command.userId)
-        val updated =
-            User(
-                id = user.id,
-                email = user.email,
-                passwordHash = user.passwordHash,
-                name = command.name,
-                role = user.role,
-            )
-        return userRepository.save(updated)
+        return userRepository.save(user.rename(command.name))
     }
 }

@@ -11,4 +11,6 @@ interface RefreshTokenRepository {
 
     /** Marks a token as used, enforcing single-use rotation. */
     fun revoke(id: Long)
+
+    fun revokeAllForUser(userId: Long)
 }

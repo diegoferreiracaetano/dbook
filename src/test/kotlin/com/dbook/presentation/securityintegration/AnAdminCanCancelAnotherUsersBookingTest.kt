@@ -8,7 +8,7 @@ class AnAdminCanCancelAnotherUsersBookingTest : SecurityIntegrationFixture() {
     @Test
     fun `given another user's booking when an admin cancels it then it returns 200`() {
         val ownerToken = registerAndLogin(uniqueEmail())
-        val adminToken = registerAdminAndLogin(uniqueEmail())
+        val adminToken = registerStaffAndLogin(uniqueEmail())
         val (bookableId, seatId) = registerFlightWithOneSeat()
 
         val bookingResult =

@@ -9,6 +9,7 @@ import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.FlightRepository
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 class FakeAirportRepository(private val airports: List<Airport>) : AirportRepository {
@@ -45,7 +46,7 @@ abstract class GetFeaturedDestinationsUseCaseFixture {
         ratings: Map<String, Double> = emptyMap(),
     ) = GetFeaturedDestinationsUseCase(
         FakeAirportRepository(airports),
-        GetLowestPriceForDestinationUseCase(FakeFlightRepository(prices)),
+        GetLowestPriceForDestinationUseCase(FakeFlightRepository(prices), Clock.systemDefaultZone()),
         GetAverageRatingForDestinationUseCase(FakeReviewRepository(averageRatingByDestination = ratings)),
     )
 

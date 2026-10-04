@@ -3,6 +3,7 @@ package com.dbook.infrastructure.persistence.identity
 import com.dbook.domain.identity.RefreshToken
 import com.dbook.domain.identity.RefreshTokenRepository
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class RefreshTokenRepositoryAdapter(
@@ -19,4 +20,7 @@ class RefreshTokenRepositoryAdapter(
         entity.revoked = true
         refreshTokenJpaRepository.save(entity)
     }
+
+    @Transactional
+    override fun revokeAllForUser(userId: Long) = refreshTokenJpaRepository.revokeAllByUserId(userId)
 }

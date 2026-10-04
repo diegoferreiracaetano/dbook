@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController
 class FlightAdminController(
     private val registerFlightUseCase: RegisterFlightUseCase,
 ) {
-    @Operation(summary = "Registers a flight, resolving origin/destination by IATA code (ADMIN only)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Registers a flight, resolving origin/destination by IATA code (FLIGHT_WRITE only)")
+    @PreAuthorize("hasAuthority('FLIGHT_WRITE')")
     @PostMapping
     fun register(
         @RequestBody request: RegisterFlightRequest,

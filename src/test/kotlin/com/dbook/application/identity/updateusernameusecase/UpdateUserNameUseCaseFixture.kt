@@ -4,6 +4,7 @@ import com.dbook.application.identity.UpdateUserNameUseCase
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
+import java.time.Instant
 
 class FakeUserRepository : UserRepository {
     val users = mutableListOf<User>()
@@ -17,6 +18,11 @@ class FakeUserRepository : UserRepository {
         users += user
         return user
     }
+
+    override fun recordLogin(
+        userId: Long,
+        at: Instant,
+    ) = error("not needed for this test")
 }
 
 abstract class UpdateUserNameUseCaseFixture {

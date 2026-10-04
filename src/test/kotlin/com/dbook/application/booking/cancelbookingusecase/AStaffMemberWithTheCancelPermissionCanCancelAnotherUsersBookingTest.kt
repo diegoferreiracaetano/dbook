@@ -5,11 +5,11 @@ import com.dbook.domain.identity.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class AnAdminCanCancelAnotherUsersBookingTest : CancelBookingUseCaseFixture() {
+class AStaffMemberWithTheCancelPermissionCanCancelAnotherUsersBookingTest : CancelBookingUseCaseFixture() {
     @Test
-    fun `given another user's booking when an ADMIN cancels it then it moves to CANCELLED`() {
+    fun `given another user's booking when a SUPPORT agent cancels it then it moves to CANCELLED`() {
         withTransactionSynchronization {
-            val cancelled = useCase.execute(bookingId, requestingUserId = 999, requestingUserRole = Role.ADMIN)
+            val cancelled = useCase.execute(bookingId, requestingUserId = 999, requestingUserRole = Role.SUPPORT)
 
             assertEquals(BookingStatus.CANCELLED, cancelled.status)
         }

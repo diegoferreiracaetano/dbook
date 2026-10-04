@@ -4,6 +4,7 @@ import com.dbook.application.identity.RegisterUserUseCase
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
+import java.time.Instant
 
 class FakeUserRepository : UserRepository {
     val users = mutableListOf<User>()
@@ -24,6 +25,11 @@ class FakeUserRepository : UserRepository {
         users += saved
         return saved
     }
+
+    override fun recordLogin(
+        userId: Long,
+        at: Instant,
+    ) = error("not needed for this test")
 }
 
 class FakePasswordHasher : PasswordHasher {

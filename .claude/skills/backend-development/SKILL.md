@@ -69,7 +69,7 @@ Objetivo: qualquer mudança nova parecer escrita pela mesma pessoa que escreveu 
 
 - Regra de domínio: `require` → 400, `check` → 409. Não crie exceção só pra isso.
 - Não encontrado: `class BookingNotFoundException(id: Long) : RuntimeException("Booking not found: $id")` em `domain/`, `?: throw` no use case (`bookingRepository.findById(id) ?: throw BookingNotFoundException(id)`), e **adicione a classe na lista de `ApiExceptionHandler.handleNotFound`**. Esquecer isso vira HTTP 500.
-- Dono do recurso: `if (booking.customerId != requestingUserId) throw NotBookingOwnerException(id)` (→ 403). `CancelBookingUseCase` deixa ADMIN passar; `RegisterPaymentUseCase` não.
+- Dono do recurso: `if (booking.customerId != requestingUserId) throw NotBookingOwnerException(id)` (→ 403). `CancelBookingUseCase` deixa passar quem tem `BOOKING_CANCEL_ANY`; `RegisterPaymentUseCase` não.
 - Resposta de erro é sempre `{"error": "..."}` (`Map<String, String>`).
 
 ## Transação e efeitos colaterais
@@ -90,7 +90,7 @@ Concorrência = lock otimista (`@Version` em `SeatJpaEntity`); dois clientes no 
 ## Segurança
 
 - Tudo é autenticado, exceto o que está em `SecurityConfig.permitAll()` (health, auth, busca de voos, destinos, mapa de assentos, swagger, `/ws/**`). Endpoint público novo = mudança **deliberada** nessa lista + teste de que continua público.
-- ADMIN: `@PreAuthorize("hasRole('ADMIN')")` no método do controller (ver `FlightAdminController`).
+- Endpoint administrativo: `@PreAuthorize("hasAuthority('<PERMISSÃO>')")` no método do controller (ver `FlightAdminController`); a permissão nova entra no enum `Permission` e na tabela de `Role`.
 - Nunca receba `customerId`/`userId` do cliente; derive do token.
 - Request de **um único campo** precisa de `@JsonCreator`/`@JsonProperty` explícitos (armadilha do Jackson já registrada em `RefreshRequest`/`UpdateUserNameRequest`).
 - Segredo nunca no repositório; o `jwt.secret` de `application.yml` é só de dev local.

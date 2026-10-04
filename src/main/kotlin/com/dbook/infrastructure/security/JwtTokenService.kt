@@ -10,6 +10,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.security.MessageDigest
+import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Base64
@@ -22,6 +23,7 @@ class JwtTokenService(
     @Value("\${jwt.secret}") secret: String,
     @Value("\${jwt.access-token-expiration-minutes}") private val accessTokenExpirationMinutes: Long,
     @Value("\${jwt.refresh-token-expiration-days}") private val refreshTokenExpirationDays: Long,
+    private val clock: Clock,
 ) : TokenService {
     private val signingKey: SecretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret))
 
@@ -63,7 +65,7 @@ class JwtTokenService(
         return Base64.getEncoder().encodeToString(digest)
     }
 
-    override fun refreshTokenExpiresAt(): Instant = Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS)
+    override fun refreshTokenExpiresAt(): Instant = clock.instant().plus(refreshTokenExpirationDays, ChronoUnit.DAYS)
 
     private fun buildToken(
         user: User,
@@ -71,7 +73,7 @@ class JwtTokenService(
         unit: ChronoUnit,
     ): String {
         val userId = requireNotNull(user.id) { "Cannot issue a token for a user that hasn't been persisted" }
-        val now = Instant.now()
+        val now = clock.instant()
         return Jwts.builder()
             .id(UUID.randomUUID().toString()) // jti: guarantees uniqueness even for two
             // tokens issued for the same user within the same second (JWT timestamps

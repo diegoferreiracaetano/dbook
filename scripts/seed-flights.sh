@@ -3,7 +3,7 @@
 # reuses the same REST endpoints already covered by the test suite (no direct SQL
 # inserts for flights), so it can never drift from what the API actually accepts.
 #
-# Local dev only: promotes the seed user to ADMIN via a direct SQL UPDATE, since there's
+# Local dev only: promotes the seed user to SUPER_ADMIN via a direct SQL UPDATE, since there's
 # no self-promotion endpoint (closed security decision — see CHECKLIST.md M3). Never run
 # this against a real environment.
 #
@@ -33,9 +33,9 @@ echo "Registering seed admin user..."
 curl -s -o /dev/null -X POST "$BASE_URL/v1/auth/register" -H "Content-Type: application/json" \
   -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\",\"name\":\"Seed Admin\"}" || true
 
-echo "Promoting to ADMIN (direct SQL — local dev only)..."
+echo "Promoting to SUPER_ADMIN (direct SQL — local dev only)..."
 docker compose exec -T postgres psql -U dbook -d dbook -c \
-  "UPDATE app_user SET role = 'ADMIN' WHERE email = '$ADMIN_EMAIL';" > /dev/null
+  "UPDATE app_user SET role = 'SUPER_ADMIN' WHERE email = '$ADMIN_EMAIL';" > /dev/null
 
 ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/v1/auth/login" -H "Content-Type: application/json" \
   -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}" \

@@ -30,7 +30,7 @@ class AiRateLimitInterceptor : HandlerInterceptor {
         }
         response.status = HttpStatus.TOO_MANY_REQUESTS.value()
         response.contentType = "application/json"
-        response.writer.write("""{"error":"Rate limit exceeded, try again later"}""")
+        response.writer.write("""{"error":"Rate limit exceeded, try again later","code":"RATE_LIMITED"}""")
         return false
     }
 

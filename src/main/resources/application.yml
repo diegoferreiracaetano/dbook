@@ -31,6 +31,15 @@ jwt:
   secret: baB82M7DHaS9cSjspi0J4hJS05eUKmSLOu0hbOivY0k=
   access-token-expiration-minutes: 15
   refresh-token-expiration-days: 7
+login-attempts:
+  window-minutes: 15
+  max-failures-per-email: 5
+  max-failures-per-ip: 20
+cors:
+  allowed-origins: http://localhost:*,http://127.0.0.1:*
+admin-portal:
+  # Safari does not treat http://localhost as secure: run with ADMIN_PORTAL_COOKIE_SECURE=false there
+  cookie-secure: ${ADMIN_PORTAL_COOKIE_SECURE:true}
 ai:
   bedrock:
     region: us-east-1
