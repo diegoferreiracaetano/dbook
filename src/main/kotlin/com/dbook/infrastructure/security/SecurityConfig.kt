@@ -64,6 +64,7 @@ class SecurityConfig(
                         "/v1/admin/auth/login",
                         "/v1/admin/auth/refresh",
                         "/v1/admin/auth/logout",
+                        "/v1/admin/invitations/accept",
                         "/v1/flights/search",
                         "/v1/flights/lowest-price",
                         "/v1/destinations",

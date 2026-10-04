@@ -20,6 +20,7 @@ Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`
 | `UNAUTHORIZED` | 401 | sem token válido |
 | `INVALID_CREDENTIALS` | 401 | e-mail/senha errados (também para um cliente no portal) |
 | `INVALID_TOKEN` | 401 | refresh token inexistente, vencido, usado ou de outra porta de entrada |
+| `INVALID_INVITATION` | 400 | convite de equipe desconhecido, vencido, já usado ou revogado (o mesmo erro para todos, de propósito) |
 | `FORBIDDEN` | 403 | sem permissão, não é o dono, ou `Origin` não permitido |
 | `ACCOUNT_BLOCKED` | 403 | conta bloqueada (só depois de a senha estar certa) |
 | `NOT_FOUND` | 404 | recurso inexistente |
@@ -47,6 +48,19 @@ Detalhes e exemplos em [Autenticação](autenticacao.md#portal-administrativo-se
 - `POST /v1/admin/auth/refresh` (aberta, exige `Origin` do portal e o cookie): `200 {accessToken}` + cookie novo; `401` sem cookie ou com cookie usado/inválido, `403` com `Origin` ausente ou de outro site.
 - `POST /v1/admin/auth/logout` (aberta, mesmo `Origin`): `204`, revoga o token e apaga o cookie.
 - `GET /v1/admin/auth/me` (staff): `{id, name, email, role, permissions[]}`; `403` para cliente.
+- `POST /v1/admin/auth/change-password` (staff): `{currentPassword, newPassword}` → `204`, encerra todas as sessões. `401 INVALID_CREDENTIALS` com a senha atual errada, `400 VALIDATION_FAILED` com a nova fraca, `429 TOO_MANY_ATTEMPTS`.
+
+## Equipe: convites e gestão (requer a permissão `ADMIN_MANAGE`)
+Fluxo e modelo de ameaças em [Autenticação](autenticacao.md#equipe-convite-e-gestão). Nenhuma resposta traz o token do convite nem o seu hash.
+
+- `POST /v1/admin/invitations` `{email, role}` (`role` ∈ `SUPPORT`, `CATALOG_MANAGER`, `SUPER_ADMIN`): `201 {id, email, role, status, invitedBy, createdAt, expiresAt}`. `409` se o e-mail já tem conta (qualquer caixa); convidar de novo um endereço com convite aberto revoga o anterior.
+- `GET /v1/admin/invitations`: os 100 convites mais recentes, com `status` (`PENDING`, `ACCEPTED`, `EXPIRED`, `REVOKED`).
+- `POST /v1/admin/invitations/{id}/resend`: `200`, manda um **link novo** (o anterior morre). `409` se o convite já foi aceito ou revogado, `404` se não existe.
+- `DELETE /v1/admin/invitations/{id}`: `204`, o link para de funcionar.
+- `POST /v1/admin/invitations/accept` (**aberta**, o token é a prova) `{token, name, password}`: `201 {id, name, email, role, permissions[]}`. `400 INVALID_INVITATION` para token desconhecido, expirado, usado ou revogado (mesma resposta), `400 VALIDATION_FAILED` para senha fraca (o convite continua valendo).
+- `GET /v1/admin/staff`: a equipe, bloqueados inclusive, `{id, name, email, role, status, blockedReason, lastLoginAt}`.
+- `PATCH /v1/admin/staff/{id}/role` `{role}`: `200`, encerra as sessões da pessoa. `409` no próprio id ou no último `SUPER_ADMIN` ativo; `400` ao tentar `CLIENT` (para tirar o acesso, bloqueie); `404` para id inexistente **ou de cliente**.
+- `POST /v1/admin/staff/{id}/block` `{reason}` e `POST /v1/admin/staff/{id}/unblock`: `200` com o membro; mesmas regras de `409`/`404`.
 
 ## `POST /v1/admin/flights` (requer a permissão `FLIGHT_WRITE`)
 Cadastra um voo, resolvendo companhia/origem/destino por código IATA, e gera automaticamente seu mapa de assentos a partir de `totalCapacity` e `aircraftType` — a quantidade de assentos por fileira (e onde ficam os corredores) vem de `SeatLayout.kt`, a única fonte dessa regra no sistema: `"Embraer E195"` → 2+2 (4/fileira), `"Airbus A320"` → 3+3 (6/fileira, o padrão), `"Boeing 777"` → 3+4+3 (10/fileira, widebody com 2 corredores). Qualquer outro valor cai no 3+3 padrão.

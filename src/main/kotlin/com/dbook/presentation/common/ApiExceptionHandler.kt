@@ -5,6 +5,8 @@ import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.catalog.AirlineNotFoundException
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.catalog.BookableNotFoundException
+import com.dbook.domain.identity.DuplicateOpenInvitationException
+import com.dbook.domain.identity.InvitationNotFoundException
 import com.dbook.domain.identity.UserAlreadyExistsException
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.payment.DuplicateIdempotencyKeyException
@@ -26,6 +28,7 @@ class ApiExceptionHandler {
         AirportNotFoundException::class,
         BookableNotFoundException::class,
         BookingNotFoundException::class,
+        InvitationNotFoundException::class,
         SeatNotFoundException::class,
         UserNotFoundException::class,
     )
@@ -72,6 +75,7 @@ class ApiExceptionHandler {
 
     @ExceptionHandler(
         DuplicateIdempotencyKeyException::class,
+        DuplicateOpenInvitationException::class,
         IllegalStateException::class,
         UserAlreadyExistsException::class,
     )

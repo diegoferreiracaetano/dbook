@@ -38,8 +38,18 @@ login-attempts:
 cors:
   allowed-origins: http://localhost:*,http://127.0.0.1:*
 admin-portal:
+  # where the invitation link points; the portal must serve /accept-invite there
+  base-url: ${ADMIN_PORTAL_BASE_URL:http://localhost:3000}
   # Safari does not treat http://localhost as secure: run with ADMIN_PORTAL_COOKIE_SECURE=false there
   cookie-secure: ${ADMIN_PORTAL_COOKIE_SECURE:true}
+bootstrap-admin:
+  # creates the first SUPER_ADMIN at startup, only while none exists (set both or neither)
+  email: ${DBOOK_BOOTSTRAP_ADMIN_EMAIL:}
+  password: ${DBOOK_BOOTSTRAP_ADMIN_PASSWORD:}
+email:
+  # the invitation e-mail body carries the token: only print it for local development (EMAIL_LOG_BODY=true);
+  # the app refuses to start with it on under the json (production) profile
+  log-body: ${EMAIL_LOG_BODY:false}
 ai:
   bedrock:
     region: us-east-1

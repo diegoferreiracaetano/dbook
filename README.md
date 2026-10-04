@@ -118,4 +118,6 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M26 — Auditoria** (registro imutável das ações administrativas na mesma transação, consulta por cursor em `GET /v1/admin/audit`, ligada ao log e ao trace — ver [docs/auditoria.md](docs/auditoria.md))
 - ✅ **M27 — Preço congelado na reserva** (`Booking.price` gravado na criação e nunca alterado; o pagamento e "Minhas Viagens" leem dele, então reajustar o preço de um voo não muda o que já foi reservado — ver [docs/migracoes.md](docs/migracoes.md))
 
+- ✅ **M28 — Equipe e convites** (convite por e-mail com token de 256 bits guardado só como hash, aceite com senha escolhida pelo convidado, troca de papel/bloqueio que nunca deixa o sistema sem `SUPER_ADMIN`, bootstrap do primeiro administrador por variável de ambiente, troca da própria senha — ver [docs/autenticacao.md](docs/autenticacao.md#equipe-convite-e-gestão))
+
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

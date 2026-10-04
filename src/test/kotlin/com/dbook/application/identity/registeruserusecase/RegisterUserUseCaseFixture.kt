@@ -2,6 +2,7 @@ package com.dbook.application.identity.registeruserusecase
 
 import com.dbook.application.identity.RegisterUserUseCase
 import com.dbook.domain.identity.PasswordHasher
+import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import java.time.Instant
@@ -30,6 +31,12 @@ class FakeUserRepository : UserRepository {
         userId: Long,
         at: Instant,
     ) = error("not needed for this test")
+
+    override fun findStaff(): List<User> = error("not needed for this test")
+
+    override fun existsByRole(role: Role): Boolean = error("not needed for this test")
+
+    override fun lockActiveByRole(role: Role): List<User> = error("not needed for this test")
 }
 
 class FakePasswordHasher : PasswordHasher {

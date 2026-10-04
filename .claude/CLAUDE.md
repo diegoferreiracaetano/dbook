@@ -49,7 +49,7 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 ## Convenções de nome
 
 - `XxxUseCase` / `XxxCommand` · porta `XxxRepository` (domain) → `XxxRepositoryAdapter` (infra) · `XxxJpaEntity` · `XxxJpaRepository` · `XxxController` · `XxxRequest` / `XxxResponse` · `XxxNotFoundException` (domain).
-- Migration: `V<N>__snake_case.sql` (próxima livre: V30). PK `BIGSERIAL`. Nunca edite migration já aplicada — crie a próxima.
+- Migration: `V<N>__snake_case.sql` (próxima livre: V31). PK `BIGSERIAL`. Nunca edite migration já aplicada — crie a próxima.
 - Entidades JPA **não** são `data class` (equals/hashCode em associações lazy é armadilha) — por isso `LongParameterList.constructorThreshold` é 15 no detekt.
 - Mappers domínio↔JPA ficam em `XxxMappers.kt` na pasta do conceito (`persistence/booking/BookingMappers.kt`, ...), um arquivo por conceito — o `Mappers.kt` único estourou `TooManyFunctions` e foi dividido em vez de subir o threshold. Um mapper que precisa converter entidade de outro conceito importa a função dele (ex.: `BookingMappers` importa `catalog.toDomain`).
 

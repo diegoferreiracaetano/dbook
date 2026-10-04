@@ -520,6 +520,18 @@ Problema: o consumidor é um app mobile, que não dá para forçar a atualizar; 
 
 Decisão (2026-10-04): o dono pediu uma área administrativa de verdade — um **portal web de CRM** com cadastro de usuários admin — e um cronograma completo, no mesmo modelo dos marcos anteriores, reunindo tudo o que foi discutido até aqui (funcionalidades de produto, evoluções de arquitetura e os débitos conhecidos). Escopo fechado: o portal é um **segundo app Flutter Web no monorepo `dbook_mobile`** (reaproveita `dbook_domain`, `dbook_core_network` e o design system); o backend segue o mesmo padrão de sempre. Este bloco é o **mapa**; cada marco abaixo é detalhado em itens numerados e fechado com o checklist de sempre. O espelho do lado do app/portal está em `dbook_mobile/CHECKLIST.md` (M24+).
 
+### Decisão de sequência (2026-10-04): o front só depois de todo o backend
+
+O portal (`apps/dbook_admin`) e as mudanças do app (`dbook-mobile`, marcos M24–M44 de lá) **começam só quando o backend inteiro (M28–M47) estiver pronto**. Enquanto isso o app não é adaptado, e as incompatibilidades com o backend novo ficam registradas aqui para serem tratadas de uma vez:
+
+- `roleFromWire` lança com `SUPER_ADMIN`, `SUPPORT` e `CATALOG_MANAGER` (conta staff no app antigo derruba o login) — já vale desde o M25
+- o validador de senha do app aceita 6 caracteres e o backend exige 8 — já vale desde o M25
+- "Minhas Viagens" mostra o preço **atual** do voo, não o `price` da reserva — desde o M27
+- **`REFUNDED` (M31)** é um valor novo de `BookingStatus`: o app **lança** em enum desconhecido, então "Minhas Viagens" quebraria para qualquer reserva reembolsada. Não use o app antigo contra um banco com reembolsos
+- demais marcos que acrescentam enum ou campo (M36, M39, M42) valem a mesma atenção
+
+A tolerância a valor de enum desconhecido (M24 do app) é o **primeiro** item do front, antes de qualquer tela.
+
 ### Achados que moldaram o plano (verificados no código em 2026-10-04)
 
 1. `RegisterPaymentUseCase` soma `booking.bookable.price` **ao vivo** — se o preço do voo mudar (admin editando voo, M32) ou entrar desconto (M39), reservas pendentes mudariam de valor retroativamente. **Vira o M27, pré-requisito** do catálogo admin e dos cupons.
@@ -681,20 +693,35 @@ Problema: o pagamento somava o preço **atual** do voo (`booking.bookable.price`
 - [x] Migration validada com dados reais; mutação nos pontos críticos
 - [x] Docs e instruções do projeto atualizados
 
-## M28 — Convite e gestão da equipe (cadastro do usuário admin) 📋
+## M28 — Convite e gestão da equipe (cadastro do usuário admin) ✅
 
-Problema: hoje a promoção é SQL manual (de propósito: sem endpoint de autopromoção). Um CRM precisa de um fluxo seguro, auditado e sem senha trafegando por e-mail.
+Problema: a promoção era SQL manual (de propósito: sem endpoint de autopromoção). Um CRM precisa de um fluxo seguro, auditado e sem senha trafegando por e-mail. Feito em 2026-10-04, **por autorização expressa do dono** (a parte de domínio/persistência foi mostrada e aprovada antes; o restante, "seguimos com a implementação do restante do código"), depois de uma revisão de código com 10 achados, todos corrigidos; nada commitado ainda.
 
-- [ ] 28.1 **Bootstrap do 1º admin:** `BootstrapSuperAdminUseCase` + executor na entrada (`presentation/identity/`, adapter de entrada como o consumidor da fila): lê `DBOOK_BOOTSTRAP_ADMIN_EMAIL`/`_PASSWORD`, cria um `SUPER_ADMIN` **somente se não existir nenhum**, idempotente, com `mustChangePassword=true`; em produção a senha vem do Secrets Manager (M43). Nunca por endpoint
-- [ ] 28.2 Migration `V30__create_staff_invitation.sql` e `app_user.must_change_password`: `staff_invitation` (`id`, `email`, `role`, `token_hash` (SHA-256 — o token em claro só existe no e-mail), `invited_by`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`); índice único parcial: **um convite pendente por e-mail**
-- [ ] 28.3 Domínio: `StaffInvitation` (papel precisa ser staff; validade 72 h; uso único; estados `PENDING/ACCEPTED/EXPIRED/REVOKED` derivados do `Clock`), porta `InvitationTokenGenerator` (`SecureRandom`, 256 bits, URL-safe)
-- [ ] 28.4 Casos de uso (`ADMIN_MANAGE`, todos auditados): `InviteStaffUseCase` (e-mail já cadastrado → `409`; reconvidar revoga o anterior), `RevokeInvitationUseCase`, `ResendInvitationUseCase`, `ListInvitationsUseCase`, `AcceptInvitationUseCase` (público: token + nome + senha; aplica a política de senha de staff; cria o usuário; marca usado na **mesma transação**)
-- [ ] 28.5 **Porta `EmailSender`** (domínio) + adaptadores: `LoggingEmailSender` (perfil `local`: imprime o link no log para desenvolvimento — nunca nos perfis `json`/produção) e `SesEmailSender` (SES v2, LocalStack local). Modelos em português (texto + HTML) com o link `${admin-portal.base-url}/accept-invite?token=...`. Será reutilizado por M36
-- [ ] 28.6 Controllers: `POST/GET /v1/admin/invitations`, `DELETE .../{id}`, `POST .../{id}/resend`, e o público `POST /v1/admin/invitations/accept` (rate limit por IP; **erro idêntico** para token inválido, expirado ou já usado — não vaza o estado)
-- [ ] 28.7 **Gestão da equipe:** `GET /v1/admin/staff`, `PATCH /v1/admin/staff/{id}/role`, `POST .../block` e `.../unblock`. Invariantes no domínio/caso de uso: ninguém altera o **próprio** papel nem se bloqueia; **nunca fica sem `SUPER_ADMIN` ativo** (contagem com bloqueio de linha `SELECT ... FOR UPDATE` para evitar duas remoções simultâneas deixarem zero — teste de corrida); trocar papel/bloquear revoga os refresh tokens
-- [ ] 28.8 `POST /v1/admin/auth/change-password` (obrigatório quando `mustChangePassword`; exige senha atual; revoga os outros refresh tokens) — com o `code=PASSWORD_CHANGE_REQUIRED` no login até trocar
-- [ ] 28.9 Testes: bootstrap só com zero admin e idempotente; convite expirado/usado/revogado; mesmo e-mail duas vezes; token hash (não há token em claro no banco); corrida "dois SUPER_ADMIN se rebaixando"; auto-alteração recusada; e-mail enviado (fake) com o link certo; auditoria de cada ação; `403` por permissão
-- [ ] 28.10 Docs: fluxo completo em `docs/autenticacao.md` (diagrama de sequência), **modelo de ameaças** (STRIDE curto: token vazado, convite reutilizado, enumeração, escalada), `endpoints.md`, ADR do convite
+- [x] 28.1 **Bootstrap do 1º admin:** `BootstrapSuperAdminUseCase` + `BootstrapSuperAdminRunner` (`presentation/identity/`): lê `DBOOK_BOOTSTRAP_ADMIN_EMAIL`/`_PASSWORD`, cria um `SUPER_ADMIN` **somente se não existir nenhum**, idempotente. As duas vazias: não faz nada; **só uma** preenchida ou e-mail que já é conta: **a subida falha**. **Sem `mustChangePassword`** (ver "Fora do escopo"). A senha em produção virá do Secrets Manager (M43)
+- [x] 28.2 Migration `V30__create_staff_invitation.sql`: `staff_invitation` (`token_hash` SHA-256 único, `invited_by`, `expires_at`, `accepted_at`, `revoked_at`, `created_at`, `version`), `CHECK` do papel staff e **índice único parcial: um convite aberto por e-mail**. **Sem a coluna `app_user.must_change_password`** (ver abaixo)
+- [x] 28.3 Domínio: `StaffInvitation` (e-mail normalizado, papel precisa ser staff, validade 72 h, uso único, estados `PENDING/ACCEPTED/EXPIRED/REVOKED` derivados do `Clock`, `reissue` para o reenvio), portas `InvitationTokenGenerator` (`SecureRandom`, 256 bits, URL-safe) e `EmailSender`
+- [x] 28.4 Casos de uso (todos auditados): `InviteStaffUseCase` (e-mail já cadastrado em qualquer caixa → `409`; reconvidar revoga o anterior; e-mail **depois do commit**), `ResendInvitationUseCase` (link **novo**, pois só o hash é guardado), `RevokeInvitationUseCase`, `ListInvitationsUseCase` (os 100 mais recentes), `AcceptInvitationUseCase` (público; política de senha de staff; fecha o convite **antes** de criar o usuário, então dois aceites simultâneos não criam duas contas; ator da auditoria = a conta criada)
+- [x] 28.5 Porta `EmailSender` + `LoggingEmailSender` (só registra o envio; o corpo com o link só com `EMAIL_LOG_BODY=true`, e a aplicação **recusa subir** com isso sob o perfil `json`). Texto em português (`InvitationMailer`, link `${admin-portal.base-url}/accept-invite?token=...`; falha de envio é registrada e não desfaz o convite). **O `SesEmailSender` ficou para o M36**, que é quem precisa de e-mail real
+- [x] 28.6 Controllers: `POST/GET /v1/admin/invitations`, `DELETE .../{id}`, `POST .../{id}/resend`, o público `POST /v1/admin/invitations/accept` (erro **idêntico** `400 INVALID_INVITATION` para token inexistente, expirado, usado ou revogado). **Sem rate limit por IP no aceite**, de propósito (token de 256 bits não se adivinha, e o limite bloquearia convidados legítimos atrás do mesmo NAT)
+- [x] 28.7 **Gestão da equipe:** `GET /v1/admin/staff`, `PATCH .../{id}/role`, `POST .../block` e `.../unblock`. Ninguém altera o próprio papel nem se bloqueia (`409`); **nunca fica sem `SUPER_ADMIN` ativo** (`lockActiveByRole`: `SELECT ... FOR UPDATE` em ordem de id, `Propagation.MANDATORY`); trocar papel/bloquear revoga os refresh tokens; id de cliente = `404`; papel `CLIENT` recusado (`400`)
+- [x] 28.8 `POST /v1/admin/auth/change-password` (senha atual obrigatória, mesmo limite de tentativas do login, revoga **todas** as sessões, política de senha por tipo de conta). **Sem o `code=PASSWORD_CHANGE_REQUIRED` do plano**: não há senha provisória (o convidado escolhe a sua e o bootstrap exige 12+), então não há o que obrigar a trocar
+- [x] 28.9 Testes: 362 no total (de 297), 0 falhas. Unitários com fakes em memória (um cenário por classe; `committed {}`/`rolledBack {}` provam que o e-mail só sai com commit), persistência (um aberto por e-mail, versão velha recusada, trava exige transação), `RecordingEmailSender` compartilhado por `RecordingEmailConfig`, e 16 de ponta a ponta (convite → e-mail → aceite → login no portal; 403 por permissão; mesmo `400` para qualquer token ruim; senha fraca não gasta o link; reconvidar e reenviar matam o link antigo; lista sem token; troca de papel encerra a sessão e audita; bloquear/desbloquear; auto-alteração `409`; cliente = `404`; troca de senha). **A corrida "dois SUPER_ADMIN se rebaixando" não tem teste HTTP** (o banco é compartilhado entre as classes, então o "último" nunca é o último): a regra tem teste com fakes e a trava tem teste de persistência. **Mutação:** sem a trava do último `SUPER_ADMIN` (rebaixar e bloquear), sem a revogação das sessões ou com o e-mail antes do commit, os testes reprovam
+- [x] 28.10 Docs: `docs/autenticacao.md` (fluxo com diagrama de sequência, bootstrap, troca de senha e **modelo de ameaças** em tabela), `endpoints.md`, `testes-e-qualidade.md`, `README.md`, `.claude/CLAUDE.md` (migration V31). **ADR do convite não escrito**: o projeto ainda não tem `docs/adr/`; as decisões estão no modelo de ameaças
+
+**O que a execução ensinou:**
+- Fechar o convite **antes** de criar a conta é o que dá a exclusão mútua: dois aceites leem a mesma `version`, e o segundo `save` perde. Fazer na ordem inversa deixaria as duas contas serem criadas.
+- Violação do índice único chega do Spring como exceção de tradução do `@Repository`, não como a do JPA: o adaptador precisa traduzi-la para uma exceção de domínio (`DuplicateOpenInvitationException` → `409`), e o `saveAndFlush` define quando ela estoura.
+- Request com **um** campo (`ChangeStaffRoleRequest`, `BlockStaffRequest`) precisa de `@JsonCreator`/`@JsonProperty`, como `RefreshRequest`.
+- Snapshot de auditoria por lista permitida **sem e-mail** (dado pessoal) e um teste que garante isso.
+
+**Fora do escopo (de propósito):** `mustChangePassword` e a troca obrigatória (sem senha provisória não há necessidade); SES (M36); 2FA (M29); rate limit no aceite; convite com papel `CLIENT`; paginação da lista de convites (teto de 100); desbloquear por e-mail.
+
+**Checklist de fechamento do M28:**
+- [x] Itens 28.1–28.10 revisados (desvios registrados acima)
+- [x] Clean Code / SOLID: regras do time num só lugar (`StaffSafeguards`), e-mail atrás de uma porta, casos de uso sem conhecer HTTP, nada especulativo
+- [x] `./gradlew check` com **exit 0** (362 testes, ktlint, detekt, JaCoCo)
+- [x] Revisão de código (10 achados corrigidos) e mutação nos pontos críticos
+- [x] Docs e instruções do projeto atualizados
 
 ## M29 — Autenticação em dois fatores (TOTP) para a equipe 📋
 

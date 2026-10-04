@@ -36,21 +36,30 @@ class User(
     ): User {
         check(!isBlocked) { "User is already blocked" }
         require(reason.isNotBlank()) { "reason must not be blank" }
-        return copy(status = UserStatus.BLOCKED, blockedReason = reason.trim(), blockedAt = at)
+        return withBlockState(UserStatus.BLOCKED, reason.trim(), at)
     }
 
     fun unblock(): User {
         check(isBlocked) { "User is not blocked" }
-        return copy(status = UserStatus.ACTIVE, blockedReason = null, blockedAt = null)
+        return withBlockState(UserStatus.ACTIVE, null, null)
     }
 
-    fun rename(newName: String): User = copy(name = newName)
+    fun rename(newName: String): User = withProfile(name = newName)
 
-    // every change goes through here so no field is dropped (rebuilding a User by hand would undo a block)
-    private fun copy(
+    fun changeRole(newRole: Role): User = withProfile(role = newRole)
+
+    fun withPasswordHash(newHash: String): User = withProfile(passwordHash = newHash)
+
+    // every change goes through one of these two so no field is dropped (rebuilding a User by hand would undo a block)
+    private fun withProfile(
         name: String = this.name,
-        status: UserStatus = this.status,
-        blockedReason: String? = this.blockedReason,
-        blockedAt: Instant? = this.blockedAt,
+        role: Role = this.role,
+        passwordHash: String = this.passwordHash,
     ) = User(id, email, passwordHash, name, role, status, blockedReason, blockedAt, lastLoginAt, version)
+
+    private fun withBlockState(
+        status: UserStatus,
+        reason: String?,
+        at: Instant?,
+    ) = User(id, email, passwordHash, name, role, status, reason, at, lastLoginAt, version)
 }

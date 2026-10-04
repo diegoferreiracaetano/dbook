@@ -23,6 +23,12 @@ class FakeUserRepository : UserRepository {
         userId: Long,
         at: Instant,
     ) = error("not needed for this test")
+
+    override fun findStaff(): List<User> = error("not needed for this test")
+
+    override fun existsByRole(role: Role): Boolean = error("not needed for this test")
+
+    override fun lockActiveByRole(role: Role): List<User> = error("not needed for this test")
 }
 
 abstract class UpdateUserNameUseCaseFixture {

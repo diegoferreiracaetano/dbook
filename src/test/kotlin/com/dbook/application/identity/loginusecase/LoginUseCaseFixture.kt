@@ -74,6 +74,12 @@ class SingleUserRepository(var user: User) : UserRepository {
     ) {
         loginsRecorded += userId to at
     }
+
+    override fun findStaff(): List<User> = error("not needed for this test")
+
+    override fun existsByRole(role: Role): Boolean = error("not needed for this test")
+
+    override fun lockActiveByRole(role: Role): List<User> = error("not needed for this test")
 }
 
 class FixedPasswordHasher(private val validPassword: String) : PasswordHasher {

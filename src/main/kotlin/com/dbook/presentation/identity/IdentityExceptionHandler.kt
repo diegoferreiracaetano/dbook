@@ -2,6 +2,7 @@ package com.dbook.presentation.identity
 
 import com.dbook.domain.identity.AccountBlockedException
 import com.dbook.domain.identity.InvalidCredentialsException
+import com.dbook.domain.identity.InvalidInvitationException
 import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.TooManyLoginAttemptsException
 import com.dbook.presentation.common.ErrorCode
@@ -24,6 +25,11 @@ class IdentityExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleInvalidToken(ex: InvalidTokenException): ErrorResponse =
         ErrorResponse(ex.message ?: "Unauthorized", ErrorCode.INVALID_TOKEN)
+
+    @ExceptionHandler(InvalidInvitationException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidInvitation(ex: InvalidInvitationException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Invalid invitation", ErrorCode.INVALID_INVITATION)
 
     @ExceptionHandler(AccountBlockedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)

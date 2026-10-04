@@ -38,7 +38,7 @@ curl -X PATCH localhost:8080/v1/users/me \
   -d '{"name": "Novo Nome"}'
 ```
 
-Rotas públicas: `/health`, `/auth/register|login|refresh`, `/admin/auth/login|refresh|logout`, `/flights/search`, `/flights/lowest-price`, `/destinations`, `/bookables/*/seats`, Swagger. Todo o resto exige `Authorization: Bearer <token>` — inclusive `/users/me` (GET e PATCH).
+Rotas públicas: `/health`, `/auth/register|login|refresh`, `/admin/auth/login|refresh|logout`, `/admin/invitations/accept`, `/flights/search`, `/flights/lowest-price`, `/destinations`, `/bookables/*/seats`, Swagger. Todo o resto exige `Authorization: Bearer <token>` — inclusive `/users/me` (GET e PATCH).
 
 ## Papéis e permissões
 
@@ -55,7 +55,7 @@ Quem pode **fazer** o quê é uma **permissão**, nunca um nome de papel: cada e
 
 **Papel e status em `/v1/admin/**` vêm do banco**, a cada requisição, e não do token: quem é bloqueado ou rebaixado perde o acesso na chamada seguinte. Fora do admin, o token de um cliente vale até vencer (15 minutos) — trade-off aceito para não consultar o banco em toda requisição.
 
-Não existe endpoint para promover alguém a staff (permitir isso por API seria uma falha de segurança; o convite entra no M28). Para testar localmente, promova direto no banco:
+Não existe endpoint que promova um **cliente** a staff (permitiria escalar privilégio pela API): a equipe nasce de um [convite](#equipe-convite-e-gestão) e o primeiro `SUPER_ADMIN` do [bootstrap](#primeiro-super_admin-bootstrap). Só para testar localmente ainda dá para promover direto no banco:
 
 ```sql
 UPDATE app_user SET role = 'SUPER_ADMIN' WHERE email = 'diego@example.com';
@@ -75,7 +75,7 @@ Métrica: `dbook.auth.login{outcome=success|invalid_credentials|blocked|rate_lim
 
 ## Política de senha
 
-Mínimo de **8** caracteres para cliente (**12** para a equipe, a partir do M28), no máximo 72 **bytes** (o BCrypt ignora o que passa disso), diferente do e-mail e fora de uma lista de senhas comuns. Sem regra de composição (NIST 800-63B). Viola: `400` com `code=VALIDATION_FAILED`.
+Mínimo de **8** caracteres para cliente (**12** para a equipe), no máximo 72 **bytes** (o BCrypt ignora o que passa disso), diferente do e-mail e fora de uma lista de senhas comuns. Sem regra de composição (NIST 800-63B). Viola: `400` com `code=VALIDATION_FAILED`.
 
 ## Portal administrativo: sessão
 
@@ -101,6 +101,54 @@ curl -i -X POST localhost:8080/v1/admin/auth/logout \
 ```
 
 `Secure` faz o navegador só enviar o cookie por HTTPS. O Chrome trata `http://localhost` como seguro; o Safari não — rodando local no Safari, use `ADMIN_PORTAL_COOKIE_SECURE=false`.
+
+## Equipe: convite e gestão
+
+Quem tem `ADMIN_MANAGE` (só o `SUPER_ADMIN`) convida pessoas por e-mail; **nenhuma senha trafega por e-mail** — o convidado escolhe a própria ao aceitar.
+
+```mermaid
+sequenceDiagram
+    actor A as SUPER_ADMIN
+    participant API
+    participant DB
+    participant Mail as E-mail
+    actor C as Convidado
+    A->>API: POST /v1/admin/invitations {email, role}
+    API->>DB: grava convite (só o hash SHA-256 do token) + auditoria
+    API-->>A: 201 {id, status: PENDING, ...}
+    API--)Mail: link com o token (depois do commit)
+    Mail--)C: .../accept-invite?token=...
+    C->>API: POST /v1/admin/invitations/accept {token, name, password}
+    API->>DB: fecha o convite, cria o usuário com o papel convidado + auditoria
+    API-->>C: 201 {id, name, email, role, permissions}
+    C->>API: POST /v1/admin/auth/login
+```
+
+- **Token:** 256 bits aleatórios (`SecureRandom`), válido por **72 horas** e de **uso único**. No banco só existe o hash; o token em claro vive apenas no e-mail. Por isso "reenviar" gera um **link novo** (o antigo para de funcionar).
+- **Um convite aberto por e-mail** (índice único parcial). Convidar de novo o mesmo endereço **revoga** o anterior. Endereço que já tem conta (em qualquer caixa, `Maria@x.com` = `maria@x.com`) é `409`.
+- **Um erro só** para token desconhecido, expirado, usado ou revogado: `400` com `code=INVALID_INVITATION`. Quem chuta tokens não descobre o estado de nenhum. Senha fraca é `400 VALIDATION_FAILED` e **não gasta** o convite.
+- O e-mail sai **depois do commit**: se a transação desfizer, nenhum link sai para um convite que não existe. Falha no envio não desfaz o convite (é registrada e dá para reenviar). Hoje o único `EmailSender` é o `LoggingEmailSender`, que **só registra o envio** no log; o corpo (com o link) só entra no log com `EMAIL_LOG_BODY=true` e nunca com o perfil `json`. O adaptador SES vem no M36.
+- **Gestão:** `GET /v1/admin/staff`, `PATCH /v1/admin/staff/{id}/role`, `POST .../block` e `.../unblock`. Regras: ninguém altera o **próprio** papel nem se bloqueia (`409`); o sistema **nunca fica sem `SUPER_ADMIN` ativo** (as linhas dos `SUPER_ADMIN` ativos são travadas com `SELECT ... FOR UPDATE`, em ordem de id, antes de contar — dois rebaixamentos simultâneos não deixam zero); trocar o papel ou bloquear **encerra as sessões** da pessoa; o id de um **cliente** nas rotas da equipe é `404`, igual a um id inexistente. Toda ação é auditada (`STAFF_INVITED`, `STAFF_INVITATION_RESENT`, `STAFF_INVITATION_REVOKED`, `STAFF_INVITATION_ACCEPTED`, `STAFF_ROLE_CHANGED`, `STAFF_BLOCKED`, `STAFF_UNBLOCKED`); o "antes/depois" do convite **não leva o e-mail**.
+
+## Primeiro SUPER_ADMIN (bootstrap)
+
+Alguém tem de convidar o primeiro. Na subida, `BootstrapSuperAdminRunner` lê `DBOOK_BOOTSTRAP_ADMIN_EMAIL` e `DBOOK_BOOTSTRAP_ADMIN_PASSWORD` e cria um `SUPER_ADMIN` **somente se não existir nenhum** (idempotente: pode ficar configurado). As duas vazias: nada acontece. **Só uma** das duas: a aplicação **não sobe** (configuração pela metade nunca passa em silêncio). E-mail que já é conta de cliente também derruba a subida, em vez de promover um cliente. A senha segue a política da equipe (12+). Em produção a senha viria do Secrets Manager (M43); nunca existe endpoint para isso.
+
+## Trocar a própria senha
+
+`POST /v1/admin/auth/change-password` `{currentPassword, newPassword}` → `204`. Exige a senha atual, e uma senha atual errada conta no **mesmo limite** do login (`429` depois de 5) — um token de acesso roubado não vira um jeito de adivinhar a senha. Trocar com sucesso **encerra todas as sessões** (refresh tokens revogados): é preciso entrar de novo. A nova segue a política (12+ para staff).
+
+## Modelo de ameaças (convites)
+
+| Ameaça | Mitigação |
+|---|---|
+| **Token vazado** (e-mail lido, backup do banco) | só o hash fica no banco; 256 bits, 72 h, uso único; o `SUPER_ADMIN` pode revogar; reenviar invalida o link anterior |
+| **Convite reutilizado** (aceito duas vezes, ao mesmo tempo) | o convite é fechado **antes** de criar o usuário, com `@Version`: o segundo aceite perde a disputa (`409`) sem criar uma segunda conta |
+| **Enumeração** (descobrir quem é convidado ou cliente) | erro idêntico para qualquer token inválido; id de cliente nas rotas da equipe = `404`; o aceite não consulta e-mail algum antes de validar o token |
+| **Escalada de privilégio** | só `ADMIN_MANAGE` convida, muda papel ou bloqueia; papel do convite tem de ser staff; ninguém mexe no próprio papel; não existe rota que promova um cliente |
+| **Lockout** (ficar sem administrador) | trava das linhas dos `SUPER_ADMIN` ativos + contagem; bootstrap por ambiente |
+| **Senha fraca ou vazada em log** | política de 12+ para staff; o corpo do e-mail não vai ao log em produção; a auditoria não guarda e-mail |
+| **Força bruta no aceite** | token de 256 bits (inviável); **sem limite por IP** de propósito, para não bloquear convidados legítimos atrás do mesmo NAT |
 
 ## Erros: o campo `code`
 
