@@ -6,6 +6,7 @@ import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingExpirationScheduler
 import com.dbook.domain.booking.BookingRepository
+import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Bookable
@@ -62,6 +63,8 @@ class FakeBookingRepository : BookingRepository {
     override fun findById(id: Long): Booking? = saved.find { it.id == id }
 
     override fun findByCustomerId(customerId: Long): List<Booking> = saved.filter { it.customerId == customerId }
+
+    override fun countPending(): Long = saved.count { it.status == BookingStatus.PENDING }.toLong()
 
     override fun save(booking: Booking): Booking {
         val withId =

@@ -4,6 +4,7 @@ import com.dbook.application.booking.CancelBookingUseCase
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
+import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Flight
@@ -21,6 +22,8 @@ class FakeBookingRepository(initial: List<Booking>) : BookingRepository {
     override fun findById(id: Long): Booking? = store[id]
 
     override fun findByCustomerId(customerId: Long): List<Booking> = store.values.filter { it.customerId == customerId }
+
+    override fun countPending(): Long = store.values.count { it.status == BookingStatus.PENDING }.toLong()
 
     override fun save(booking: Booking): Booking {
         store[requireNotNull(booking.id)] = booking

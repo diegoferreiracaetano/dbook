@@ -8,4 +8,7 @@ interface BookingRepository {
     fun findByCustomerId(customerId: Long): List<Booking>
 
     fun save(booking: Booking): Booking
+
+    /** How many bookings are PENDING right now, i.e. holding a seat while waiting for payment. */
+    fun countPending(): Long
 }

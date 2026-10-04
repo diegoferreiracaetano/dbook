@@ -44,6 +44,8 @@ class BookingRepositoryAdapter(
         )
     }
 
+    override fun countPending(): Long = bookingJpaRepository.countPending()
+
     private fun availableCapacityOf(bookableId: Long): Int =
         seatJpaRepository.countByBookable_IdAndStatus(bookableId, SeatStatus.AVAILABLE)
 }

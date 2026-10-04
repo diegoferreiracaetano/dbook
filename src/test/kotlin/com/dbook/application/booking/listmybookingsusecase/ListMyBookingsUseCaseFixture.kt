@@ -4,6 +4,7 @@ import com.dbook.application.booking.ListMyBookingsUseCase
 import com.dbook.application.review.createreviewusecase.FakeReviewRepository
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
+import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Flight
@@ -19,6 +20,8 @@ class FakeBookingRepository(private val bookings: List<Booking>) : BookingReposi
     override fun findById(id: Long): Booking? = bookings.find { it.id == id }
 
     override fun findByCustomerId(customerId: Long): List<Booking> = bookings.filter { it.customerId == customerId }
+
+    override fun countPending(): Long = bookings.count { it.status == BookingStatus.PENDING }.toLong()
 
     override fun save(booking: Booking): Booking = error("not used by ListMyBookingsUseCase")
 }
