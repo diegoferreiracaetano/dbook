@@ -24,9 +24,12 @@ import java.util.concurrent.TimeUnit
  *
  * Deliberately logged: method, path, status and duration. Never: the query string (it can carry
  * tokens), headers (Authorization), or bodies (card data, passwords).
+ *
+ * Ordered right after Spring's observation filter (HIGHEST_PRECEDENCE + 1): the request's trace
+ * is already open here, so traceId/spanId are in the MDC when the access line is written.
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 2)
 class RequestLoggingFilter : OncePerRequestFilter() {
     private val log = LoggerFactory.getLogger(javaClass)
 

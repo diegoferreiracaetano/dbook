@@ -40,6 +40,7 @@ class JsonProfileWritesStructuredLogsTest : ObservabilityFixture() {
         assertEquals(200, line["status"].asInt())
         assertTrue(line["duration_ms"].isNumber, "duration_ms should be a number")
         assertTrue(line.has("@timestamp"))
+        assertTrue(line["traceId"].asText().length == 32, "no traceId in the JSON line")
     }
 
     companion object {

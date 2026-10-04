@@ -63,6 +63,16 @@ services:
     depends_on:
       - loki
 
+  # --- Traces: where the app sends its spans (OTLP over HTTP, port 4318) -----------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: ["observability"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # the UI: http://localhost:16686
+      - "4318:4318"   # OTLP/HTTP, where the app exports to
+
 volumes:
   dbook_pgdata:
   dbook_localstack_data:

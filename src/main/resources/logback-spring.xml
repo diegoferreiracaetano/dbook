@@ -3,7 +3,7 @@
   Logging, in two shapes:
     - default (local development): one readable line, with the request id and user id
     - profile "json" (production / ECS): one JSON object per line, which CloudWatch Logs
-      Insights and Loki can filter by field (level, requestId, userId, status...)
+      Insights and Loki can filter by field (level, requestId, traceId, userId, status...)
   Profile "logfile" additionally writes the JSON to logs/dbook.json (what the local Loki
   stack reads — see docker-compose.yml, profile "observability").
   requestId and userId come from the MDC (RequestLoggingFilter / JwtAuthenticationFilter).
@@ -14,7 +14,7 @@
     <springProfile name="!json">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{HH:mm:ss.SSS} %-5level [%X{requestId:--}] [user=%X{userId:--}] %logger{36} - %msg%n</pattern>
+                <pattern>%d{HH:mm:ss.SSS} %-5level [%X{requestId:--}] [trace=%X{traceId:--}] [user=%X{userId:--}] %logger{36} - %msg%n</pattern>
             </encoder>
         </appender>
     </springProfile>

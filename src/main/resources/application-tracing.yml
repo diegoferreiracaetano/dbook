@@ -1,0 +1,7 @@
+# Profile "tracing": export the spans to an OpenTelemetry collector (the local Jaeger of
+# docker-compose --profile observability listens on localhost:4318).
+#   SPRING_PROFILES_ACTIVE=tracing ./gradlew bootRun
+spring:
+  autoconfigure:
+    # same as application.yml, minus the OTLP exporter exclusion
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration

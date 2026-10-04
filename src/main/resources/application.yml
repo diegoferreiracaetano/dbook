@@ -5,7 +5,10 @@ spring:
   # UserDetailsService/form login, so this default auto-config just generates a
   # useless password and warns on every startup. Excluded to keep the log clean.
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+    # (1) no UserDetailsService: authentication is 100% JWT. (2) no OTLP trace exporter by default:
+    # without a collector it would log "Failed to export spans" all the time. Spans are still
+    # created (the traceId is in every log line); run with the "tracing" profile to export them.
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration,org.springframework.boot.actuate.autoconfigure.tracing.otlp.OtlpAutoConfiguration
   datasource:
     url: jdbc:postgresql://localhost:5432/dbook
     username: dbook
@@ -50,6 +53,20 @@ booking-expiration:
     # long polling: SQS holds the call up to this long waiting for a message
     wait-seconds: 20
 management:
+  tracing:
+    sampling:
+      # every request is traced here (local development); lower it in production through the
+      # MANAGEMENT_TRACING_SAMPLING_PROBABILITY environment variable
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  metrics:
+    distribution:
+      # histogram buckets, so Prometheus can compute percentiles (p95...) of these timers
+      percentiles-histogram:
+        http.server.requests: true
+        dbook.usecase: true
   observations:
     annotations:
       # makes @Observed work: each annotated use case gets a timer (and, later, a trace span)
