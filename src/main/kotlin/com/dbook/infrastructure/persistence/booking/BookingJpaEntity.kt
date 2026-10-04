@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.Version
+import java.math.BigDecimal
 
 @Entity
 @Table(name = "booking")
@@ -35,4 +36,5 @@ class BookingJpaEntity(
     var payment: PaymentJpaEntity? = null,
     @Version
     var version: Long = 0,
+    var price: BigDecimal = BigDecimal.ZERO,
 )

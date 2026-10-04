@@ -69,7 +69,14 @@ class FakeBookingRepository : BookingRepository {
     override fun save(booking: Booking): Booking {
         val withId =
             if (booking.id == null) {
-                Booking(saved.size + 1L, booking.bookable, booking.seatId, booking.customerId, booking.status)
+                Booking(
+                    saved.size + 1L,
+                    booking.bookable,
+                    booking.seatId,
+                    booking.customerId,
+                    booking.status,
+                    price = booking.price,
+                )
             } else {
                 booking
             }

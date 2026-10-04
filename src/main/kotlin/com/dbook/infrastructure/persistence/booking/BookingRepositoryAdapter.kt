@@ -41,6 +41,7 @@ class BookingRepositoryAdapter(
             status = saved.status,
             paymentId = saved.payment?.id,
             version = saved.version,
+            price = saved.price,
         )
     }
 

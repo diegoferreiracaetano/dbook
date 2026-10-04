@@ -76,7 +76,7 @@ class RegisterPaymentUseCase(
                 booking
             }
 
-        val amount = bookings.fold(BigDecimal.ZERO) { total, booking -> total + booking.bookable.price }
+        val amount = bookings.fold(BigDecimal.ZERO) { total, booking -> total + booking.price }
         val payment =
             paymentRepository.save(
                 Payment(

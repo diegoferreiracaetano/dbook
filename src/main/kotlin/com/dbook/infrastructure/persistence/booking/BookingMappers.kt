@@ -15,6 +15,7 @@ fun BookingJpaEntity.toDomain(availableCapacity: Int): Booking =
         status = status,
         paymentId = payment?.id,
         version = version,
+        price = price,
     )
 
 fun Booking.toJpaEntity(
@@ -30,4 +31,5 @@ fun Booking.toJpaEntity(
         status = status,
         payment = payment,
         version = version,
+        price = price,
     )

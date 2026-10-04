@@ -17,6 +17,7 @@ import jakarta.servlet.http.Cookie
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.ResultActionsDsl
@@ -49,6 +50,9 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var blockUserUseCase: BlockUserUseCase
+
+    @Autowired
+    lateinit var jdbcTemplate: JdbcTemplate
 
     protected fun uniqueEmail() = "user${(1..999_999_999).random()}@example.com"
 
@@ -158,6 +162,28 @@ abstract class SecurityIntegrationFixture : AbstractIntegrationTest() {
 
     protected fun errorCodeOf(result: MvcResult): String =
         objectMapper.readTree(result.response.contentAsString)["code"].asText()
+
+    protected fun reprice(
+        bookableId: Long,
+        price: String,
+    ) {
+        jdbcTemplate.update("UPDATE bookable SET price = ? WHERE id = ?", BigDecimal(price), bookableId)
+    }
+
+    /** @return the id of the new PENDING booking. */
+    protected fun book(
+        token: String,
+        bookableId: Long,
+        seatId: Long,
+    ): Long {
+        val result =
+            mockMvc.post("/v1/bookings") {
+                header("Authorization", "Bearer $token")
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(mapOf("bookableId" to bookableId, "seatId" to seatId))
+            }.andReturn()
+        return objectMapper.readTree(result.response.contentAsString)["id"].asLong()
+    }
 
     protected fun userIdOf(email: String): Long = requireNotNull(userRepository.findByEmail(email)?.id)
 

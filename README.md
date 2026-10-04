@@ -87,6 +87,7 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 | [Endpoints](docs/endpoints.md) | todos os endpoints, com `curl` de exemplo e os códigos de status |
 | [Versionamento da API](docs/versionamento.md) | por que e como a API é versionada (`/v1`), o que é mudança que quebra, como lançar uma `v2` e aposentar a antiga |
 | [Autenticação](docs/autenticacao.md) | registro, login, refresh de token rotativo, papéis e permissões, conta bloqueada, limite de tentativas e a sessão do portal admin |
+| [Migrações do banco](docs/migracoes.md) | as regras do Flyway e a técnica *expand / contract* para adicionar uma coluna obrigatória |
 | [Auditoria](docs/auditoria.md) | o registro imutável das ações administrativas: o que é gravado, como consultar (`GET /v1/admin/audit`) e como se liga ao log e ao trace |
 | [Observabilidade](docs/observabilidade.md) | **o conceito, o que foi usado, como foi implementado, onde acessar** e roteiros para investigar problemas (métricas, logs, tracing) |
 | [Expiração de reservas (SQS)](docs/expiracao-de-reservas.md) | como uma reserva pendente é cancelada sozinha, com diagrama |
@@ -115,5 +116,6 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M23 — Observabilidade** (health liveness/readiness e métricas Prometheus numa porta de gestão separada; `@Observed` em todos os casos de uso; métricas de negócio e o gauge de reservas pendentes; logs em JSON com `requestId`/`userId`/`traceId`; tracing com OpenTelemetry que atravessa a fila SQS; Prometheus + Loki + Jaeger + Grafana locais com dashboard — ver [docs/observabilidade.md](docs/observabilidade.md))
 - ✅ **M25 — Fundação administrativa** (papéis com permissões, conta bloqueável, login com limite de tentativas em Redis, política de senha, sessão do portal admin em cookie `httpOnly`, `code` nos erros — ver [docs/autenticacao.md](docs/autenticacao.md))
 - ✅ **M26 — Auditoria** (registro imutável das ações administrativas na mesma transação, consulta por cursor em `GET /v1/admin/audit`, ligada ao log e ao trace — ver [docs/auditoria.md](docs/auditoria.md))
+- ✅ **M27 — Preço congelado na reserva** (`Booking.price` gravado na criação e nunca alterado; o pagamento e "Minhas Viagens" leem dele, então reajustar o preço de um voo não muda o que já foi reservado — ver [docs/migracoes.md](docs/migracoes.md))
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

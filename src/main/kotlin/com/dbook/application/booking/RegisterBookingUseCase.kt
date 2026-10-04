@@ -51,6 +51,7 @@ class RegisterBookingUseCase(
                 bookable = bookable,
                 seatId = command.seatId,
                 customerId = command.customerId,
+                price = bookable.price,
             )
         val saved = bookingRepository.save(booking)
 

@@ -1,8 +1,6 @@
 package com.dbook.presentation.securityintegration
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.post
 import java.util.UUID
 import kotlin.test.Test
@@ -12,9 +10,6 @@ import kotlin.test.assertEquals
 // sends the very same payment again. Without the key the retry would be a 409 (the booking
 // is already CONFIRMED) even though the money was taken.
 class RetryingAPaymentWithTheSameKeyReturnsTheSamePaymentTest : SecurityIntegrationFixture() {
-    @Autowired
-    lateinit var jdbcTemplate: JdbcTemplate
-
     @Test
     fun `given a paid booking when the same payment is sent again with its key then it returns the same one`() {
         val token = registerAndLogin(uniqueEmail())

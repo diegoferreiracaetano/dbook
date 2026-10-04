@@ -657,16 +657,29 @@ Problema: ações administrativas (cadastrar voo, cancelar a reserva de outra pe
 - [x] Mutação nos pontos críticos
 - [x] Docs e instruções do projeto atualizados
 
-## M27 — Preço congelado na reserva (dívida técnica) 📋
+## M27 — Preço congelado na reserva ✅
 
-Problema (achado 1): o pagamento soma o preço **atual** do voo. Editar o preço de um voo (M32) mudaria o valor de reservas já feitas; um cupom (M39) não teria onde registrar o subtotal.
+Problema: o pagamento somava o preço **atual** do voo (`booking.bookable.price`). Editar o preço de um voo (M32) ou dar desconto (M39) mudaria retroativamente o valor de reservas já feitas. **Achado a mais:** `GET /v1/bookings` ("Minhas Viagens") devolvia só o `flight.price` atual, então o app mostraria o preço novo numa reserva antiga. Feito em 2026-10-04, com autorização do dono para aplicar; nada commitado ainda.
 
-- [ ] 27.1 Migration `V29__add_price_snapshot_to_booking.sql` em **expand/contract**: coluna `booking.price` nullable → `UPDATE` preenchendo com o preço do `bookable` → `NOT NULL`. Em uma migration só é aceitável porque a tabela é pequena; registrar a técnica em `docs/migracoes.md` para tabelas grandes
-- [ ] 27.2 `Booking` ganha `price` (copiado de `bookable.price` na criação, imutável); `RegisterBookingUseCase` preenche; `BookingJpaEntity`/mappers alinhados; `Booking.price` é a única fonte de valor daí em diante
-- [ ] 27.3 `RegisterPaymentUseCase` soma `booking.price`, não `booking.bookable.price`
-- [ ] 27.4 `GET /v1/bookings` expõe o valor da reserva (valor igual ao de antes → não-quebra). **Conferir no app se o preço exibido vem do voo ou da reserva** (`dbook_mobile`) e alinhar
-- [ ] 27.5 Testes (um cenário por classe): "voo reajustado depois da reserva → pagamento usa o preço antigo", "duas reservas de preços diferentes somam certo", concorrência existente continua verde; mutação trocando `booking.price` por `bookable.price` deve reprovar
-- [ ] 27.6 Docs (`CHECKLIST`, `endpoints.md`, `docs/migracoes.md`)
+- [x] 27.1 Migration `V29__add_price_to_booking.sql` (*expand / contract* numa migration só, porque a tabela é pequena): coluna nula → `UPDATE` com o preço do voo → `NOT NULL` + `CHECK (price >= 0)`. **Aplicada num Postgres descartável com reservas já existentes** (cada uma ganhou o preço do voo dela; a coluna é obrigatória, o `CHECK` recusa negativo e reajustar o voo depois não mexe na reserva). A técnica ficou documentada em `docs/migracoes.md`
+- [x] 27.2 `Booking.price`: parâmetro no fim do construtor, com padrão `bookable.price` (só vale para uma reserva **nova**, o que mantém os ~12 testes que constroem `Booking(...)` compilando); `transitionTo` repassa o preço; `require(price >= 0)`. `RegisterBookingUseCase` o grava **explicitamente** (`price = bookable.price`): é o momento do congelamento
+- [x] 27.3 `RegisterPaymentUseCase` soma `booking.price`, não `booking.bookable.price`
+- [x] 27.4 `price` entra em `BookingResponse` e `MyBookingResponse` (campo **aditivo**, o app antigo continua funcionando); o `flight.price` segue sendo o preço **atual** do voo. Entidade, mapeador e `BookingRepositoryAdapter.save` repassam o campo. **O app ainda não mostra o `price` da reserva** (item do app, abaixo)
+- [x] 27.5 Testes: 283 no total (de 274), 0 falhas. Domínio (congela, sobrevive a confirmar/cancelar, recusa negativo), aplicação (a reserva congela; o pagamento cobra 400 numa reserva feita a 400 num voo que agora custa 500), persistência real (reajustar o voo para 150 não altera a reserva) e de ponta a ponta (Minhas Viagens mostra 100 e o voo 150; pagar depois do reajuste cobra 100; **cancelar depois do reajuste devolve 100**). **Mutação:** pagamento voltando a `bookable.price` reprova; adaptador esquecendo o preço ao devolver a reserva reprova
+- [x] 27.6 Docs: `docs/migracoes.md` (novo), `endpoints.md`, `testes-e-qualidade.md`, `README.md` (mapa e roadmap), `.claude/CLAUDE.md` (regra "o valor de uma reserva é `Booking.price`", migration V30)
+
+**O que a execução ensinou:**
+- O `BookingRepositoryAdapter.save` **reconstrói a reserva campo a campo** para devolvê-la (como o `UpdateUserNameUseCase` fazia com o `User` no M25): esquecer o preço ali devolveria o preço atual do voo e **nenhum teste de leitura pegaria**, porque na criação os dois coincidem. Só o teste de cancelamento depois do reajuste cobre esse caminho.
+- Um campo novo num fixture compartilhado (`jdbcTemplate` no `SecurityIntegrationFixture`) colidiu com o mesmo campo declarado num teste antigo.
+
+**Fora do escopo (de propósito):** as reservas anteriores à `V29` ficam com o preço **atual** do voo na hora da migração (não há como saber o de quando foram feitas); o app mostrar o `price` da reserva em "Minhas Viagens" (pendente no `dbook-mobile`); preenchimento em lotes para tabela grande (descrito em `docs/migracoes.md`, não necessário aqui).
+
+**Checklist de fechamento do M27:**
+- [x] Itens 27.1–27.6 revisados
+- [x] Clean Code: a regra "preço da reserva" mora em um só lugar (`Booking.price`) e o congelamento é explícito no caso de uso
+- [x] `./gradlew check` com **exit 0** (283 testes, ktlint, detekt, JaCoCo)
+- [x] Migration validada com dados reais; mutação nos pontos críticos
+- [x] Docs e instruções do projeto atualizados
 
 ## M28 — Convite e gestão da equipe (cadastro do usuário admin) 📋
 

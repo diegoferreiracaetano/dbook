@@ -2,6 +2,7 @@ package com.dbook.presentation.booking
 
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingStatus
+import java.math.BigDecimal
 
 data class BookingResponse(
     val id: Long?,
@@ -9,6 +10,7 @@ data class BookingResponse(
     val seatId: Long,
     val customerId: Long,
     val status: BookingStatus,
+    val price: BigDecimal,
 ) {
     companion object {
         fun from(booking: Booking) =
@@ -18,6 +20,7 @@ data class BookingResponse(
                 seatId = booking.seatId,
                 customerId = booking.customerId,
                 status = booking.status,
+                price = booking.price,
             )
     }
 }

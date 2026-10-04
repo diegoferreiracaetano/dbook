@@ -115,7 +115,7 @@ curl localhost:8080/v1/bookings \
   -H "Authorization: Bearer <accessToken>"
 ```
 
-Retorna `200` com a lista (vazia se o usuário não tiver reservas), ou `401` sem token.
+Retorna `200` com a lista (vazia se o usuário não tiver reservas), ou `401` sem token. Cada item traz o `price` **da reserva**, o valor de quando ela foi feita; o `flight.price` é o preço **atual** do voo e pode ser outro se ele foi reajustado depois.
 
 ## `POST /v1/bookings` (autenticado)
 Reserva um assento específico (`seatId`) de um `Bookable` (hoje só `Flight`; qualquer especialização futura funciona sem mudar este endpoint) em nome do usuário autenticado, travando o assento sob lock otimista. `availableCapacity` do `Bookable` é derivado da contagem de assentos `AVAILABLE` — não é mais um contador em paralelo. Cria a reserva como `PENDING`.
@@ -127,7 +127,7 @@ curl -X POST localhost:8080/v1/bookings \
   -d '{"bookableId": 1, "seatId": 1}'
 ```
 
-Retorna `201` com a reserva criada, `401` sem token, `400` se o `seatId` não pertencer ao `bookableId` informado, `404` se o `bookableId` ou `seatId` não existirem, ou `409` se o assento não estiver `AVAILABLE` (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o mesmo assento).
+Retorna `201` com a reserva criada (com o `price` que ficou congelado nela), `401` sem token, `400` se o `seatId` não pertencer ao `bookableId` informado, `404` se o `bookableId` ou `seatId` não existirem, ou `409` se o assento não estiver `AVAILABLE` (ou em caso de conflito de concorrência — duas reservas simultâneas disputando o mesmo assento).
 
 ## `POST /v1/bookings/{id}/cancel` (autenticado, dono ou `BOOKING_CANCEL_ANY`)
 Cancela uma reserva `PENDING`, liberando o assento de volta a `AVAILABLE`. Só quem criou a reserva (ou quem tem a permissão `BOOKING_CANCEL_ANY`) pode cancelá-la.

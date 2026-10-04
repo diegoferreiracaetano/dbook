@@ -6,6 +6,7 @@ import com.dbook.domain.catalog.Flight
 import com.dbook.presentation.catalog.FlightResponse
 import com.dbook.presentation.review.ReviewResponse
 import com.dbook.presentation.seating.SeatResponse
+import java.math.BigDecimal
 
 data class MyBookingResponse(
     val id: Long?,
@@ -13,6 +14,7 @@ data class MyBookingResponse(
     val seat: SeatResponse,
     val flight: FlightResponse,
     val review: ReviewResponse?,
+    val price: BigDecimal,
 ) {
     companion object {
         // Bookable is abstract; the only concrete specialization today is Flight (see the
@@ -25,6 +27,7 @@ data class MyBookingResponse(
                 seat = SeatResponse.from(details.seat),
                 flight = FlightResponse.from(details.booking.bookable as Flight),
                 review = details.review?.let { ReviewResponse.from(it) },
+                price = details.booking.price,
             )
     }
 }
