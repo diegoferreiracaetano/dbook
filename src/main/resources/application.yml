@@ -68,6 +68,13 @@ management:
         http.server.requests: true
         dbook.usecase: true
   observations:
+    enable:
+      # Spring would open a one-span trace for EVERY run of a @Scheduled method: the queue consumer
+      # polls every 5 s, which buried the useful traces in Jaeger. The span that matters
+      # ("booking-expiration consume", one per message) is created by the consumer itself.
+      tasks:
+        scheduled:
+          execution: false
     annotations:
       # makes @Observed work: each annotated use case gets a timer (and, later, a trace span)
       enabled: true
