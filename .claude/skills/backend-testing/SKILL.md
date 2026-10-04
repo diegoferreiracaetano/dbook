@@ -123,4 +123,4 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
 ./gradlew check                                  # CI: inclui JaCoCo ≥ 75%
 ```
 
-**Ambiente sem Docker acessível:** classes que estendem `AbstractIntegrationTest` falham com `Could not find a valid Docker environment` (documentado no README). Não é regressão. Confirme que **só** elas falham e relate quantas não rodaram; a cobertura local fica subestimada pelo mesmo motivo (o número confiável é o do CI).
+**Docker precisa estar aberto.** As classes que estendem `AbstractIntegrationTest` usam Testcontainers (Postgres, Redis; o LocalStack nos testes de fila). O `build.gradle.kts` já fixa `api.version=1.41` para o Docker Desktop recente, então **falha nelas é falha real**, não limitação de ambiente (foi assim que dois testes quebrados ficaram escondidos por meses). Sem Docker rodando, abra-o e rode de novo; nunca descarte essas falhas.

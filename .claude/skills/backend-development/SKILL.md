@@ -53,7 +53,7 @@ Objetivo: qualquer mudança nova parecer escrita pela mesma pessoa que escreveu 
    }
    ```
    `Response` tem `companion object { fun from(domain) }`; `Request` usa `@get:Schema(example = ...)`. O controller só traduz HTTP ↔ `Command`; regra de negócio **não** entra aqui.
-6. **Docs** — `README.md` (seção Endpoints, com `curl` e lista de status) e `CHECKLIST.md` (`## Mn`). Fecha o marco.
+6. **Docs** — `docs/endpoints.md` (com `curl` e lista de status; assunto grande tem seu próprio `docs/*.md`), o roadmap do `README.md` e o `CHECKLIST.md` (`## Mn`). Fecha o marco.
 
 ## Onde cada coisa vai
 

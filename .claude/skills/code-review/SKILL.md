@@ -43,7 +43,7 @@ description: Revisão de código do backend Kotlin/Spring do DBook, focada em pr
 
 **5. Contrato da API (impacto no app Flutter)**
 - O app `../dbook-mobile` espelha as respostas (`*ResponseDto` → entidades de `dbook_domain`). Renomear/remover campo, trocar tipo ou status code é **mudança quebrando cliente**: exija que o campo antigo continue ou que o mobile seja atualizado junto. Campo novo opcional é seguro.
-- Swagger (`@Tag`/`@Operation`/`@Schema`) e README atualizados para endpoint novo.
+- Swagger (`@Tag`/`@Operation`/`@Schema`) e `docs/endpoints.md` atualizados para endpoint novo.
 
 **6. Testes**
 - O caminho feliz **e** cada falha (400/401/403/404/409) tem cenário? Padrão um-cenário-por-classe / `given-when-then`? Fake em vez de mock onde o projeto usa fake?

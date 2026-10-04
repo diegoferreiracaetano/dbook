@@ -12,11 +12,16 @@ class DomainDependsOnNoFrameworkNorOuterLayerTest : ArchitectureFixture() {
             .should().dependOnClassesThat().resideInAnyPackage(
                 "org.springframework..",
                 "jakarta..",
+                "io.micrometer..",
+                "io.opentelemetry..",
                 "com.dbook.application..",
                 "com.dbook.presentation..",
                 "com.dbook.infrastructure..",
             )
-            .because("the domain holds rules and ports only: no Spring, no JPA, nothing from the layers around it")
+            .because(
+                "the domain holds rules and ports only: no Spring, no JPA, no metrics or tracing, " +
+                    "nothing from the layers around it",
+            )
             .check(productionClasses)
     }
 }

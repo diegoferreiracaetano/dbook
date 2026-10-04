@@ -4,7 +4,7 @@ API de reservas em Kotlin + Spring Boot. Hoje só voos (`Flight`), mas o domíni
 
 Contexto do dono: especialista em Android/KMP que está aprendendo Kotlin + Spring **fazendo**. Ao introduzir um conceito de Spring/JPA novo, explique em uma ou duas frases por que ele existe (analogia com Android/KMP quando ajudar) e siga o ritmo do `CHECKLIST.md`: um item por vez, explicar antes, confirmar depois de testar.
 
-Idioma: docs (`README.md`, `CHECKLIST.md`, este arquivo) e commits em **português**; identificadores, KDoc e comentários de código em **inglês** (é o que o código existente faz — não misture).
+Idioma: docs (`README.md`, `docs/*.md`, `CHECKLIST.md`, este arquivo) e commits em **português**; identificadores, KDoc e comentários de código em **inglês** (é o que o código existente faz — não misture).
 
 > Regra de ouro: **não invente padrões**. Antes de escrever código, ache o irmão mais próximo (outro use case, controller, adapter, teste) e copie a forma dele. As skills em `.claude/skills/` têm exemplos reais.
 
@@ -59,7 +59,7 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 2. Ordem: regra no **domain** (`init { require(...) }` / `check(...)`) → porta → use case → adapter/entidade/migration → controller + DTOs → testes → docs.
 3. Endpoint autenticado por padrão: só o que está em `SecurityConfig.permitAll()` é público. Recurso do usuário logado usa `authentication.currentUserId()` (`presentation/SecurityExtensions.kt`) — **nunca** aceite `userId`/`customerId` no corpo. ADMIN: `@PreAuthorize("hasRole('ADMIN')")`.
 4. Todo controller novo: `@Tag`, `@Operation`, `@SecurityRequirement(name = "bearerAuth")` (se autenticado) e `@Schema(example = ...)` nos Requests.
-5. Fechar um marco = atualizar `README.md` (seção Endpoints) **e** `CHECKLIST.md` (seção `## Mn — ...` com itens numerados + checklist de fechamento). É a memória do projeto.
+5. Fechar um marco = atualizar `docs/endpoints.md` (endpoints novos), o documento do assunto em `docs/` e o `README.md` (só o mapa e o roadmap) **e** `CHECKLIST.md` (seção `## Mn — ...` com itens numerados + checklist de fechamento). É a memória do projeto.
 
 ## Tratamento de erros
 
@@ -124,5 +124,5 @@ Antes de dizer "pronto", confirme cada item (ou diga qual não se aplica e por q
 - [ ] Migration nova (se mexeu no schema) sem editar as antigas; entidade/mapper/adapter alinhados.
 - [ ] Testes criados/atualizados no padrão um-cenário-por-classe (caminho feliz **e** as falhas: 400/403/404/409).
 - [ ] `./gradlew ktlintCheck detekt` limpo e `./gradlew test` rodado — sem nenhuma falha (inclusive os de integração, que exigem Docker aberto).
-- [ ] `README.md` (Endpoints) e `CHECKLIST.md` atualizados quando o comportamento público mudou.
+- [ ] `docs/endpoints.md` (ou o `docs/` do assunto), o roadmap do `README.md` e o `CHECKLIST.md` atualizados quando o comportamento público mudou.
 - [ ] Relatório final lista **arquivos alterados** e **validações executadas** (com o resultado real, não o esperado).
