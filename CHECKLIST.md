@@ -1187,7 +1187,7 @@ Fecha o item "Não feito" do M24.
 Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilidade.md) (revisão 3, módulos: `core`, `audit`, `identity`, `catalog`, `booking`, `flight`, `accommodation`, `pricing`, `favorite`, `ai`, `payment`, `review`, `trips`, `notification`, `admin` e `app`). **Passo a passo, riscos e provas em [docs/plano-modularizacao.md](docs/plano-modularizacao.md).** Sem mudança de comportamento em nenhum passo; cada passo termina com `./gradlew check` verde.
 
 **Fase A — Ensaiar (nada muda de lugar)**
-- [ ] 48.1 A regra do grafo alvo em **todas** as camadas, com as violações de hoje congeladas (`FreezingArchRule`): a lista congelada é a lista de trabalho
+- [x] 48.1 A regra do grafo alvo em **todas** as camadas, com as violações de hoje congeladas (`FreezingArchRule`, em `src/test/resources/archunit_store`): **318** pares na primeira rodada, **70** em 17 arestas depois de o vocabulário de segurança e de auditoria contar como `core`. O ensaio achou o ciclo 12 (o `ApiExceptionHandler` do `core` conhece as exceções de todos) e três dependências legítimas que o ADR não tinha (`favorite`/`pricing` → `catalog`; `admin` → `identity`, `audit`, `favorite`)
 - [ ] 48.2 `build-logic` (convention plugin) com Kotlin, Spring, ktlint, detekt, JaCoCo e a configuração dos testes, ainda com um módulo só
 
 **Fase B — Separar os pacotes (um módulo Gradle ainda)**
@@ -1195,7 +1195,7 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 - [ ] 48.4 `trips` nasce como conceito ("minhas viagens" sai de `booking`; a rota não muda)
 
 **Fase C — Desfazer os ciclos (um por commit)**
-- [ ] 48.5 `Actor` e `AuditLog` para o `core` (ciclo 10)
+- [ ] 48.5 `Actor`, `Role`, `Permission` e o vocabulário e a porta da auditoria para o `core` (ciclo 10); o `ApiExceptionHandler` dividido por módulo (ciclo 12)
 - [ ] 48.6 `flight` publica o fato do preço e `pricing` o ouve (ciclo 7)
 - [ ] 48.7 `DestinationRatings` e a rota de avaliações do hotel para `review` (ciclos 8 e 9)
 - [ ] 48.8 `booking` sem `review` (ciclo 6, resolvido pelo 48.4: aqui só se confirma)

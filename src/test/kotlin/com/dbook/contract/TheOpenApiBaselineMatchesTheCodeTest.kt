@@ -25,8 +25,11 @@ class TheOpenApiBaselineMatchesTheCodeTest : AbstractIntegrationTest() {
 
     private fun published(group: String): String {
         val body = mockMvc.get("/v3/api-docs/$group").andReturn().response.getContentAsString(Charsets.UTF_8)
+        // read as plain maps and lists (a JsonNode tree would keep the order springdoc happened to emit, which is not
+        // stable: the response codes of an operation came out as 200, 202 in one run and 202, 200 in the next)
         val sorted = objectMapper.copy().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
-        return sorted.writerWithDefaultPrettyPrinter().writeValueAsString(sorted.readTree(body)) + "\n"
+        val plain = sorted.readValue(body, Any::class.java)
+        return sorted.writerWithDefaultPrettyPrinter().writeValueAsString(plain) + "\n"
     }
 
     @Test

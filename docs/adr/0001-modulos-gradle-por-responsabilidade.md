@@ -1,6 +1,6 @@
 # ADR 0001 — Dividir o backend em módulos Gradle por responsabilidade
 
-- **Status:** proposta, **revisão 3** (2026-10-05: as decisões em aberto foram revisadas e fechadas; nada foi movido ainda)
+- **Status:** proposta, **revisão 4** (2026-10-05: o ensaio do 48.1 mediu o grafo de verdade e corrigiu a lista de ciclos; nada foi movido ainda)
 - **Marco:** M48 (`CHECKLIST.md`)
 - **Substitui:** a decisão de 2026-10-04 de *não* dividir "agora, reavaliar depois do M45" (o M45 fechou)
 
@@ -50,21 +50,21 @@ Do mais baixo para o mais alto, **sem ciclos** (cada módulo só enxerga os que 
 
 | Módulo | Responsabilidade | Depende de |
 |---|---|---|
-| `:core` | **só portas e conceitos minúsculos compartilhados, nunca regra de negócio** (o nome é `core`, não `common`, para não virar gaveta): paginação, `ApiPaths`, `ErrorCode`, `TransactionSupport`, `Actor`, **as portas** `AuditLog` e `OutboxWriter` (com os seus eventos), a base de web e segurança | — |
+| `:core` | **só portas e conceitos minúsculos compartilhados, nunca regra de negócio** (o nome é `core`, não `common`, para não virar gaveta): paginação, `ApiPaths`, `ErrorCode`, `TransactionSupport`, **o vocabulário de segurança** (`Actor`, `Role`, `Permission`), **o vocabulário e a porta da auditoria** (`AuditAction`, `AuditEvent`, `AuditLog`), `OutboxWriter` (com os seus eventos), a base de web e segurança | — |
 | `:audit` | **a implementação** da trilha: gravação, consulta, `GET /v1/admin/audit` | `core` |
 | `:identity` | usuários, tokens, papéis, equipe, 2FA | `core` |
 | `:catalog` | o genérico: `Bookable` (e a entidade JPA base), `Airport`, o registro de mapeadores por tipo | `core` |
 | `:booking` | a reserva **genérica**: ciclo de vida, preço congelado, expiração, histórico, a porta "liberar estoque" | `catalog`, `core` |
 | `:flight` | voo, companhia, **assentos**, modelos de aeronave, busca, importação, a reserva de assento (`POST /v1/bookings`), a disponibilidade em tempo real | `catalog`, `booking`, `core` |
 | `:accommodation` | hotéis, quartos, estoque por noite, a reserva de estadia | `catalog`, `booking`, `core` |
-| `:pricing` | histórico de preço e alertas | `flight` |
-| `:favorite` | favoritos | `flight` |
+| `:pricing` | histórico de preço e alertas | `flight`, `catalog` |
+| `:favorite` | favoritos | `flight`, `catalog` |
 | `:ai` | sugestões por IA (Bedrock, disjuntor) | `flight` |
 | `:payment` | pagamento, reembolso, política de cancelamento **e códigos promocionais** (pacote `promo` dentro) | `booking`, `flight` |
 | `:review` | avaliações e moderação (e as avaliações do hotel) | `booking`, `accommodation`, `flight` |
 | `:trips` | "minhas viagens": junta reserva, assento ou estadia, pagamento e avaliação | `booking`, `flight`, `accommodation`, `review` |
 | `:notification` | avisos (in-app, e-mail, push) e preferências | `booking`, `flight`, `payment`, `pricing`, `identity` |
-| `:admin` | CRM e dashboard (leitura por SQL) | `core` |
+| `:admin` | CRM e dashboard (leitura por SQL) | `identity`, `audit`, `favorite`, `core` |
 | **`:app`** | **só a montagem**: `main`, configuração, `SecurityConfig`, migrations do Flyway, Dockerfile; **sem regra de negócio** (decisão do dono) | todos |
 
 `appconfig` fica em `:app` (decisão do dono).
@@ -82,8 +82,21 @@ Do mais baixo para o mais alto, **sem ciclos** (cada módulo só enxerga os que 
 | 7 | `flight → pricing` | `RegisterFlight`/`UpdateFlight` chamam `FlightPriceRecorder` | `flight` publica o fato (evento ou porta), `pricing` o ouve |
 | 8 | `flight → review` | destinos em destaque pedem a nota média | porta `DestinationRatings` em `flight`, implementada por `review` |
 | 9 | `accommodation → review` | `AccommodationController` serve as avaliações do hotel | a rota (`/accommodations/{id}/reviews`) passa para `review` |
-| 10 | `identity ↔ audit` | `Actor` e `AuditLog` | `Actor` e a **porta** `AuditLog` vão para `core`; a implementação fica em `:audit` |
+| 10 | `identity ↔ audit` e todos → ambos | `Actor`, `Role`, `Permission` e `AuditAction`/`AuditEvent`/`AuditLog` | vão para `core` (ver "O que o ensaio mediu"); a implementação da trilha fica em `:audit` |
 | 11 | `payment → flight` | a janela de reembolso usa a partida do voo | **aceita por ora** (`payment → flight` não cria ciclo); quando o hotel tiver política própria, entra uma porta `CancellationPolicy` por tipo |
+
+## O que o ensaio (passo 48.1) mediu
+
+A regra `TheModulesOnlyDependOnTheirTargetModulesTest` confere o grafo alvo no **bytecode**, em todas as camadas. A primeira rodada achou **318** pares de classes fora do grafo; o motivo de quase dois terços era o mesmo, e já foi tratado no mapa:
+
+- **O vocabulário compartilhado de segurança e auditoria** (`Actor`, `Role`, `Permission`, e `AuditAction`, `AuditEvent`, `AuditOutcome`, `AuditLog`) mora em `identity` e `audit`, mas **todo módulo o usa** (186 pares). No alvo ele vai para o **`core`**; a regra já o conta como `core`, e o passo 48.5 o move de verdade. Decisão: o enum `AuditAction` fica **inteiro no `core`** (adicionar uma ação toca o `core`); trocá-lo por um vocabulário por módulo é possível depois, e só valeria a pena com *deploys* separados.
+- **Três dependências legítimas que o ADR não tinha**: `favorite` e `pricing` usam o `Airport` do `catalog`; `admin` (CRM) usa `identity` (bloquear e anonimizar usuário), `audit` (a trilha na visão 360º) e `favorite` (a exportação dos dados do titular). Entram na tabela.
+
+**Depois disso restam 70 pares, em 17 arestas.** São as 11 do ADR, mais os efeitos de o voo ainda morar dentro de `catalog` (`ai`, `payment`, `catalog → flight`: somem na separação do 48.3) e **uma que o ADR não previa**:
+
+| # | Aresta | O que é | Como se desfaz |
+|---|---|---|---|
+| 12 | `core → identity, payment, catalog, booking, flight` | o `ApiExceptionHandler` (em `presentation/common`) traduz as exceções de domínio de **todos** os módulos para HTTP | cada módulo ganha o seu handler (já é o padrão de `IdentityExceptionHandler`); o `core` fica só com os erros genéricos |
 
 ## Como chegar lá sem quebrar nada (o método do M45, em escala)
 
