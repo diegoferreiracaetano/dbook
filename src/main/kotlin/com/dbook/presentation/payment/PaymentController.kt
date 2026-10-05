@@ -45,6 +45,7 @@ class PaymentController(
                     cardholderName = request.cardholderName,
                     requestingUserId = authentication.currentUserId(),
                     idempotencyKey = idempotencyKey,
+                    promoCode = request.promoCode,
                 ),
             )
         return ResponseEntity.status(HttpStatus.CREATED).body(PaymentResponse.from(payment, request.bookingIds))

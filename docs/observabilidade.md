@@ -90,6 +90,12 @@ Três origens:
 | `dbook_auth_login_total` | `outcome` = `success`, `invalid_credentials`, `blocked`, `rate_limited`; `audience` = `client`, `staff` | como os logins terminam, por porta de entrada: um pico de `invalid_credentials` ou `rate_limited` é tentativa de adivinhar senha |
 | `dbook_admin_action_total` | `action` (ex.: `FLIGHT_CREATED`, `ACCESS_DENIED`), `outcome` = `SUCCESS`, `DENIED` | ações administrativas feitas e negadas; cada uma tem um registro na trilha de [auditoria](auditoria.md) |
 | `dbook_booking_pending` (gauge) | — | **quantas reservas estão `PENDING` agora**: assentos presos esperando pagamento. Se só cresce, a expiração não está funcionando |
+| `dbook_outbox_pending` (gauge) | — | eventos do outbox ainda não publicados, os agendados para depois incluídos (cada reserva dos últimos 15 minutos tem um: é normal) |
+| `dbook_outbox_overdue_seconds` (gauge) | — | **o atraso do evento mais atrasado**, 0 se nenhum está atrasado (medido pela hora em que devia sair, não pela da próxima tentativa): é o que se alerta ([Mensageria](mensageria.md)) |
+| `dbook_outbox_published_total` / `dbook_outbox_failures_total` | `type` | eventos entregues e tentativas que falharam, por tipo |
+| `dbook_sqs_dlq_depth` (gauge) | `queue` = `booking-expiration` ou `notifications` | **quantas mensagens estão na fila de mensagens mortas** de cada fila (lida do SQS a cada coleta; `NaN`, sem dado, quando o SQS não responde): acima de zero, uma mensagem falhou 3 vezes: uma expiração (o assento pode estar preso) ou um aviso (o cliente pode não ter sido informado) |
+| `dbook_refund_total` | `outcome` = `completed`, `failed`, `replayed`, `conflict` | como os reembolsos terminam; um `failed` precisa de retry ([Reembolso](reembolso.md)) |
+| `dbook_cache_total` | `cache` = `dashboard`; `outcome` = `hit`, `miss`, `error` | quanto o cache vale e se o Redis está respondendo ([Dashboard](dashboard.md#o-cache-o-primeiro-do-projeto)) |
 
 Detalhes que importam:
 
@@ -157,7 +163,7 @@ Suba a pilha (a aplicação roda no seu terminal, a pilha em contêineres):
 
 ```bash
 docker compose up -d                                   # Postgres, Redis, LocalStack (base)
-docker compose --profile observability up -d           # Prometheus, Grafana, Loki, Promtail, Jaeger
+docker compose --profile observability up -d           # Prometheus, Alertmanager, Grafana, Loki, Promtail, Jaeger
 SPRING_PROFILES_ACTIVE=tracing,json,logfile ./gradlew bootRun
 ```
 
@@ -166,7 +172,8 @@ SPRING_PROFILES_ACTIVE=tracing,json,logfile ./gradlew bootRun
 | **Grafana** (tela única) | http://localhost:3000 | sem login (só local). Dashboard **"DBook — visão geral"**: http://localhost:3000/d/dbook-overview |
 | Logs (Loki) | Grafana → **Explore** → fonte *Loki* | consultas na seção 5 |
 | Traces (Jaeger) | http://localhost:16686 (ou Grafana → Explore → *Jaeger*) | serviço `dbook` |
-| Métricas (Prometheus) | http://localhost:9090 | em *Status → Targets* o alvo `dbook` deve estar `UP` |
+| Métricas (Prometheus) | http://localhost:9090 | em *Status → Targets* o alvo `dbook` deve estar `UP`; em *Alerts* as regras |
+| **Alertas** (Alertmanager) | http://localhost:9093 | o que está disparando e para onde vai; o painel de SLOs: http://localhost:3000/d/dbook-slo |
 | Métricas cruas da aplicação | http://localhost:8081/actuator/prometheus | |
 | Health | http://localhost:8081/actuator/health/liveness e `/readiness` | |
 | Logs em arquivo | `logs/dbook.json` | um JSON por linha; pasta ignorada pelo Git |
@@ -182,6 +189,15 @@ jq -c 'select(.level=="ERROR")' logs/dbook.json                               # 
 jq -c 'select(.requestId=="demo-bookings-1")' logs/dbook.json                 # tudo de uma requisição
 jq -c 'select(.status==401) | {requestId, message}' logs/dbook.json           # respostas 401
 jq -c 'select(.duration_ms > 500) | {message, duration_ms}' logs/dbook.json   # requisições lentas
+```
+
+### 3.2.1 Alertas, SLOs e runbooks
+
+As métricas acima viram **alertas** em `observability/alerts.yml` (disponibilidade, 5xx, latência da busca, fila de mensagens mortas, reservas pendentes, reembolsos falhos, picos de login e de acesso negado, cache), enviados ao **Alertmanager** (`http://localhost:9093`) e dali a um receptor (`observability/alertmanager.yml`, um *webhook* de exemplo). Cada alerta aponta para um **runbook** em [Runbooks](runbooks.md): o que significa, onde olhar, como mitigar. Os **SLOs** (99,5 % de disponibilidade em 30 dias; p95 da busca abaixo de 500 ms) e o orçamento de erro estão no painel **"DBook — SLOs e orçamento de erro"**. As regras são **testadas** (`observability/alerts_test.yml`, com o `promtool`: cada alerta recebe séries que devem e que não devem dispará-lo) localmente e no CI.
+
+```bash
+docker run --rm -v "$PWD/observability:/obs" --entrypoint promtool prom/prometheus:v2.55.0 check rules /obs/alerts.yml
+docker run --rm -v "$PWD/observability:/obs" --entrypoint promtool prom/prometheus:v2.55.0 test rules /obs/alerts_test.yml
 ```
 
 ## 5. Roteiros: como investigar um problema
@@ -279,6 +295,8 @@ Arquivos: `src/main/resources/logback-spring.xml` (logs), `application.yml` e `a
 | o formato JSON real do perfil `json` | `JsonProfileWritesStructuredLogsTest` |
 | o contador de pagamento só conta depois do commit | `DoesNotCountAPaymentThatNeverCommitsTest` (verificado por mutação) |
 | o gauge de pendentes lê o valor do momento, e a consulta conta só as pendentes | `pendingbookingsmetrics/`, `CountsOnlyThePendingBookingsTest` (por mutação) |
+| o gauge da fila de mensagens mortas lê a profundidade do SQS (e dá `NaN`, não zero, sem resposta) | `TheDeadLetterQueueDepthIsAGaugeTest` |
+| as regras de alerta são válidas e disparam (e não disparam) quando devem | `observability/alerts_test.yml` (`promtool`), no CI (job `alert-rules`) |
 | o trace atravessa a fila SQS | `ContinuesTheTraceOfTheRequestThatScheduledItTest`, `AttachesTheTraceContextToTheMessageTest` (por mutação) |
 
 ## 9. Decisões, armadilhas e limites

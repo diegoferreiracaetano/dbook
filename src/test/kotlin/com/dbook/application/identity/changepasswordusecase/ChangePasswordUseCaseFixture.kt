@@ -4,6 +4,7 @@ import com.dbook.application.identity.ChangePasswordCommand
 import com.dbook.application.identity.ChangePasswordUseCase
 import com.dbook.application.identity.LoginAttemptGuard
 import com.dbook.application.identity.LoginAttemptsPolicy
+import com.dbook.application.identity.PasswordConfirmation
 import com.dbook.application.identity.loginusecase.FakeLoginAttemptLimiter
 import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
@@ -22,8 +23,8 @@ abstract class ChangePasswordUseCaseFixture {
     protected val refreshTokens = FakeRefreshTokenRepository()
     private val guard =
         LoginAttemptGuard(FakeLoginAttemptLimiter(), LoginAttemptsPolicy(maxFailuresPerEmail = 3, maxFailuresPerIp = 5))
-    private val useCase =
-        ChangePasswordUseCase(users, FixedPasswordHasher(validPassword = "current-password-1"), refreshTokens, guard)
+    private val hasher = FixedPasswordHasher(validPassword = "current-password-1")
+    private val useCase = ChangePasswordUseCase(users, hasher, refreshTokens, PasswordConfirmation(hasher, guard))
 
     protected fun change(
         userId: Long = 1,

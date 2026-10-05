@@ -39,8 +39,20 @@ class FakeReviewRepository(
     override fun findByBookingId(bookingId: Long): Review? = store[bookingId]
 
     override fun save(review: Review): Review {
-        store[review.bookingId] = review
-        return review
+        val stored =
+            if (review.id == null) {
+                review.copy(
+                    id = (store.values.maxOfOrNull { it.id ?: 0 } ?: 0) + 1,
+                )
+            } else {
+                review
+            }
+        store[review.bookingId] = stored
+        return stored
+    }
+
+    override fun delete(id: Long) {
+        store.values.removeAll { it.id == id }
     }
 
     override fun findAverageRatingByDestination(destinationIataCode: String): Double? =

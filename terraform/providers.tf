@@ -41,6 +41,10 @@ provider "aws" {
       ecs            = "http://localhost:4566"
       rds            = "http://localhost:4566"
       secretsmanager = "http://localhost:4566"
+      sqs            = "http://localhost:4566"
+      sesv2          = "http://localhost:4566"
+      cloudfront     = "http://localhost:4566"
+      cloudwatch     = "http://localhost:4566"
       sts            = "http://localhost:4566"
       logs           = "http://localhost:4566"
       # elasticache is LocalStack Pro-only — kept here for consistency, has no effect

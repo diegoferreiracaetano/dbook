@@ -100,3 +100,26 @@ resource "aws_iam_role_policy" "terraform_state_backend" {
     ]
   })
 }
+
+# Deploying the portal is exactly this and nothing more: put the files in its bucket (and remove the old ones) and ask
+# CloudFront to forget what it kept.
+resource "aws_iam_role_policy" "portal_deploy" {
+  name = "${var.name}-portal-deploy"
+  role = aws_iam_role.github_actions_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:DeleteObject", "s3:GetObject", "s3:ListBucket"]
+        Resource = [var.portal_bucket_arn, "${var.portal_bucket_arn}/*"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"]
+        Resource = var.portal_distribution_arn
+      },
+    ]
+  })
+}

@@ -15,7 +15,8 @@ class WebSocketConfig(
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         // no withSockJS(): the frontend is a separate KMP/Compose client (project
         // decision), not a browser page needing SockJS's HTTP-polling fallback.
-        registry.addEndpoint("/ws")
+        // /v1/ws is the versioned endpoint; /ws keeps answering for the apps already out (see docs/versionamento.md)
+        registry.addEndpoint("/v1/ws", "/ws")
     }
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {

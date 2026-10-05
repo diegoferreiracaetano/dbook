@@ -16,6 +16,14 @@ class FakeAirportRepository(private val airports: List<Airport>) : AirportReposi
     override fun findByIataCode(iataCode: String): Airport? = airports.find { it.iataCode == iataCode }
 
     override fun findAll(): List<Airport> = airports
+
+    override fun findById(id: Long): Airport? = error("not needed for this test")
+
+    override fun save(airport: Airport): Airport = error("not needed for this test")
+
+    override fun delete(id: Long) = error("not needed for this test")
+
+    override fun flightCount(id: Long): Long = error("not needed for this test")
 }
 
 class FakeFlightRepository(private val lowestPriceByDestination: Map<String, BigDecimal>) : FlightRepository {
@@ -36,6 +44,11 @@ class FakeFlightRepository(private val lowestPriceByDestination: Map<String, Big
         from: LocalDate,
         to: LocalDate,
     ): BigDecimal? = lowestPriceByDestination[destinationIataCode]
+
+    override fun update(
+        flight: Flight,
+        expectedVersion: Long?,
+    ): Flight = error("not needed for this test")
 }
 
 // Shared "given": each scenario below supplies its own airport list and price map.

@@ -1,6 +1,7 @@
 package com.dbook.presentation.review
 
 import com.dbook.domain.review.Review
+import com.dbook.domain.review.ReviewStatus
 import java.time.LocalDateTime
 
 data class ReviewResponse(
@@ -10,6 +11,8 @@ data class ReviewResponse(
     val rating: Int,
     val comment: String,
     val createdAt: LocalDateTime,
+    val status: ReviewStatus = ReviewStatus.VISIBLE,
+    val updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun from(review: Review) =
@@ -20,6 +23,8 @@ data class ReviewResponse(
                 rating = review.rating,
                 comment = review.comment,
                 createdAt = review.createdAt,
+                status = review.status,
+                updatedAt = review.updatedAt,
             )
     }
 }

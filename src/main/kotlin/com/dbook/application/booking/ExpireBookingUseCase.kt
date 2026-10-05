@@ -30,7 +30,7 @@ class ExpireBookingUseCase(
         // Cancels on behalf of the booking's own owner, which passes the ownership check
         // without needing ADMIN. If a payment commits between the check above and this call,
         // the cancel fails and the message is redelivered — the next attempt finds it paid.
-        cancelBookingUseCase.execute(bookingId, booking.customerId, Role.CLIENT)
+        cancelBookingUseCase.execute(bookingId, booking.customerId, Role.CLIENT, CancellationSource.EXPIRATION)
         meterRegistry.countOutcome("dbook.booking.expiration", "expired")
     }
 }

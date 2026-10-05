@@ -15,3 +15,13 @@ variable "state_bucket_name" {
 variable "lock_table_name" {
   type = string
 }
+
+variable "portal_bucket_arn" {
+  description = "The bucket the pipeline uploads the portal to."
+  type        = string
+}
+
+variable "portal_distribution_arn" {
+  description = "The distribution the pipeline invalidates after the upload."
+  type        = string
+}

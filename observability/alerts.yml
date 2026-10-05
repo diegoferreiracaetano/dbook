@@ -1,0 +1,111 @@
+# Alert rules for Prometheus. Every alert has a runbook (docs/runbooks.md#<anchor>): what it means, where to look, how to
+# mitigate. The rules are tested with promtool (observability/alerts_test.yml), locally and in CI.
+#
+# `severity: critical` is for what needs someone now; `warning` is for what can wait for working hours.
+groups:
+  - name: dbook-availability
+    rules:
+      - alert: DbookDown
+        expr: up{job="dbook"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The DBook application is not answering Prometheus"
+          runbook: "docs/runbooks.md#dbookdown"
+
+      # at least 6 requests a minute, so a handful of failures at night is not a page
+      - alert: HighServerErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="dbook", status=~"5.."}[5m]))
+            / sum(rate(http_server_requests_seconds_count{job="dbook"}[5m])) > 0.05
+          and sum(rate(http_server_requests_seconds_count{job="dbook"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "More than 5% of the requests are failing with a 5xx"
+          runbook: "docs/runbooks.md#highservererrorrate"
+
+      - alert: SearchLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="dbook", uri="/v1/flights/search"}[5m]))) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The p95 of the flight search is above 500 ms (the SLO)"
+          runbook: "docs/runbooks.md#searchlatencyhigh"
+
+  - name: dbook-bookings
+    rules:
+      # anything in a dead-letter queue is a message that failed three times: an expiration or a notification
+      - alert: DeadLetterQueueNotEmpty
+        expr: dbook_sqs_dlq_depth > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Messages are landing in a dead-letter queue: a seat may be stuck or a customer not told"
+          runbook: "docs/runbooks.md#deadletterqueuenotempty"
+
+      # PENDING bookings hold a seat for at most 15 minutes; a pile that keeps growing means expiration is not running
+      - alert: PendingBookingsPiling
+        expr: dbook_booking_pending > 200 and deriv(dbook_booking_pending[30m]) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pending bookings keep piling up: the expiration queue may not be working"
+          runbook: "docs/runbooks.md#pendingbookingspiling"
+
+      - alert: RefundsFailing
+        expr: sum(increase(dbook_refund_total{outcome="failed"}[15m])) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "A refund failed at the payment gateway: it needs a retry"
+          runbook: "docs/runbooks.md#refundsfailing"
+
+      # events due long ago and still not delivered: the relay is stopped, or the queue is unreachable
+      - alert: OutboxOverdue
+        expr: dbook_outbox_overdue_seconds > 300
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Outbox events are overdue by more than 5 minutes: bookings may not be expiring"
+          runbook: "docs/runbooks.md#outboxoverdue"
+
+  - name: dbook-security
+    rules:
+      - alert: LoginFailureSpike
+        expr: sum(rate(dbook_auth_login_total{outcome=~"invalid_credentials|rate_limited"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Login failures are above 2 per second: someone may be guessing passwords"
+          runbook: "docs/runbooks.md#loginfailurespike"
+
+      - alert: AdminDeniedSpike
+        expr: sum(rate(dbook_admin_action_total{outcome="DENIED"}[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Many denied attempts in the admin portal: an account may be probing"
+          runbook: "docs/runbooks.md#admindeniedspike"
+
+  - name: dbook-platform
+    rules:
+      - alert: CacheUnavailable
+        expr: sum(rate(dbook_cache_total{outcome="error"}[5m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The cache has been failing for 10 minutes (answers still work, only slower)"
+          runbook: "docs/runbooks.md#cacheunavailable"

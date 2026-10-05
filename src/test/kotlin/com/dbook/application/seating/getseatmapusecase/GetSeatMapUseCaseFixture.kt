@@ -29,6 +29,8 @@ class FakeSeatRepository(private val seats: List<Seat>) : SeatRepository {
     override fun reserve(seatId: Long): Seat = throw UnsupportedOperationException("not used by GetSeatMapUseCase")
 
     override fun release(seatId: Long): Seat = throw UnsupportedOperationException("not used by GetSeatMapUseCase")
+
+    override fun deleteAll(seatIds: List<Long>) = error("not needed for this test")
 }
 
 // Shared "given": one Flight (bookableId) with a two-seat map.

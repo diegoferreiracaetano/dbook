@@ -32,6 +32,11 @@ class ActiveOnlyFlightRepository(private val active: List<Flight>) : FlightRepos
         from: LocalDate,
         to: LocalDate,
     ): BigDecimal? = error("not used by SuggestFlightsUseCase")
+
+    override fun update(
+        flight: Flight,
+        expectedVersion: Long?,
+    ): Flight = error("not needed for this test")
 }
 
 class FixedAiSuggestionService(private val result: Result<AiSuggestionResult>) : AiSuggestionService {

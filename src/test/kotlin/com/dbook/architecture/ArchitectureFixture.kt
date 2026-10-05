@@ -9,7 +9,11 @@ import com.tngtech.archunit.core.importer.ImportOption
 abstract class ArchitectureFixture {
     protected val productionClasses: JavaClasses = importedProductionClasses
 
-    protected val concepts = listOf("catalog", "seating", "booking", "payment", "review", "identity", "ai", "audit")
+    protected val concepts =
+        listOf(
+            "catalog", "seating", "booking", "payment", "review", "identity", "ai", "audit", "crm", "dashboard",
+            "messaging", "notification", "favorite", "promo", "pricing", "accommodation", "appconfig",
+        )
 
     private companion object {
         // importing the class files is the slow part: do it once per test JVM

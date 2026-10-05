@@ -1,11 +1,10 @@
 package com.dbook.application.booking
 
-import com.dbook.application.common.afterCommit
 import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditEvent
 import com.dbook.domain.audit.AuditLog
-import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
+import com.dbook.domain.booking.BookingEvents
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
@@ -13,19 +12,24 @@ import com.dbook.domain.booking.toAuditSnapshot
 import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Permission.BOOKING_CANCEL_ANY
 import com.dbook.domain.identity.Role
-import com.dbook.domain.seating.SeatRepository
+import com.dbook.domain.messaging.OutboxWriter
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+
+/** Why a booking is being cancelled: someone asked for it, or its time ran out. */
+enum class CancellationSource { REQUESTED, EXPIRATION }
 
 /** Cancels a PENDING [Booking] and releases its [com.dbook.domain.seating.Seat] back to AVAILABLE. */
 @Observed(name = "dbook.usecase")
 @Service
 class CancelBookingUseCase(
     private val bookingRepository: BookingRepository,
-    private val seatRepository: SeatRepository,
-    private val availabilityBroadcaster: AvailabilityBroadcaster,
+    private val inventory: BookingInventoryReleaser,
     private val auditLog: AuditLog,
+    private val outboxWriter: OutboxWriter,
+    private val clock: Clock,
 ) {
     // A CLIENT may only cancel their own booking; whoever holds BOOKING_CANCEL_ANY can cancel any booking.
     // Without this check, authentication alone wouldn't actually protect a booking
@@ -35,6 +39,7 @@ class CancelBookingUseCase(
         bookingId: Long,
         requestingUserId: Long,
         requestingUserRole: Role,
+        source: CancellationSource = CancellationSource.REQUESTED,
     ): Booking {
         val booking =
             bookingRepository.findById(bookingId)
@@ -43,18 +48,32 @@ class CancelBookingUseCase(
             throw NotBookingOwnerException(bookingId)
         }
         val cancelled = booking.cancel()
-        val bookableId =
-            requireNotNull(booking.bookable.id) { "A persisted Booking must reference a persisted Bookable" }
-        seatRepository.release(booking.seatId)
+        inventory.release(booking)
         val saved = bookingRepository.save(cancelled)
         if (booking.customerId != requestingUserId) {
             recordStaffCancellation(booking, saved, Actor(requestingUserId, requestingUserRole))
         }
+        announce(source, booking, saved, requestingUserId)
 
-        afterCommit {
-            availabilityBroadcaster.broadcast(bookableId, seatRepository.countAvailable(bookableId))
-        }
+        inventory.announceAfterCommit(booking)
         return saved
+    }
+
+    // The customer cancelling their own booking is told nothing (they just did it); staff cancelling it, and the
+    // expiration, are news to the customer. The event commits with the cancellation.
+    private fun announce(
+        source: CancellationSource,
+        before: Booking,
+        saved: Booking,
+        requestingUserId: Long,
+    ) {
+        val event =
+            when {
+                source == CancellationSource.EXPIRATION -> BookingEvents.expired(saved, clock.instant())
+                before.customerId != requestingUserId -> BookingEvents.cancelledByStaff(saved, clock.instant())
+                else -> null
+            }
+        event?.let { outboxWriter.add(it) }
     }
 
     // reaching here with someone else's booking means the caller holds BOOKING_CANCEL_ANY: that is staff action

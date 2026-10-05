@@ -1,8 +1,12 @@
 package com.dbook.application.catalog.registerflightusecase
 
 import com.dbook.application.audit.FakeAuditLog
+import com.dbook.application.catalog.CatalogLookup
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.application.common.RecordingOutboxWriter
+import com.dbook.application.pricing.FlightPriceRecorder
+import com.dbook.application.pricing.InMemoryPriceHistory
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.AirlineRepository
 import com.dbook.domain.catalog.Airport
@@ -16,17 +20,38 @@ import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.SeatStatus
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class FakeAirportRepository(private val airports: List<Airport>) : AirportRepository {
     override fun findByIataCode(iataCode: String): Airport? = airports.find { it.iataCode == iataCode }
 
     override fun findAll(): List<Airport> = airports
+
+    override fun findById(id: Long): Airport? = error("not needed for this test")
+
+    override fun save(airport: Airport): Airport = error("not needed for this test")
+
+    override fun delete(id: Long) = error("not needed for this test")
+
+    override fun flightCount(id: Long): Long = error("not needed for this test")
 }
 
 class FakeAirlineRepository(private val airlines: List<Airline>) : AirlineRepository {
     override fun findByIataCode(iataCode: String): Airline? = airlines.find { it.iataCode == iataCode }
+
+    override fun findById(id: Long): Airline? = error("not needed for this test")
+
+    override fun findAll(): List<Airline> = error("not needed for this test")
+
+    override fun save(airline: Airline): Airline = error("not needed for this test")
+
+    override fun delete(id: Long) = error("not needed for this test")
+
+    override fun flightCount(id: Long): Long = error("not needed for this test")
 }
 
 class FakeFlightRepository : FlightRepository {
@@ -73,6 +98,11 @@ class FakeFlightRepository : FlightRepository {
         seatClass = flight.seatClass,
         aircraftType = flight.aircraftType,
     )
+
+    override fun update(
+        flight: Flight,
+        expectedVersion: Long?,
+    ): Flight = error("not needed for this test")
 }
 
 class FakeSeatRepository : SeatRepository {
@@ -97,6 +127,8 @@ class FakeSeatRepository : SeatRepository {
     override fun reserve(seatId: Long): Seat = throw UnsupportedOperationException("not used by RegisterFlightUseCase")
 
     override fun release(seatId: Long): Seat = throw UnsupportedOperationException("not used by RegisterFlightUseCase")
+
+    override fun deleteAll(seatIds: List<Long>) = error("not needed for this test")
 }
 
 // Shared "given": GRU and GIG exist as airports; every scenario below registers a flight
@@ -128,14 +160,20 @@ abstract class RegisterFlightUseCaseFixture {
     protected val flightRepository = FakeFlightRepository()
     protected val seatRepository = FakeSeatRepository()
     protected val auditLog = FakeAuditLog()
+    protected val outbox = RecordingOutboxWriter()
+    protected val priceHistory = InMemoryPriceHistory()
     protected val admin = Actor(id = 1, role = Role.SUPER_ADMIN)
     protected val useCase =
         RegisterFlightUseCase(
             flightRepository,
-            FakeAirlineRepository(listOf(latam)),
-            FakeAirportRepository(listOf(gru, gig)),
+            CatalogLookup(FakeAirlineRepository(listOf(latam)), FakeAirportRepository(listOf(gru, gig))),
             seatRepository,
             auditLog,
+            FlightPriceRecorder(
+                priceHistory,
+                outbox,
+                Clock.fixed(Instant.parse("2026-10-04T12:00:00Z"), ZoneOffset.UTC),
+            ),
         )
 
     protected fun command(

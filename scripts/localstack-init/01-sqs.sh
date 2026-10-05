@@ -6,3 +6,9 @@ awslocal sqs create-queue --queue-name dbook-booking-expiration-dlq
 
 awslocal sqs create-queue --queue-name dbook-booking-expiration \
   --attributes '{"VisibilityTimeout":"30","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:dbook-booking-expiration-dlq\",\"maxReceiveCount\":\"3\"}"}'
+
+# Notifications: what the customer is told about (booking confirmed/expired/cancelled, refund, flight change)
+awslocal sqs create-queue --queue-name dbook-notifications-dlq
+
+awslocal sqs create-queue --queue-name dbook-notifications \
+  --attributes '{"VisibilityTimeout":"30","RedrivePolicy":"{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:dbook-notifications-dlq\",\"maxReceiveCount\":\"3\"}"}'

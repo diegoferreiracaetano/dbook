@@ -11,6 +11,10 @@ fun PaymentJpaEntity.toDomain(): Payment =
         cardholderName = cardholderName,
         idempotencyKey = idempotencyKey,
         requestFingerprint = requestFingerprint,
+        subtotal = subtotal,
+        discount = discount,
+        promoCodeId = promoCodeId,
+        promoCode = promoCode,
     )
 
 fun Payment.toJpaEntity(): PaymentJpaEntity =
@@ -22,4 +26,8 @@ fun Payment.toJpaEntity(): PaymentJpaEntity =
         cardholderName = cardholderName,
         idempotencyKey = idempotencyKey,
         requestFingerprint = requestFingerprint,
+        subtotal = subtotal,
+        discount = discount,
+        promoCodeId = promoCodeId,
+        promoCode = promoCode,
     )

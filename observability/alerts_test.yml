@@ -1,0 +1,224 @@
+# promtool test rules observability/alerts_test.yml
+# Each alert is fed series that should and should not fire it, evaluated at the moments that matter.
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - name: DbookDown fires after a minute without answers
+    interval: 1m
+    input_series:
+      - series: 'up{job="dbook"}'
+        values: "1 1 0 0 0"
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: DbookDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: DbookDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: dbook
+            exp_annotations:
+              summary: "The DBook application is not answering Prometheus"
+              runbook: "docs/runbooks.md#dbookdown"
+
+  - name: HighServerErrorRate needs both the rate of errors and some traffic
+    interval: 1m
+    input_series:
+      # 10 requests a second, 1 of them failing: 10%
+      - series: 'http_server_requests_seconds_count{job="dbook", status="200"}'
+        values: "0+540x20"
+      - series: 'http_server_requests_seconds_count{job="dbook", status="500"}'
+        values: "0+60x20"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HighServerErrorRate
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: HighServerErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "More than 5% of the requests are failing with a 5xx"
+              runbook: "docs/runbooks.md#highservererrorrate"
+
+  - name: HighServerErrorRate stays quiet with errors but almost no traffic
+    interval: 1m
+    input_series:
+      # 3 requests in 10 minutes, one failing: a high ratio over nothing
+      - series: 'http_server_requests_seconds_count{job="dbook", status="200"}'
+        values: "0 0 0 0 0 0 0 0 0 0 2 2 2 2 2 2 2 2 2 2"
+      - series: 'http_server_requests_seconds_count{job="dbook", status="500"}'
+        values: "0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1"
+    alert_rule_test:
+      - eval_time: 19m
+        alertname: HighServerErrorRate
+        exp_alerts: []
+
+  - name: SearchLatencyHigh fires when the p95 stays above 500 ms
+    interval: 1m
+    input_series:
+      # every request lands in the 1 s bucket: the p95 is about 1 s
+      - series: 'http_server_requests_seconds_bucket{job="dbook", uri="/v1/flights/search", le="0.5"}'
+        values: "0+0x20"
+      - series: 'http_server_requests_seconds_bucket{job="dbook", uri="/v1/flights/search", le="1"}'
+        values: "0+60x20"
+      - series: 'http_server_requests_seconds_bucket{job="dbook", uri="/v1/flights/search", le="+Inf"}'
+        values: "0+60x20"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: SearchLatencyHigh
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: SearchLatencyHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "The p95 of the flight search is above 500 ms (the SLO)"
+              runbook: "docs/runbooks.md#searchlatencyhigh"
+
+  - name: DeadLetterQueueNotEmpty fires for any message in any dead-letter queue
+    interval: 1m
+    input_series:
+      - series: 'dbook_sqs_dlq_depth{queue="booking-expiration"}'
+        values: "0 0 0 0 0 0"
+      - series: 'dbook_sqs_dlq_depth{queue="notifications"}'
+        values: "0 0 0 1 1 1"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: DeadLetterQueueNotEmpty
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: DeadLetterQueueNotEmpty
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              queue: notifications
+            exp_annotations:
+              summary: "Messages are landing in a dead-letter queue: a seat may be stuck or a customer not told"
+              runbook: "docs/runbooks.md#deadletterqueuenotempty"
+
+  - name: PendingBookingsPiling needs a big pile that is still growing
+    interval: 1m
+    input_series:
+      - series: "dbook_booking_pending"
+        values: "100+10x60"
+      - series: 'dbook_booking_pending{case="flat"}'
+        values: "500+0x60"
+    alert_rule_test:
+      # over 200 since minute 11, but it has to last 15 minutes
+      - eval_time: 20m
+        alertname: PendingBookingsPiling
+        exp_alerts: []
+      - eval_time: 50m
+        alertname: PendingBookingsPiling
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Pending bookings keep piling up: the expiration queue may not be working"
+              runbook: "docs/runbooks.md#pendingbookingspiling"
+
+  - name: OutboxOverdue fires only for events that are late for more than five minutes
+    interval: 1m
+    input_series:
+      # late by 10 minutes from the 4th minute on
+      - series: "dbook_outbox_overdue_seconds"
+        values: "0 0 0 600 600 600 600 600 600 600"
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: OutboxOverdue
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: OutboxOverdue
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+            exp_annotations:
+              summary: "Outbox events are overdue by more than 5 minutes: bookings may not be expiring"
+              runbook: "docs/runbooks.md#outboxoverdue"
+
+  - name: RefundsFailing fires as soon as a refund fails
+    interval: 1m
+    input_series:
+      - series: 'dbook_refund_total{outcome="failed"}'
+        values: "0 0 0 1 1 1"
+      - series: 'dbook_refund_total{outcome="completed"}'
+        values: "0 1 2 3 4 5"
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: RefundsFailing
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: RefundsFailing
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "A refund failed at the payment gateway: it needs a retry"
+              runbook: "docs/runbooks.md#refundsfailing"
+
+  - name: LoginFailureSpike counts wrong passwords and lockouts, not successes
+    interval: 1m
+    input_series:
+      - series: 'dbook_auth_login_total{outcome="invalid_credentials", audience="client"}'
+        values: "0+300x20"
+      - series: 'dbook_auth_login_total{outcome="success", audience="client"}'
+        values: "0+6000x20"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: LoginFailureSpike
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: LoginFailureSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Login failures are above 2 per second: someone may be guessing passwords"
+              runbook: "docs/runbooks.md#loginfailurespike"
+
+  - name: AdminDeniedSpike fires on denied admin attempts only
+    interval: 1m
+    input_series:
+      - series: 'dbook_admin_action_total{action="ACCESS_DENIED", outcome="DENIED"}'
+        values: "0+30x20"
+      - series: 'dbook_admin_action_total{action="FLIGHT_CREATED", outcome="SUCCESS"}'
+        values: "0+600x20"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: AdminDeniedSpike
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: AdminDeniedSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Many denied attempts in the admin portal: an account may be probing"
+              runbook: "docs/runbooks.md#admindeniedspike"
+
+  - name: CacheUnavailable fires after ten minutes of errors
+    interval: 1m
+    input_series:
+      - series: 'dbook_cache_total{cache="dashboard", outcome="error"}'
+        values: "0+1x30"
+      - series: 'dbook_cache_total{cache="dashboard", outcome="hit"}'
+        values: "0+5x30"
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: CacheUnavailable
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: CacheUnavailable
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "The cache has been failing for 10 minutes (answers still work, only slower)"
+              runbook: "docs/runbooks.md#cacheunavailable"

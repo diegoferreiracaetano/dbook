@@ -7,6 +7,67 @@ on:
     branches: [main]
 
 jobs:
+  # The Prometheus alert rules must be valid and must fire (and stay quiet) when they should: promtool ships in the
+  # Prometheus image, so nothing is installed here.
+  alert-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check the alert rules
+        run: >
+          docker run --rm -v "$PWD/observability:/obs" --entrypoint promtool
+          prom/prometheus:v2.55.0 check rules /obs/alerts.yml
+
+      - name: Test the alert rules
+        run: >
+          docker run --rm -v "$PWD/observability:/obs" --entrypoint promtool
+          prom/prometheus:v2.55.0 test rules /obs/alerts_test.yml
+
+      - name: Check the Alertmanager config
+        run: >
+          docker run --rm -v "$PWD/observability:/obs" --entrypoint amtool
+          prom/alertmanager:v0.27.0 check-config /obs/alertmanager.yml
+
+  # The infrastructure code is checked without credentials or state: there is no AWS account behind this project to run a
+  # real `plan` against (see docs/custos.md), so what can be proved statically is proved here. A finding that is
+  # accepted on purpose is listed, with its reason, in terraform/.checkov.yaml.
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Format
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Set up tflint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: checkov
+        run: >
+          docker run --rm -v "$PWD:/tf" bridgecrew/checkov:3.3.22
+          --config-file /tf/.checkov.yaml -d /tf
+
   check:
     runs-on: ubuntu-latest
     steps:

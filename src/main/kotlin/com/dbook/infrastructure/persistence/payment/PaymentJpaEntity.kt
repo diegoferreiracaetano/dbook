@@ -21,4 +21,8 @@ class PaymentJpaEntity(
     var cardholderName: String = "",
     var idempotencyKey: String? = null,
     var requestFingerprint: String? = null,
+    var subtotal: BigDecimal = BigDecimal.ZERO,
+    var discount: BigDecimal = BigDecimal.ZERO,
+    var promoCodeId: Long? = null,
+    var promoCode: String? = null,
 )

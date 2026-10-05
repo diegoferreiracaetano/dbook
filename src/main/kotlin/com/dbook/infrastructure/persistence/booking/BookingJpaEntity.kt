@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.Version
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @Entity
 @Table(name = "booking")
@@ -27,7 +28,7 @@ class BookingJpaEntity(
     var bookable: BookableJpaEntity,
     @ManyToOne
     @JoinColumn(name = "seat_id")
-    var seat: SeatJpaEntity,
+    var seat: SeatJpaEntity?,
     var customerId: Long = 0,
     @Enumerated(EnumType.STRING)
     var status: BookingStatus = BookingStatus.PENDING,
@@ -37,4 +38,11 @@ class BookingJpaEntity(
     @Version
     var version: Long = 0,
     var price: BigDecimal = BigDecimal.ZERO,
+    var discount: BigDecimal = BigDecimal.ZERO,
+    // a stay (a room for some nights) instead of a seat
+    var roomTypeId: Long? = null,
+    var checkIn: LocalDate? = null,
+    var checkOut: LocalDate? = null,
+    var guests: Int? = null,
+    var nightlyRate: BigDecimal? = null,
 )

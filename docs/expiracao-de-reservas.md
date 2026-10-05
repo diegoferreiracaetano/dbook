@@ -6,11 +6,13 @@ Como uma reserva pendente é cancelada sozinha 15 minutos depois.
 
 Uma reserva nasce `PENDING` e já tira o assento de circulação. Sem esta fila, quem abandonasse o pagamento prendia o assento para sempre. Agora, **15 minutos depois de criada, uma reserva ainda `PENDING` é cancelada sozinha e o assento volta a ficar livre**.
 
+O fluxo completo, com o outbox e o relé, está no diagrama de [Mensageria](mensageria.md#o-problema-que-isto-fecha-o-dual-write). O desenho abaixo é o original (anterior ao outbox: o passo "agendar depois do commit" hoje é "gravar o evento no mesmo commit").
+
 ![Fluxo de expiração de reservas pendentes](booking-expiration.svg)
 
 Como funciona:
 
-1. `POST /v1/bookings` cria a reserva e, **depois do commit** (`afterCommit`), agenda uma mensagem `{"bookingId": N}` na fila `dbook-booking-expiration` com `DelaySeconds = 900`. A mensagem fica invisível durante os 15 minutos.
+1. `POST /v1/bookings` cria a reserva e, **na mesma transação**, grava um evento `booking.expiration.requested` no **outbox** (`outbox_event`), com `available_at` = agora + 15 minutos. Ou os dois existem, ou nenhum. Um relé o entrega à fila `dbook-booking-expiration` quando vence (ver [Mensageria](mensageria.md)); a mensagem é `{"bookingId": N}`, sem atraso na SQS, já que o outbox segurou o evento até a hora.
 2. Quando ela fica visível, o `BookingExpirationConsumer` (`@Scheduled`, long polling) a lê e chama o `ExpireBookingUseCase`.
 3. O use case é **idempotente**: se a reserva não existe mais ou já não está `PENDING` (foi paga ou cancelada), não faz nada. Se ainda está `PENDING`, reaproveita o `CancelBookingUseCase`, que cancela, libera o assento e avisa a disponibilidade em tempo real.
 4. A mensagem só é **apagada depois de processada**. Se algo falha, ela não é apagada: a SQS a entrega de novo após 30 s (`VisibilityTimeout`) e, depois de 3 falhas (`maxReceiveCount`), a move para a **DLQ** (`dbook-booking-expiration-dlq`), onde pode ser inspecionada sem travar a fila principal.
@@ -20,9 +22,9 @@ Como funciona:
 **Decisões e limites**
 
 - **A SQS entrega pelo menos uma vez**, então mensagem duplicada é normal; é a idempotência do use case que a torna inofensiva.
-- **15 minutos é o máximo** que uma mensagem SQS pode ser atrasada (900 s). Prazos maiores exigiriam outra estratégia.
+- **O prazo não depende mais do limite de 900 s da SQS:** quem segura o evento até a hora é o outbox (`available_at`), então outro prazo (30 minutos, 1 hora) é só mudar uma constante.
 - **A reserva expirada fica `CANCELLED`**, sem um status `EXPIRED` novo, para não mudar o contrato com o app.
-- **Falha ao agendar é logada, não lançada.** O agendamento acontece depois do commit; lançar exceção ali devolveria um erro para uma reserva que existe. Isso deixa uma janela conhecida (*dual write*): se a aplicação cair entre o commit e o envio, aquela reserva não expira sozinha. A solução é um *outbox* transacional (gravar o evento na mesma transação e publicar por um relay), não implementado aqui.
+- **Não há mais janela de perda.** O agendamento antigo (`afterCommit` + SQS) tinha um *dual write*: uma queda entre o commit e o envio, ou uma falha engolida, deixava a reserva sem expirar. Com o **outbox transacional** (M35) o evento nasce com a reserva; se a fila estiver fora do ar, o relé tenta de novo com *backoff* e entrega quando ela volta (verificado ao vivo, ver [Mensageria](mensageria.md#verificado-ao-vivo)). A entrega é no mínimo uma vez: o `ExpireBookingUseCase` idempotente absorve a duplicata.
 - **O pagamento continua síncrono**: não há gateway real. Com um gateway que confirma depois (Pix, boleto, 3DS), a confirmação viraria um evento assíncrono e os 15 minutos passariam a significar "o pagamento não foi confirmado a tempo".
 - **Sem Terraform da SQS ainda.** Localmente a fila vem do LocalStack; criar o recurso na AWS exigiria uma conta persistente, que o projeto não tem hoje.
 
@@ -37,6 +39,6 @@ aws --endpoint-url=http://localhost:4566 sqs send-message \
   --message-body '{"bookingId": 1}'
 ```
 
-Em até ~5 s a reserva passa a `CANCELLED` e o assento volta a `AVAILABLE`. Para ver a mensagem real aguardando os 15 minutos: `aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --queue-url <url> --attribute-names ApproximateNumberOfMessagesDelayed`.
+Em até ~5 s a reserva passa a `CANCELLED` e o assento volta a `AVAILABLE`. Para ver o evento real aguardando os 15 minutos: `select type, payload, available_at from outbox_event where published_at is null` (e para adiantá-lo: `update outbox_event set available_at = now(), next_attempt_at = now() where aggregate_id = '1'`).
 
-Configuração (`application.yml`): `aws.sqs.region`, `aws.sqs.endpoint` (só no LocalStack; na AWS fica vazio), `booking-expiration.queue-url`, `booking-expiration.consumer.enabled` (desligado nos testes) e `booking-expiration.consumer.wait-seconds`.
+Configuração (`application.yml`): `aws.sqs.region`, `aws.sqs.endpoint` (só no LocalStack; na AWS fica vazio), `booking-expiration.queue-url`, `booking-expiration.dlq-url` (a profundidade da DLQ vira a métrica `dbook_sqs_dlq_depth`, listada em `dead-letter-queues.queues`), `outbox.queues.booking-expiration` (a rota do evento), `booking-expiration.consumer.enabled` (desligado nos testes) e `booking-expiration.consumer.wait-seconds`.

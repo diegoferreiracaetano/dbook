@@ -1,0 +1,26 @@
+# Where the alerts go. The only receiver here is an example webhook: point it at whatever takes alerts in your team
+# (Slack, PagerDuty, an e-mail bridge), or just run a listener on port 5001 to see the payload:
+#   python3 -m http.server 5001   (it logs the POSTs it cannot parse)
+route:
+  receiver: example-webhook
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # something that needs a person now is repeated more often
+    - matchers: [severity="critical"]
+      receiver: example-webhook
+      repeat_interval: 1h
+
+receivers:
+  - name: example-webhook
+    webhook_configs:
+      - url: http://host.docker.internal:5001/alerts
+        send_resolved: true
+
+# when the application is down, everything else that depends on it is noise
+inhibit_rules:
+  - source_matchers: [alertname="DbookDown"]
+    target_matchers: [severity=~"warning|critical"]
+    equal: []

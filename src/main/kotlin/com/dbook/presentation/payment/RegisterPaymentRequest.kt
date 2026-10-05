@@ -12,4 +12,6 @@ data class RegisterPaymentRequest(
     val cardLast4: String,
     @get:Schema(example = "Jane Doe", description = "name on the card")
     val cardholderName: String,
+    @get:Schema(example = "WELCOME10", description = "a promotional code, in any case; optional")
+    val promoCode: String? = null,
 )

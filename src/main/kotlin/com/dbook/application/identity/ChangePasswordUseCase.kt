@@ -1,11 +1,8 @@
 package com.dbook.application.identity
 
-import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.PasswordPolicy
 import com.dbook.domain.identity.RefreshTokenRepository
-import com.dbook.domain.identity.TooManyLoginAttemptsException
-import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.identity.UserRepository
 import io.micrometer.observation.annotation.Observed
@@ -30,28 +27,16 @@ class ChangePasswordUseCase(
     private val userRepository: UserRepository,
     private val passwordHasher: PasswordHasher,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val attemptGuard: LoginAttemptGuard,
+    private val passwordConfirmation: PasswordConfirmation,
 ) {
     @Transactional
     fun execute(command: ChangePasswordCommand) {
         val user = userRepository.findById(command.userId) ?: throw UserNotFoundException(command.userId)
-        requireCurrentPassword(user, command)
+        passwordConfirmation.confirm(user, command.currentPassword, command.clientIp)
         val minLength = if (user.role.isStaff) PasswordPolicy.STAFF_MIN_LENGTH else PasswordPolicy.CLIENT_MIN_LENGTH
         PasswordPolicy.validate(command.newPassword, user.email, minLength)
 
         userRepository.save(user.withPasswordHash(passwordHasher.hash(command.newPassword)))
         refreshTokenRepository.revokeAllForUser(command.userId)
-    }
-
-    private fun requireCurrentPassword(
-        user: User,
-        command: ChangePasswordCommand,
-    ) {
-        attemptGuard.lockedFor(user.email, command.clientIp)?.let { throw TooManyLoginAttemptsException(it) }
-        if (!passwordHasher.matches(command.currentPassword, user.passwordHash)) {
-            attemptGuard.recordFailure(user.email, command.clientIp)
-            throw InvalidCredentialsException()
-        }
-        attemptGuard.clear(user.email)
     }
 }

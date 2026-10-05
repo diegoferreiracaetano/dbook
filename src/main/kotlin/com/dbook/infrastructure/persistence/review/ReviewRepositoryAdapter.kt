@@ -14,6 +14,8 @@ class ReviewRepositoryAdapter(
 
     override fun save(review: Review): Review = reviewJpaRepository.save(review.toJpaEntity()).toDomain()
 
+    override fun delete(id: Long) = reviewJpaRepository.deleteById(id)
+
     override fun findAverageRatingByDestination(destinationIataCode: String) =
         reviewJpaRepository.findAverageRatingByDestination(destinationIataCode)
 }

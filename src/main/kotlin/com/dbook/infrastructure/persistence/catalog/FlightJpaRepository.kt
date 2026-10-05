@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 
 interface FlightJpaRepository : JpaRepository<FlightJpaEntity, Long> {
     @Suppress("FunctionName")
-    fun findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetween(
+    fun findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetweenAndActiveTrue(
         originIataCode: String,
         destinationIataCode: String,
         start: LocalDateTime,

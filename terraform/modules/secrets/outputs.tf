@@ -6,3 +6,11 @@ output "db_password_arn" {
 output "jwt_secret_arn" {
   value = aws_secretsmanager_secret.jwt_secret.arn
 }
+
+output "bootstrap_admin_password_arn" {
+  value = aws_secretsmanager_secret.bootstrap_admin_password.arn
+}
+
+output "totp_encryption_key_arn" {
+  value = aws_secretsmanager_secret.totp_encryption_key.arn
+}

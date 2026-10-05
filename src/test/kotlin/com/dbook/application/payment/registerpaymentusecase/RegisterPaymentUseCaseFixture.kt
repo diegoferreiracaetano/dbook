@@ -1,7 +1,9 @@
 package com.dbook.application.payment.registerpaymentusecase
 
+import com.dbook.application.common.RecordingOutboxWriter
 import com.dbook.application.payment.RegisterPaymentCommand
 import com.dbook.application.payment.RegisterPaymentUseCase
+import com.dbook.application.promo.InMemoryPromos
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
@@ -11,10 +13,15 @@ import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.payment.Payment
 import com.dbook.domain.payment.PaymentRepository
+import com.dbook.domain.promo.PromoCode
+import com.dbook.domain.promo.PromoType
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class FakeBookingRepository(initial: List<Booking>) : BookingRepository {
     val store = initial.associateBy { requireNotNull(it.id) }.toMutableMap()
@@ -45,6 +52,10 @@ class FakePaymentRepository : PaymentRepository {
                 cardholderName = payment.cardholderName,
                 idempotencyKey = payment.idempotencyKey,
                 requestFingerprint = payment.requestFingerprint,
+                subtotal = payment.subtotal,
+                discount = payment.discount,
+                promoCodeId = payment.promoCodeId,
+                promoCode = payment.promoCode,
             )
         saved += withId
         return withId
@@ -118,7 +129,44 @@ abstract class RegisterPaymentUseCaseFixture {
         )
     protected val paymentRepository = FakePaymentRepository()
     protected val meterRegistry = SimpleMeterRegistry()
-    protected val useCase = RegisterPaymentUseCase(bookingRepository, paymentRepository, meterRegistry)
+    protected val outbox = RecordingOutboxWriter()
+    protected val now: Instant = Instant.parse("2026-10-04T12:00:00Z")
+
+    // Codes the tests use: WELCOME10 takes 10% (once per customer), FIVE takes 5.00, ONCE can be used by one payment
+    // in all, EXPIRED ended a second ago, BIG needs a total of at least 1000, FREEBIE tries to take everything
+    private fun promo(
+        code: String,
+        type: PromoType,
+        value: String,
+        limits: PromoCode.() -> PromoCode = { this },
+    ) = PromoCode(
+        code = code,
+        type = type,
+        value = BigDecimal(value),
+        validFrom = now.minusSeconds(DAY_SECONDS),
+        validUntil = now.plusSeconds(DAY_SECONDS),
+        createdBy = 1,
+        createdAt = now.minusSeconds(DAY_SECONDS),
+    ).limits()
+
+    protected val promos =
+        InMemoryPromos(
+            promo("WELCOME10", PromoType.PERCENT, "10"),
+            promo("FIVE", PromoType.FIXED, "5.00"),
+            promo("ONCE", PromoType.FIXED, "5.00") { copy(maxRedemptions = 1) },
+            promo("EXPIRED", PromoType.FIXED, "5.00") { copy(validUntil = now.minusSeconds(1)) },
+            promo("BIG", PromoType.FIXED, "5.00") { copy(minAmount = BigDecimal("1000")) },
+            promo("FREEBIE", PromoType.FIXED, "100000.00"),
+        )
+    protected val useCase =
+        RegisterPaymentUseCase(
+            bookingRepository,
+            paymentRepository,
+            meterRegistry,
+            outbox,
+            promos,
+            Clock.fixed(now, ZoneOffset.UTC),
+        )
 
     // execute() registers an afterCommit callback, which needs an active transaction
     // synchronization even outside a real Spring transaction. This fakes just enough of it
@@ -145,4 +193,8 @@ abstract class RegisterPaymentUseCaseFixture {
         requestingUserId: Long = ownerId,
         idempotencyKey: String = "key-1",
     ) = RegisterPaymentCommand(bookingIds, "4242", "Jane Doe", requestingUserId, idempotencyKey)
+
+    private companion object {
+        const val DAY_SECONDS = 86_400L
+    }
 }

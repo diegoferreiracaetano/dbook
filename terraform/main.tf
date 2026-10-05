@@ -4,6 +4,12 @@ module "vpc" {
   name = var.project_name
 }
 
+module "sqs" {
+  source = "./modules/sqs"
+
+  name = var.project_name
+}
+
 module "ecr" {
   source = "./modules/ecr"
 
@@ -49,12 +55,48 @@ resource "random_password" "jwt_secret" {
   special = false
 }
 
+# The first administrator's password, and the key that will protect the team's 2FA secrets (M29): generated here, kept
+# in Secrets Manager, handed to the container as secrets and never written in the task definition.
+resource "random_password" "bootstrap_admin" {
+  length  = 24
+  special = false
+}
+
+resource "random_password" "totp_encryption_key" {
+  length  = 44
+  special = false
+}
+
 module "secrets" {
   source = "./modules/secrets"
 
-  name        = var.project_name
-  db_password = random_password.db_password.result
-  jwt_secret  = random_password.jwt_secret.result
+  name                     = var.project_name
+  db_password              = random_password.db_password.result
+  jwt_secret               = random_password.jwt_secret.result
+  bootstrap_admin_password = random_password.bootstrap_admin.result
+  totp_encryption_key      = random_password.totp_encryption_key.result
+}
+
+module "ses" {
+  source = "./modules/ses"
+
+  name         = var.project_name
+  from_address = var.ses_from_address
+  domain       = var.ses_domain
+}
+
+module "portal" {
+  source = "./modules/portal"
+
+  name            = var.project_name
+  domain_name     = var.portal_domain_name
+  certificate_arn = var.portal_certificate_arn
+  api_origin      = var.api_origin
+}
+
+# What the application itself may do on AWS: the queues it uses and, when an identity exists, the mail it sends.
+data "aws_iam_policy_document" "task" {
+  source_policy_documents = compact([module.sqs.app_policy_json, module.ses.app_policy_json])
 }
 
 module "rds" {
@@ -93,6 +135,27 @@ module "ecs" {
 
   redis_endpoint = module.redis.endpoint
   redis_port     = module.redis.port
+
+  task_policy_json = data.aws_iam_policy_document.task.json
+
+  # Spring relaxed binding: BOOKING_EXPIRATION_QUEUE_URL is booking-expiration.queue-url, and so on
+  environment_extra = {
+    BOOKING_EXPIRATION_QUEUE_URL = module.sqs.queue_urls["booking-expiration"]
+    BOOKING_EXPIRATION_DLQ_URL   = module.sqs.dead_letter_queue_urls["booking-expiration"]
+    NOTIFICATIONS_QUEUE_URL      = module.sqs.queue_urls["notifications"]
+    NOTIFICATIONS_DLQ_URL        = module.sqs.dead_letter_queue_urls["notifications"]
+    # empty: the SDK resolves the real SQS endpoint (the local default points at LocalStack)
+    AWS_SQS_ENDPOINT = ""
+    # where the invitation link points, and the only origin the browser may call the API from
+    ADMIN_PORTAL_BASE_URL = module.portal.url
+    CORS_ALLOWED_ORIGINS  = module.portal.url
+    # both or neither: the application refuses to start with half of it
+    DBOOK_BOOTSTRAP_ADMIN_EMAIL = var.bootstrap_admin_email
+  }
+
+  secrets_extra = var.bootstrap_admin_email == "" ? {} : {
+    DBOOK_BOOTSTRAP_ADMIN_PASSWORD = module.secrets.bootstrap_admin_password_arn
+  }
 }
 
 module "github_oidc" {
@@ -102,4 +165,7 @@ module "github_oidc" {
   github_repo       = var.github_repo
   state_bucket_name = var.state_bucket_name
   lock_table_name   = var.lock_table_name
+
+  portal_bucket_arn       = module.portal.bucket_arn
+  portal_distribution_arn = module.portal.distribution_arn
 }

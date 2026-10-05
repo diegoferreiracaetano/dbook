@@ -3,10 +3,9 @@ package com.dbook.domain.catalog
 import java.math.BigDecimal
 
 /**
- * Anything that can be reserved through a [Booking] — [Flight] today, `Accommodation`
- * (hotels) planned as a second specialization. Carries availability tracking and
- * pricing common to every specialization; route/schedule/seat details live on the
- * concrete subtype instead.
+ * Anything that can be reserved through a [Booking]: [Flight] and `Accommodation` (hotels). Carries availability
+ * tracking and pricing common to every specialization; route/schedule/seat details live on the concrete subtype
+ * instead.
  *
  * No abstract member on purpose: exists only to be extended, never instantiated on its
  * own — `abstract` enforces that at compile time.

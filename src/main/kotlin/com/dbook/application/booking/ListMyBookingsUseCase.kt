@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
  * A [Booking] paired with its [Seat] — [Booking.bookable] already carries the full
  * [com.dbook.domain.catalog.Flight].
  */
-data class BookingWithDetails(val booking: Booking, val seat: Seat, val review: Review?)
+data class BookingWithDetails(val booking: Booking, val seat: Seat?, val review: Review?)
 
 /**
  * Lists every booking made by the authenticated user — "my trips"
@@ -29,7 +29,7 @@ class ListMyBookingsUseCase(
 ) {
     fun execute(customerId: Long): List<BookingWithDetails> =
         bookingRepository.findByCustomerId(customerId).map { booking ->
-            val seat = requireNotNull(seatRepository.findById(booking.seatId)) { "Seat ${booking.seatId} not found" }
+            val seat = booking.seatId?.let { requireNotNull(seatRepository.findById(it)) { "Seat $it not found" } }
             val review = booking.id?.let { reviewRepository.findByBookingId(it) }
             BookingWithDetails(booking, seat, review)
         }

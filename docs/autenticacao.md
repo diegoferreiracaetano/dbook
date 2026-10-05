@@ -138,6 +138,8 @@ Alguém tem de convidar o primeiro. Na subida, `BootstrapSuperAdminRunner` lê `
 
 `POST /v1/admin/auth/change-password` `{currentPassword, newPassword}` → `204`. Exige a senha atual, e uma senha atual errada conta no **mesmo limite** do login (`429` depois de 5) — um token de acesso roubado não vira um jeito de adivinhar a senha. Trocar com sucesso **encerra todas as sessões** (refresh tokens revogados): é preciso entrar de novo. A nova segue a política (12+ para staff).
 
+**E-mail de conta anonimizada não é aceito no registro** (`409 CONFLICT`, igual a "já existe"): ver [CRM](crm.md#anonimizar-direito-ao-esquecimento).
+
 ## Modelo de ameaças (convites)
 
 | Ameaça | Mitigação |

@@ -7,5 +7,8 @@ interface ReviewRepository {
 
     fun save(review: Review): Review
 
+    fun delete(id: Long)
+
+    /** The average of the visible reviews of the flights to a destination; null when there are none. */
     fun findAverageRatingByDestination(destinationIataCode: String): Double?
 }

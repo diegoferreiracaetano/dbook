@@ -1,10 +1,13 @@
 package com.dbook.infrastructure.persistence.catalog
 
 import com.dbook.domain.catalog.Flight
+import com.dbook.domain.catalog.FlightNotFoundException
 import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.common.StaleVersionException
 import com.dbook.domain.seating.SeatStatus
 import com.dbook.infrastructure.persistence.seating.SeatJpaRepository
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -49,6 +52,33 @@ class FlightRepositoryAdapter(
         )
     }
 
+    @Transactional
+    override fun update(
+        flight: Flight,
+        expectedVersion: Long?,
+    ): Flight {
+        val id = requireNotNull(flight.id) { "Only a persisted Flight can be updated" }
+        val entity = flightJpaRepository.findById(id).orElseThrow { FlightNotFoundException(id) }
+        if (expectedVersion != null && entity.version != expectedVersion) {
+            throw StaleVersionException("The flight was changed by someone else: reload it and edit again")
+        }
+        entity.title = flight.title
+        entity.price = flight.price
+        entity.totalCapacity = flight.totalCapacity
+        entity.active = flight.active
+        entity.flightNumber = flight.flightNumber
+        entity.airline = airlineJpaRepository.getReferenceById(requireNotNull(flight.airline.id))
+        entity.origin = airportJpaRepository.getReferenceById(requireNotNull(flight.origin.id))
+        entity.destination = airportJpaRepository.getReferenceById(requireNotNull(flight.destination.id))
+        entity.departureTime = flight.departureTime
+        entity.arrivalTime = flight.arrivalTime
+        entity.seatClass = flight.seatClass
+        entity.aircraftType = flight.aircraftType
+        // flushed now: the version moves and a concurrent change shows up here, not at some later commit
+        flightJpaRepository.saveAndFlush(entity)
+        return flight
+    }
+
     override fun search(
         originIataCode: String,
         destinationIataCode: String,
@@ -57,7 +87,7 @@ class FlightRepositoryAdapter(
         val start = date.atStartOfDay()
         val end = date.plusDays(1).atStartOfDay()
         return flightJpaRepository
-            .findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetween(
+            .findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetweenAndActiveTrue(
                 originIataCode,
                 destinationIataCode,
                 start,

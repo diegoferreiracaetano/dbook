@@ -48,7 +48,7 @@ class TheFlightSnapshotListsOnlyTheAllowedFieldsTest {
         assertEquals(
             setOf(
                 "id", "flightNumber", "airline", "origin", "destination", "departureTime", "arrivalTime",
-                "seatClass", "price", "totalCapacity", "aircraftType",
+                "seatClass", "price", "totalCapacity", "aircraftType", "status",
             ),
             snapshot.keys,
         )

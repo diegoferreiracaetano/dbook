@@ -2,9 +2,11 @@ package com.dbook.infrastructure.security
 
 import com.dbook.config.CorsProperties
 import com.dbook.domain.identity.Permission.ADMIN_PORTAL_ACCESS
+import jakarta.servlet.DispatcherType
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -45,6 +47,10 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    // A streamed response (the CSV export) is finished in an ASYNC dispatch, where the JWT filter does
+                    // not run again and the stateless context is gone. The request was already authorized when it
+                    // arrived (the controller's @PreAuthorize ran then); this dispatch only writes the body.
+                    .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                     // Actuator (health probes, Prometheus) is served on its own management port,
                     // which is never exposed publicly. With a separate port this matcher only
                     // matches there — on the public port the same paths stay authenticated.
@@ -57,6 +63,10 @@ class SecurityConfig(
                         // browsers can't set Authorization on the WS handshake request;
                         // real auth happens on the STOMP CONNECT frame instead (5.7)
                         "/ws/**",
+                        "/v1/ws/**",
+                        // which app versions are served: asked before anyone signs in
+                        "/v1/app-config",
+                        "/v2/destinations",
                         // the public routes of the business API (version 1)
                         "/v1/auth/register",
                         "/v1/auth/login",
@@ -67,9 +77,13 @@ class SecurityConfig(
                         "/v1/admin/invitations/accept",
                         "/v1/flights/search",
                         "/v1/flights/lowest-price",
+                        "/v1/flights/*/price-history",
                         "/v1/destinations",
+                        "/v1/destinations/*/reviews",
                         "/v1/bookables/*/seats",
                     ).permitAll()
+                    // reading hotels is public like reading flights; booking a stay (a POST) is not
+                    .requestMatchers(HttpMethod.GET, "/v1/accommodations/**").permitAll()
                     .requestMatchers("/v1/admin/**").hasAuthority(ADMIN_PORTAL_ACCESS.name)
                     .anyRequest().authenticated()
             }.exceptionHandling {

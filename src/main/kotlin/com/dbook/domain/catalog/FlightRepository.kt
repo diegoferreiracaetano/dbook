@@ -9,6 +9,15 @@ interface FlightRepository {
 
     fun save(flight: Flight): Flight
 
+    /**
+     * Saves the changes of an existing flight. With [expectedVersion] it only goes through if the flight is still at
+     * that version (what the caller last read), otherwise it throws [com.dbook.domain.common.StaleVersionException].
+     */
+    fun update(
+        flight: Flight,
+        expectedVersion: Long? = null,
+    ): Flight
+
     /** Public search by route and departure date, used by `GET /flights/search`. */
     fun search(
         originIataCode: String,

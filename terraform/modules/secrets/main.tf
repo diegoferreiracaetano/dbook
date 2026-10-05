@@ -15,3 +15,21 @@ resource "aws_secretsmanager_secret_version" "jwt_secret" {
   secret_id     = aws_secretsmanager_secret.jwt_secret.id
   secret_string = var.jwt_secret
 }
+
+resource "aws_secretsmanager_secret" "bootstrap_admin_password" {
+  name = "${var.name}/bootstrap-admin-password"
+}
+
+resource "aws_secretsmanager_secret_version" "bootstrap_admin_password" {
+  secret_id     = aws_secretsmanager_secret.bootstrap_admin_password.id
+  secret_string = var.bootstrap_admin_password
+}
+
+resource "aws_secretsmanager_secret" "totp_encryption_key" {
+  name = "${var.name}/totp-encryption-key"
+}
+
+resource "aws_secretsmanager_secret_version" "totp_encryption_key" {
+  secret_id     = aws_secretsmanager_secret.totp_encryption_key.id
+  secret_string = var.totp_encryption_key
+}

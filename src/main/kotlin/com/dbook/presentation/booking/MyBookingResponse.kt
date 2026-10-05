@@ -1,6 +1,7 @@
 package com.dbook.presentation.booking
 
 import com.dbook.application.booking.BookingWithDetails
+import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.catalog.Flight
 import com.dbook.presentation.catalog.FlightResponse
@@ -11,10 +12,14 @@ import java.math.BigDecimal
 data class MyBookingResponse(
     val id: Long?,
     val status: BookingStatus,
-    val seat: SeatResponse,
-    val flight: FlightResponse,
+    val seat: SeatResponse?,
+    val flight: FlightResponse?,
+    val stay: StayResponse?,
+    val accommodation: AccommodationRefResponse?,
     val review: ReviewResponse?,
     val price: BigDecimal,
+    val discount: BigDecimal,
+    val paidAmount: BigDecimal,
 ) {
     companion object {
         // Bookable is abstract; the only concrete specialization today is Flight (see the
@@ -24,10 +29,14 @@ data class MyBookingResponse(
             MyBookingResponse(
                 id = details.booking.id,
                 status = details.booking.status,
-                seat = SeatResponse.from(details.seat),
-                flight = FlightResponse.from(details.booking.bookable as Flight),
+                seat = details.seat?.let(SeatResponse::from),
+                flight = (details.booking.bookable as? Flight)?.let(FlightResponse::from),
+                stay = details.booking.stay?.let(StayResponse::from),
+                accommodation = (details.booking.bookable as? Accommodation)?.let(AccommodationRefResponse::from),
                 review = details.review?.let { ReviewResponse.from(it) },
                 price = details.booking.price,
+                discount = details.booking.discount,
+                paidAmount = details.booking.paidAmount,
             )
     }
 }

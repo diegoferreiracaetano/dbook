@@ -39,3 +39,39 @@ variable "lock_table_name" {
   type    = string
   default = "dbook-terraform-locks"
 }
+
+variable "bootstrap_admin_email" {
+  description = "E-mail of the first SUPER_ADMIN, created at startup while none exists. Empty: none is created (and the password secret is not given to the container)."
+  type        = string
+  default     = ""
+}
+
+variable "ses_from_address" {
+  description = "E-mail address the application sends from; AWS sends a verification link to it. Empty: no address identity."
+  type        = string
+  default     = ""
+}
+
+variable "ses_domain" {
+  description = "Domain the application sends mail from (verified by DNS). Empty: no domain identity."
+  type        = string
+  default     = ""
+}
+
+variable "portal_domain_name" {
+  description = "The admin portal's own domain. Empty: served from the CloudFront domain."
+  type        = string
+  default     = ""
+}
+
+variable "portal_certificate_arn" {
+  description = "ACM certificate for portal_domain_name, issued in us-east-1. Required with a domain."
+  type        = string
+  default     = ""
+}
+
+variable "api_origin" {
+  description = "Public origin of the API (https://api.example.com), allowed by the portal's Content-Security-Policy."
+  type        = string
+  default     = ""
+}

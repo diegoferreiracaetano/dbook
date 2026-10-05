@@ -42,16 +42,34 @@ resource "aws_iam_role_policy" "ecs_execution_role_secrets" {
     Statement = [{
       Effect   = "Allow"
       Action   = "secretsmanager:GetSecretValue"
-      Resource = [var.db_password_secret_arn, var.jwt_secret_arn]
+      Resource = concat([var.db_password_secret_arn, var.jwt_secret_arn], values(var.secrets_extra))
     }]
   })
 }
 
+# The role of the application itself, apart from the execution role (which only starts the container): what the code
+# does on AWS (send and receive on its queues, send mail) is granted here and nowhere else.
+resource "aws_iam_role" "ecs_task_role" {
+  name = "${var.name}-ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_task_role" {
+  name   = "${var.name}-ecs-task-access"
+  role   = aws_iam_role.ecs_task_role.id
+  policy = var.task_policy_json
+}
+
 locals {
-  # Reused for both execution (ECS agent: pull image, write logs, fetch secrets) and task
-  # (the application itself) roles — the app doesn't call any AWS API yet, so it doesn't
-  # need permissions beyond what the execution role already has. Revisit once M7 (Bedrock)
-  # gives the application its own AWS calls to make.
+  # the ECS agent's role: pull the image, write the logs, fetch the secrets
   role_arn = aws_iam_role.ecs_execution_role.arn
 }
 
@@ -62,7 +80,7 @@ resource "aws_ecs_task_definition" "this" {
   cpu                      = var.cpu
   memory                   = var.memory
   execution_role_arn       = local.role_arn
-  task_role_arn            = local.role_arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
@@ -78,18 +96,24 @@ resource "aws_ecs_task_definition" "this" {
       # Standard Spring Boot relaxed-binding env var names — override the values
       # hardcoded in application.yml without needing any code change (environment
       # variables outrank application.yml in Spring's property source order).
-      environment = [
-        { name = "SPRING_DATASOURCE_URL", value = "jdbc:postgresql://${var.db_endpoint}/${var.db_name}" },
-        { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
-        { name = "SPRING_DATA_REDIS_HOST", value = var.redis_endpoint },
-        { name = "SPRING_DATA_REDIS_PORT", value = tostring(var.redis_port) },
-        # one JSON object per log line: CloudWatch Logs Insights can then filter by field
-        { name = "SPRING_PROFILES_ACTIVE", value = "json" },
-      ]
-      secrets = [
-        { name = "SPRING_DATASOURCE_PASSWORD", valueFrom = var.db_password_secret_arn },
-        { name = "JWT_SECRET", valueFrom = var.jwt_secret_arn },
-      ]
+      environment = concat(
+        [
+          { name = "SPRING_DATASOURCE_URL", value = "jdbc:postgresql://${var.db_endpoint}/${var.db_name}" },
+          { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
+          { name = "SPRING_DATA_REDIS_HOST", value = var.redis_endpoint },
+          { name = "SPRING_DATA_REDIS_PORT", value = tostring(var.redis_port) },
+          # one JSON object per log line: CloudWatch Logs Insights can then filter by field
+          { name = "SPRING_PROFILES_ACTIVE", value = "json" },
+        ],
+        [for name, value in var.environment_extra : { name = name, value = value }],
+      )
+      secrets = concat(
+        [
+          { name = "SPRING_DATASOURCE_PASSWORD", valueFrom = var.db_password_secret_arn },
+          { name = "JWT_SECRET", valueFrom = var.jwt_secret_arn },
+        ],
+        [for name, arn in var.secrets_extra : { name = name, valueFrom = arn }],
+      )
       logConfiguration = {
         logDriver = "awslogs"
         options = {

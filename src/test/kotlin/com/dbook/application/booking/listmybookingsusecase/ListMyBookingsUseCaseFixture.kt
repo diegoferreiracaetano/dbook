@@ -40,6 +40,8 @@ class FakeSeatRepository(seats: List<Seat>) : SeatRepository {
     override fun reserve(seatId: Long): Seat = error("not used by ListMyBookingsUseCase")
 
     override fun release(seatId: Long): Seat = error("not used by ListMyBookingsUseCase")
+
+    override fun deleteAll(seatIds: List<Long>) = error("not needed for this test")
 }
 
 // Shared "given": two customers (ownerId, otherOwnerId), each with their own booked seat on

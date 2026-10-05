@@ -1,7 +1,10 @@
 package com.dbook.application.booking.cancelbookingusecase
 
+import com.dbook.application.accommodation.RecordingRoomInventory
 import com.dbook.application.audit.FakeAuditLog
+import com.dbook.application.booking.BookingInventoryReleaser
 import com.dbook.application.booking.CancelBookingUseCase
+import com.dbook.application.common.RecordingOutboxWriter
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
@@ -15,7 +18,10 @@ import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.SeatStatus
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class FakeBookingRepository(initial: List<Booking>) : BookingRepository {
     val store = initial.associateBy { requireNotNull(it.id) }.toMutableMap()
@@ -60,6 +66,8 @@ class FakeSeatRepository(seats: List<Seat>) : SeatRepository {
         store[seatId] = released
         return released
     }
+
+    override fun deleteAll(seatIds: List<Long>) = error("not needed for this test")
 }
 
 class RecordingAvailabilityBroadcaster : AvailabilityBroadcaster {
@@ -126,7 +134,17 @@ abstract class CancelBookingUseCaseFixture {
     protected val bookingRepository = FakeBookingRepository(listOf(Booking(bookingId, flight, seatId, ownerId)))
     protected val availabilityBroadcaster = RecordingAvailabilityBroadcaster()
     protected val auditLog = FakeAuditLog()
-    protected val useCase = CancelBookingUseCase(bookingRepository, seatRepository, availabilityBroadcaster, auditLog)
+    protected val outbox = RecordingOutboxWriter()
+    protected val roomInventory = RecordingRoomInventory()
+    protected val now: Instant = Instant.parse("2026-10-04T12:00:00Z")
+    protected val useCase =
+        CancelBookingUseCase(
+            bookingRepository,
+            BookingInventoryReleaser(seatRepository, roomInventory, availabilityBroadcaster),
+            auditLog,
+            outbox,
+            Clock.fixed(now, ZoneOffset.UTC),
+        )
 
     // execute() calls afterCommit(), which needs an active transaction synchronization even
     // outside a real Spring transaction — this fakes just enough of it for a unit test.

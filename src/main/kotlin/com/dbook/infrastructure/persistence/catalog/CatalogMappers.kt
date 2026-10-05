@@ -1,5 +1,7 @@
 package com.dbook.infrastructure.persistence.catalog
 
+import com.dbook.domain.accommodation.Accommodation
+import com.dbook.domain.accommodation.RoomType
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Bookable
@@ -49,6 +51,8 @@ fun FlightJpaEntity.toDomain(availableCapacity: Int): Flight =
 fun BookableJpaEntity.toDomain(availableCapacity: Int): Bookable =
     when (this) {
         is FlightJpaEntity -> this.toDomain(availableCapacity)
+        // the light form (no room types): a booking only needs to know which hotel it is at
+        is AccommodationJpaEntity -> this.toDomain(emptyList())
         else -> error("Unknown Bookable subtype: ${this::class}")
     }
 
@@ -71,4 +75,18 @@ fun Flight.toJpaEntity(
         arrivalTime = arrivalTime,
         seatClass = seatClass,
         aircraftType = aircraftType,
+    )
+
+fun AccommodationJpaEntity.toDomain(roomTypes: List<RoomType>): Accommodation =
+    Accommodation(
+        id = id,
+        name = title,
+        destination = destination.toDomain(),
+        address = address,
+        stars = stars,
+        description = description,
+        photoUrl = photoUrl,
+        amenities = amenities.split(',').map { it.trim() }.filter { it.isNotEmpty() }.toSet(),
+        roomTypes = roomTypes,
+        active = active,
     )

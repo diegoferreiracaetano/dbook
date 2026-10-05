@@ -88,12 +88,25 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 | [Versionamento da API](docs/versionamento.md) | por que e como a API é versionada (`/v1`), o que é mudança que quebra, como lançar uma `v2` e aposentar a antiga |
 | [Autenticação](docs/autenticacao.md) | registro, login, refresh de token rotativo, papéis e permissões, conta bloqueada, limite de tentativas e a sessão do portal admin |
 | [Migrações do banco](docs/migracoes.md) | as regras do Flyway e a técnica *expand / contract* para adicionar uma coluna obrigatória |
+| [Hotéis](docs/hoteis.md) | a estadia por noites: o modelo, o estoque por noite, a busca, a reserva e as decisões |
+| [Preços](docs/precos.md) | o histórico de preço de um voo e os alertas de preço |
+| [Promoções](docs/promocoes.md) | os códigos promocionais: o cálculo, o consumo atômico, a idempotência e o reembolso |
+| [Favoritos](docs/favoritos.md) | os destinos e voos salvos no servidor, o limite e a idempotência |
+| [Avaliações](docs/avaliacoes.md) | a leitura pública, a edição, a denúncia e a moderação das avaliações |
+| [Notificações](docs/notificacoes.md) | os avisos ao cliente: eventos, canais, idempotência por evento e canal, preferências e a API |
+| [Mensageria (outbox)](docs/mensageria.md) | como um evento sai do sistema sem se perder: o outbox transacional, o relé e a decisão contra o CDC |
+| [Runbooks](docs/runbooks.md) | cada alerta: o que significa, onde olhar, como mitigar, e os SLOs |
+| [Dashboard](docs/dashboard.md) | o glossário dos números de negócio, o primeiro cache (Redis) e as medições de desempenho |
+| [Catálogo administrativo](docs/catalogo-admin.md) | editar e cancelar voos (versão, assentos), companhias, aeroportos e a importação em lote por CSV |
+| [Reembolso](docs/reembolso.md) | reservas no portal (com linha do tempo) e reembolso: estados, política de 24 h, a mini-saga e a idempotência |
+| [CRM de clientes](docs/crm.md) | busca, visão 360º, notas, bloqueio, exportação e anonimização (LGPD), com as medições de desempenho |
 | [Auditoria](docs/auditoria.md) | o registro imutável das ações administrativas: o que é gravado, como consultar (`GET /v1/admin/audit`) e como se liga ao log e ao trace |
 | [Observabilidade](docs/observabilidade.md) | **o conceito, o que foi usado, como foi implementado, onde acessar** e roteiros para investigar problemas (métricas, logs, tracing) |
 | [Expiração de reservas (SQS)](docs/expiracao-de-reservas.md) | como uma reserva pendente é cancelada sozinha, com diagrama |
 | [Tempo real](docs/tempo-real.md) | disponibilidade de assentos por WebSocket + Redis |
 | [IA](docs/ia.md) | sugestões de voo com AWS Bedrock |
 | [Nuvem e CI/CD](docs/nuvem-e-cicd.md) | Terraform + AWS e os pipelines |
+| [Custos](docs/custos.md) | quanto a infraestrutura custa por mês e o que o CI prova dela |
 | [Testes e qualidade](docs/testes-e-qualidade.md) | estratégia de testes e verificações automáticas |
 | [CHECKLIST](CHECKLIST.md) | o que exatamente foi feito em cada marco, e o que falta |
 
@@ -119,5 +132,27 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M27 — Preço congelado na reserva** (`Booking.price` gravado na criação e nunca alterado; o pagamento e "Minhas Viagens" leem dele, então reajustar o preço de um voo não muda o que já foi reservado — ver [docs/migracoes.md](docs/migracoes.md))
 
 - ✅ **M28 — Equipe e convites** (convite por e-mail com token de 256 bits guardado só como hash, aceite com senha escolhida pelo convidado, troca de papel/bloqueio que nunca deixa o sistema sem `SUPER_ADMIN`, bootstrap do primeiro administrador por variável de ambiente, troca da própria senha — ver [docs/autenticacao.md](docs/autenticacao.md#equipe-convite-e-gestão))
+- ✅ **M30 — CRM de clientes** (busca sem acento com trigram, visão 360º, notas, bloqueio, auditoria de leitura, exportação CSV e anonimização/LGPD, medido com 50 mil clientes — ver [docs/crm.md](docs/crm.md))
+- ✅ **M31 — Reservas admin e reembolso** (lista e linha do tempo de qualquer reserva, reembolso em mini-saga idempotente com janela de 24 h e `override` de `SUPER_ADMIN`, sem dinheiro movido duas vezes — ver [docs/reembolso.md](docs/reembolso.md))
+- ✅ **M32 — Catálogo administrativo** (lista, edição com versão e mapa de assentos, cancelamento, companhias, aeroportos e importação CSV tudo-ou-nada — ver [docs/catalogo-admin.md](docs/catalogo-admin.md))
+- ✅ **M33 — Dashboard de negócio** (receita líquida, reservas, clientes novos, conversão, expiração, ocupação, séries e rotas, em horário de São Paulo, com o primeiro cache em Redis — ver [docs/dashboard.md](docs/dashboard.md))
+- ✅ **M34 — Alertas e operação** (nove alertas testados com `promtool`, Alertmanager no perfil `observability`, gauge da fila de mensagens mortas, SLOs e runbooks — ver [docs/runbooks.md](docs/runbooks.md))
+- ✅ **M35 — Outbox transacional** (a expiração da reserva nasce na mesma transação da reserva e um relé a entrega, sem a janela de perda do *dual write*; verificado ao vivo com o SQS fora do ar — ver [docs/mensageria.md](docs/mensageria.md))
+
+- ✅ **M36 — Notificações** (reserva confirmada/expirada/cancelada, reembolso e voo alterado por caixa de entrada, e-mail e push; idempotente por evento e canal, um canal que falha não derruba os outros, preferências e aparelhos — ver [docs/notificacoes.md](docs/notificacoes.md))
+
+- ✅ **M37 — Avaliações públicas e moderação** (leitura pública por destino com média e distribuição derivadas, autor só como primeiro nome e inicial, editar/apagar, denúncia e fila de moderação auditada — ver [docs/avaliacoes.md](docs/avaliacoes.md))
+
+- ✅ **M38 — Favoritos no servidor** (destinos e voos por cliente, `PUT`/`DELETE` idempotentes, lista com o que o app precisa, limite de 200 que nem duas requisições juntas furam — ver [docs/favoritos.md](docs/favoritos.md))
+
+- ✅ **M39 — Código promocional** (percentual ou valor fixo, previsão sem gastar, consumo atômico que nem 20 disputando o último uso furam, desconto dividido por reserva ao centavo e reembolso do valor pago — ver [docs/promocoes.md](docs/promocoes.md))
+
+- ✅ **M40 — Histórico e alerta de preço** (todo preço de voo entra no histórico e vira um evento; alertas por rota e data disparam uma vez por janela de 24 h, mesmo com dez entregas simultâneas, e viram notificações pelo pipeline do M36 — ver [docs/precos.md](docs/precos.md))
+
+- ✅ **M41 — Cancelamento e reembolso pelo cliente** (a política mostrada antes de confirmar e o pedido de reembolso do dono da reserva, no mesmo mecanismo da equipe, sem o override das últimas 24 h e sem tocar no contrato do `cancel` — ver [docs/reembolso.md](docs/reembolso.md))
+
+- ✅ **M42 — Hotéis** (o `Bookable` ganha o segundo filho: estadia por noites com estoque contado por noite e um comando condicional por noite, sem que duas estadias dividam o último quarto, mesma reserva, pagamento, expiração e reembolso do voo — ver [docs/hoteis.md](docs/hoteis.md))
+
+- ✅ **M43 — Terraform completo** (filas com mortas e alarmes, SES, segredos, papel da tarefa separado, o portal em S3 privado + CloudFront com cabeçalhos de segurança, e o CI de infraestrutura sem credenciais — ver [docs/nuvem-e-cicd.md](docs/nuvem-e-cicd.md) e [docs/custos.md](docs/custos.md))
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

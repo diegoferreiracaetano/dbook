@@ -28,6 +28,7 @@ class UserJpaEntity(
     var blockedReason: String? = null,
     var blockedAt: Instant? = null,
     var lastLoginAt: Instant? = null,
+    var anonymizedAt: Instant? = null,
     @Version
     var version: Long = 0,
 )

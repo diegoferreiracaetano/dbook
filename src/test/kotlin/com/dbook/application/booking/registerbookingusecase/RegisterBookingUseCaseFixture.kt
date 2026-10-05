@@ -2,9 +2,9 @@ package com.dbook.application.booking.registerbookingusecase
 
 import com.dbook.application.booking.RegisterBookingCommand
 import com.dbook.application.booking.RegisterBookingUseCase
+import com.dbook.application.common.RecordingOutboxWriter
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
-import com.dbook.domain.booking.BookingExpirationScheduler
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.catalog.Airline
@@ -19,8 +19,10 @@ import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.SeatStatus
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal
-import java.time.Duration
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class FakeBookableRepository(private val bookables: List<Bookable>) : BookableRepository {
     override fun findById(id: Long): Bookable? = bookables.find { it.id == id }
@@ -55,6 +57,8 @@ class FakeSeatRepository(seats: List<Seat>) : SeatRepository {
         store[seatId] = released
         return released
     }
+
+    override fun deleteAll(seatIds: List<Long>) = error("not needed for this test")
 }
 
 class FakeBookingRepository : BookingRepository {
@@ -83,17 +87,6 @@ class FakeBookingRepository : BookingRepository {
         saved.removeAll { it.id == withId.id }
         saved += withId
         return withId
-    }
-}
-
-class RecordingBookingExpirationScheduler : BookingExpirationScheduler {
-    val scheduled = mutableListOf<Pair<Long, Duration>>()
-
-    override fun scheduleExpiration(
-        bookingId: Long,
-        after: Duration,
-    ) {
-        scheduled += bookingId to after
     }
 }
 
@@ -164,7 +157,8 @@ abstract class RegisterBookingUseCaseFixture {
         )
     protected val bookingRepository = FakeBookingRepository()
     protected val availabilityBroadcaster = RecordingAvailabilityBroadcaster()
-    protected val bookingExpirationScheduler = RecordingBookingExpirationScheduler()
+    protected val outbox = RecordingOutboxWriter()
+    protected val now: Instant = Instant.parse("2026-10-04T12:00:00Z")
 
     protected val useCase =
         RegisterBookingUseCase(
@@ -172,7 +166,8 @@ abstract class RegisterBookingUseCaseFixture {
             seatRepository,
             bookingRepository,
             availabilityBroadcaster,
-            bookingExpirationScheduler,
+            outbox,
+            Clock.fixed(now, ZoneOffset.UTC),
         )
 
     protected fun command(
@@ -182,6 +177,15 @@ abstract class RegisterBookingUseCaseFixture {
 
     // execute() calls afterCommit(), which needs an active transaction synchronization even
     // outside a real Spring transaction — this fakes just enough of it for a unit test.
+    protected fun <T> withTransactionSynchronizationResult(block: () -> T): T {
+        TransactionSynchronizationManager.initSynchronization()
+        try {
+            return block()
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization()
+        }
+    }
+
     protected fun withTransactionSynchronization(block: () -> Unit) {
         TransactionSynchronizationManager.initSynchronization()
         try {

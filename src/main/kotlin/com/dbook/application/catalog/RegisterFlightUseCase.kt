@@ -1,22 +1,16 @@
 package com.dbook.application.catalog
 
+import com.dbook.application.pricing.FlightPriceRecorder
 import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditEvent
 import com.dbook.domain.audit.AuditLog
-import com.dbook.domain.catalog.Airline
-import com.dbook.domain.catalog.AirlineNotFoundException
-import com.dbook.domain.catalog.AirlineRepository
-import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.AirportNotFoundException
-import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.FlightRepository
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.catalog.toAuditSnapshot
 import com.dbook.domain.identity.Actor
-import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
-import com.dbook.domain.seating.seatLayoutFor
+import com.dbook.domain.seating.generateSeats
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,8 +31,6 @@ data class RegisterFlightCommand(
     val aircraftType: String,
 )
 
-private val ROW_LETTERS = ('A'..'Z').toList()
-
 /**
  * Registers a new [Flight], resolving origin/destination by IATA code, and generates its
  * seat map — seats per row and column letters come from [seatLayoutFor], based on
@@ -49,16 +41,16 @@ private val ROW_LETTERS = ('A'..'Z').toList()
 @Service
 class RegisterFlightUseCase(
     private val flightRepository: FlightRepository,
-    private val airlineRepository: AirlineRepository,
-    private val airportRepository: AirportRepository,
+    private val catalogLookup: CatalogLookup,
     private val seatRepository: SeatRepository,
     private val auditLog: AuditLog,
+    private val priceRecorder: FlightPriceRecorder,
 ) {
     @Transactional
     fun execute(command: RegisterFlightCommand): Flight {
-        val airline = resolveAirline(command.airlineIataCode)
-        val origin = resolveAirport(command.originIataCode)
-        val destination = resolveAirport(command.destinationIataCode)
+        val airline = catalogLookup.airline(command.airlineIataCode)
+        val origin = catalogLookup.airport(command.originIataCode)
+        val destination = catalogLookup.airport(command.destinationIataCode)
 
         val flight =
             Flight(
@@ -77,13 +69,14 @@ class RegisterFlightUseCase(
             )
         val saved = flightRepository.save(flight)
         val bookableId = requireNotNull(saved.id) { "A saved Flight must have an id" }
-        seatRepository.saveAll(generateSeatMap(bookableId, command.totalCapacity, command.aircraftType))
+        seatRepository.saveAll(generateSeats(bookableId, command.aircraftType, 0, command.totalCapacity))
 
         // availableCapacity is derived from the seats just generated above, not from `saved`
         val registered =
             requireNotNull(flightRepository.findById(bookableId)) {
                 "Flight $bookableId was just saved but could not be reloaded"
             }
+        priceRecorder.record(registered, previous = null)
         auditLog.record(
             AuditEvent(
                 actor = command.actor,
@@ -93,24 +86,5 @@ class RegisterFlightUseCase(
             ),
         )
         return registered
-    }
-
-    private fun resolveAirline(iataCode: String): Airline =
-        airlineRepository.findByIataCode(iataCode) ?: throw AirlineNotFoundException(iataCode)
-
-    private fun resolveAirport(iataCode: String): Airport =
-        airportRepository.findByIataCode(iataCode) ?: throw AirportNotFoundException(iataCode)
-
-    private fun generateSeatMap(
-        bookableId: Long,
-        totalCapacity: Int,
-        aircraftType: String,
-    ): List<Seat> {
-        val seatsPerRow = seatLayoutFor(aircraftType).sum()
-        return (0 until totalCapacity).map { index ->
-            val row = index / seatsPerRow + 1
-            val letter = ROW_LETTERS[index % seatsPerRow]
-            Seat(bookableId = bookableId, label = "$row$letter")
-        }
     }
 }

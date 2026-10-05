@@ -1,6 +1,9 @@
 package com.dbook.infrastructure.persistence.review
 
+import com.dbook.domain.review.ReviewStatus
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -18,4 +21,10 @@ class ReviewJpaEntity(
     var rating: Int = 0,
     var comment: String = "",
     var createdAt: LocalDateTime,
+    @Enumerated(EnumType.STRING)
+    var status: ReviewStatus = ReviewStatus.VISIBLE,
+    var updatedAt: LocalDateTime? = null,
+    var hiddenReason: String? = null,
+    var hiddenBy: Long? = null,
+    var hiddenAt: LocalDateTime? = null,
 )

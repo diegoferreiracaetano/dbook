@@ -1,7 +1,11 @@
 package com.dbook.presentation.catalog.flightadmincontroller
 
+import com.dbook.application.catalog.CancelFlightUseCase
+import com.dbook.application.catalog.GetAdminFlightUseCase
 import com.dbook.application.catalog.RegisterFlightCommand
 import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.application.catalog.SearchAdminFlightsUseCase
+import com.dbook.application.catalog.UpdateFlightUseCase
 import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.SeatClass
@@ -36,6 +40,18 @@ abstract class FlightAdminControllerFixture {
 
     @MockBean
     lateinit var registerFlightUseCase: RegisterFlightUseCase
+
+    @MockBean
+    lateinit var searchAdminFlightsUseCase: SearchAdminFlightsUseCase
+
+    @MockBean
+    lateinit var getAdminFlightUseCase: GetAdminFlightUseCase
+
+    @MockBean
+    lateinit var updateFlightUseCase: UpdateFlightUseCase
+
+    @MockBean
+    lateinit var cancelFlightUseCase: CancelFlightUseCase
 
     // see FlightSearchControllerFixture for why this is still needed despite addFilters = false
     @MockBean

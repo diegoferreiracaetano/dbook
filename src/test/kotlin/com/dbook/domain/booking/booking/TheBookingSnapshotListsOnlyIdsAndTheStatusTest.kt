@@ -14,19 +14,19 @@ import kotlin.test.assertEquals
 class TheBookingSnapshotListsOnlyIdsAndTheStatusTest {
     @Test
     fun `given a booking when its audit snapshot is taken then it carries identifiers and the status only`() {
-        val airport =
-            Airport(1, "GRU", "Name", "City", "Country", "https://example.com/photo.jpg", "Region", false)
+        val origin = Airport(1, "GRU", "Name", "City", "Country", "https://example.com/photo.jpg", "Region", false)
+        val destination = Airport(2, "GIG", "Name", "City", "Country", "https://example.com/photo.jpg", "Region", false)
         val flight =
             Flight(
                 id = 5,
-                title = "DB1 GRU-GRU",
+                title = "DB1 GRU-GIG",
                 price = BigDecimal("100.00"),
                 totalCapacity = 1,
                 availableCapacity = 1,
                 flightNumber = "DB1",
                 airline = Airline(id = 1, iataCode = "LA", name = "LATAM"),
-                origin = airport,
-                destination = airport,
+                origin = origin,
+                destination = destination,
                 departureTime = LocalDateTime.of(2027, 2, 1, 8, 0),
                 arrivalTime = LocalDateTime.of(2027, 2, 1, 9, 10),
                 seatClass = SeatClass.ECONOMY,

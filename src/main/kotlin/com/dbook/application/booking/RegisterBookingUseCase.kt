@@ -3,16 +3,17 @@ package com.dbook.application.booking
 import com.dbook.application.common.afterCommit
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
-import com.dbook.domain.booking.BookingExpirationScheduler
+import com.dbook.domain.booking.BookingEvents
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.catalog.BookableNotFoundException
 import com.dbook.domain.catalog.BookableRepository
+import com.dbook.domain.messaging.OutboxWriter
 import com.dbook.domain.seating.SeatNotFoundException
 import com.dbook.domain.seating.SeatRepository
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Duration
+import java.time.Clock
 
 data class RegisterBookingCommand(
     val bookableId: Long,
@@ -31,13 +32,15 @@ class RegisterBookingUseCase(
     private val seatRepository: SeatRepository,
     private val bookingRepository: BookingRepository,
     private val availabilityBroadcaster: AvailabilityBroadcaster,
-    private val bookingExpirationScheduler: BookingExpirationScheduler,
+    private val outboxWriter: OutboxWriter,
+    private val clock: Clock,
 ) {
     @Transactional
     fun execute(command: RegisterBookingCommand): Booking {
         val bookable =
             bookableRepository.findById(command.bookableId)
                 ?: throw BookableNotFoundException(command.bookableId)
+        check(bookable.active) { "This flight is no longer on offer" }
         val seat =
             seatRepository.findById(command.seatId)
                 ?: throw SeatNotFoundException(command.seatId)
@@ -55,24 +58,18 @@ class RegisterBookingUseCase(
             )
         val saved = bookingRepository.save(booking)
 
-        // only after the transaction actually commits — a rollback past this point
-        // must not leave an expiration scheduled for a booking that never existed.
-        // First on purpose: an exception in one afterCommit callback skips the next ones,
-        // and the broadcast is best-effort while the expiration is what frees the seat.
-        afterCommit {
-            bookingExpirationScheduler.scheduleExpiration(requireNotNull(saved.id), BOOKING_EXPIRATION)
-        }
-        // same reason for the broadcast: WebSocket subscribers shouldn't believe a
-        // reservation that never happened
+        // In the SAME transaction as the booking: the expiration is an event in the outbox, due 15 minutes from now.
+        // Either both exist or neither does, so a crash can no longer leave a booking that never expires (the old
+        // afterCommit call to SQS could); the relay delivers it, and a delivered-twice event is harmless.
+        outboxWriter.add(
+            BookingEvents.expirationRequested(requireNotNull(saved.id), clock.instant().plus(BookingEvents.HOLD)),
+        )
+
+        // after the commit: WebSocket subscribers shouldn't believe a reservation that never happened
         afterCommit {
             availabilityBroadcaster.broadcast(command.bookableId, seatRepository.countAvailable(command.bookableId))
         }
 
         return saved
-    }
-
-    private companion object {
-        // how long a PENDING booking holds its seat; 15 min is also the most SQS can delay
-        val BOOKING_EXPIRATION: Duration = Duration.ofMinutes(15)
     }
 }

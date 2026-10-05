@@ -453,7 +453,7 @@ Problema real: uma `Booking` `PENDING` já tirou o assento de circulação e nad
 
 **Fora do M20 (evolução, não feito):**
 - [ ] 20.5 Terraform do módulo SQS — sem conta AWS persistente só seria validado por `terraform plan`
-- [ ] 20.6 Outbox transacional: gravar o evento na mesma transação da reserva e publicar por um relay, fechando a janela de perda do *dual write* (queda entre o commit e o envio à SQS)
+- [x] 20.6 Outbox transacional: gravar o evento na mesma transação da reserva e publicar por um relay, fechando a janela de perda do *dual write* (queda entre o commit e o envio à SQS). **Feito no M35** (2026-10-05); o `BookingExpirationScheduler` e o `SqsBookingExpirationScheduler` dos itens 20.3a/20.3b deixaram de existir (o outbox os substitui) e o limite de 900 s da SQS (20.2) deixou de ser uma restrição
 - [ ] Pagamento assíncrono (gateway que confirma depois) e `Idempotency-Key` no `POST /payments`
 
 ## M21 — Idempotência no `POST /payments` ✅
@@ -727,173 +727,372 @@ Problema: a promoção era SQL manual (de propósito: sem endpoint de autopromo�
 
 Incremental: pode ser entregue depois do portal estar de pé; o backend sai antes.
 
-- [ ] 29.1 Migration `V31__create_staff_totp.sql`: `staff_totp` (`user_id`, `secret_encrypted`, `confirmed_at`, `last_used_step`), `staff_recovery_code` (`user_id`, `code_hash`, `used_at`)
+- [ ] 29.1 Migration `V35__create_staff_totp.sql`: `staff_totp` (`user_id`, `secret_encrypted`, `confirmed_at`, `last_used_step`), `staff_recovery_code` (`user_id`, `code_hash`, `used_at`)
 - [ ] 29.2 Portas `TotpService` (RFC 6238: HMAC-SHA1, 6 dígitos, passo de 30 s, tolerância ±1 passo; **vetores de teste da RFC**) e `SecretCipher` (AES-GCM, chave vinda de configuração/Secrets Manager — nunca no repositório). HMAC via JCA, sem inventar criptografia
 - [ ] 29.3 Cadastro: `POST /v1/admin/auth/2fa/enroll` (devolve a URI `otpauth://` para o QR) e `.../confirm` (código válido ativa); 10 códigos de recuperação exibidos **uma vez**, guardados com hash
 - [ ] 29.4 Login em duas etapas: senha correta + 2FA ativo → `challengeToken` (JWT de 5 min, escopo `2fa`) → `POST /v1/admin/auth/2fa/verify` → tokens. Anti-replay (`last_used_step`), limite de tentativas, código de recuperação consumível uma vez
 - [ ] 29.5 Política: obrigatório para `SUPER_ADMIN` (`admin.2fa.required`, configurável); reset por outro `SUPER_ADMIN` (`ADMIN_MANAGE`, auditado, exige motivo)
 - [ ] 29.6 Testes (vetores da RFC, janela de tempo com `Clock.fixed`, replay, recuperação, reset auditado) e docs
 
-## M30 — CRM de clientes (backend) 📋  *(GG — incrementos 30a–30d)*
+## M30 — CRM de clientes (backend) ✅  *(GG — incrementos 30a–30d)*
 
 Problema: o suporte precisa **encontrar** um cliente, ver o **quadro completo** dele, registrar contexto e agir — com rastro e respeito à LGPD. Novo conceito `crm` (leitura/consulta) nas camadas; atualizar a lista de conceitos no `CLAUDE.md` (7 → 8) e a regra de ciclos.
 
 **30a — Consulta**
-- [ ] 30.1 Convenções de listagem (usam o envelope do M26): filtros tipados, `sort` por lista permitida, `size ≤ 100`, ordenação estável (desempate por `id`)
-- [ ] 30.2 Portas de **leitura** (`CustomerSearch`) devolvendo *read models* (`CustomerSummary`), não entidades — separa consulta de agregado (CQRS leve, ADR). Adaptador com `Specification`/SQL nativo
-- [ ] 30.3 Migration `V32__add_customer_search_indexes.sql`: extensão `pg_trgm` e índices GIN em `lower(name)` e `lower(email)`; `GET /v1/admin/customers?query&status&createdFrom&createdTo&hasBookings&sort&page&size` (`CUSTOMER_READ`). Caracteres `%` e `_` na busca **escapados**
-- [ ] 30.4 `GET /v1/admin/customers/{id}` — visão 360º: perfil, status, totais (reservas por status, total pago, último acesso, nota média dada). **Sem N+1:** teste que conta as consultas SQL (datasource-micrometer, já no projeto) e falha acima do limite
-- [ ] 30.5 Subrecursos paginados: `/{id}/bookings`, `/{id}/payments`, `/{id}/reviews`
+- [x] 30.1 Convenções de listagem: filtros tipados, `sort` (enum fechado) + `direction`, `size` 1–100 validado em `PageQuery` (`domain/common`), ordenação estável (desempate por `id`). **Lista de clientes por `page`/`size` com `totalElements` (`PageResponse`), não por cursor** (a tela precisa de "página N de M" e de ordenar por coluna); a auditoria segue por cursor. O "keyset" do 30.11 cai
+- [x] 30.2 Portas de **leitura** (`CustomerSearch`) devolvendo *read models* (`CustomerSummary`), não entidades — separa consulta de agregado (CQRS leve, ADR). Adaptador com `Specification`/SQL nativo
+- [x] 30.3 Migration **`V31`**`__add_customer_search_indexes.sql` (a V31 estava livre; as migrations do M30 foram V31–V34 e o M29 passa a V35+) com `pg_trgm`, `unaccent` (via `immutable_unaccent`, busca **sem caixa e sem acento**), índice parcial `(created_at, id) WHERE role='CLIENT'` e `idx_booking_customer` (`booking.customer_id` não tinha índice): extensão `pg_trgm` e índices GIN em `lower(name)` e `lower(email)`; `GET /v1/admin/customers?query&status&createdFrom&createdTo&hasBookings&sort&page&size` (`CUSTOMER_READ`). Caracteres `%` e `_` na busca **escapados**
+- [x] 30.4 `GET /v1/admin/customers/{id}` (**uma** consulta, três `LATERAL`; `V32` indexa `review(customer_id)`; id de staff = `404`) — visão 360º: perfil, status, totais (reservas por status, total pago, último acesso, nota média dada). **Sem N+1:** `QueryCounter` (um `ObservationHandler` de teste que conta os `jdbc.query` do datasource-micrometer) prova 1 consulta por perfil e 2 por página de busca, qualquer que seja o histórico. **Atenção M31:** `payments.totalPaid` é a soma de `payment.amount`; com reembolso, o total precisa abater o reembolsado
+- [x] 30.5 Subrecursos paginados: `/{id}/bookings` (preço **congelado**, voo em `LEFT JOIN`: a reserva de algo que não é voo, do M42, não some), `/{id}/payments` (só os 4 últimos dígitos do cartão e as reservas cobertas; **sem o nome do titular**), `/{id}/reviews`; mais recentes primeiro, 2 consultas por página (testado). `crm` não importa `booking`/`payment`/`review`: o status vai como texto e tudo lê por SQL, isolado em `infrastructure/persistence/crm/`
 
 **30b — Contexto e ação**
-- [ ] 30.6 Migration `V33__create_customer_note.sql` (`customer_id`, `author_id`, `body ≤ 2000`, `pinned`, `created_at`, `edited_at`, `deleted_at`); `POST/GET/PATCH/DELETE` de notas (`CUSTOMER_NOTE`; só o autor ou `SUPER_ADMIN` apaga; remoção lógica); auditadas
-- [ ] 30.7 `POST /v1/admin/customers/{id}/block` e `/unblock` (`CUSTOMER_BLOCK`): `reason` obrigatório (≥ 10 caracteres), revoga refresh tokens, auditado; contrato `ACCOUNT_BLOCKED` já existente (M25)
-- [ ] 30.8 Auditoria de **leitura**: abrir a visão 360º grava `CUSTOMER_VIEWED` (deduplicado por ator+alvo em 5 min) — prestação de contas de acesso a dado pessoal
+- [x] 30.6 Migration `V33__create_customer_note.sql` (`customer_id`, `author_id`, `body ≤ 2000`, `pinned`, `created_at`, `edited_at`, `deleted_at`); `POST/GET/PATCH/DELETE` de notas (escrever = `CUSTOMER_NOTE`, listar = `CUSTOMER_READ`; **só o autor edita**; o autor ou um `SUPER_ADMIN` apaga; remoção lógica; lista com fixadas primeiro); auditadas **sem o texto** (dado pessoal livre: a trilha só diz que mudou)
+- [x] 30.7 `POST /v1/admin/customers/{id}/block` e `/unblock` (`CUSTOMER_BLOCK`): `reason` obrigatório (≥ 10 caracteres), revoga refresh tokens, auditado; contrato `ACCOUNT_BLOCKED` já existente (M25)
+- [x] 30.8 Auditoria de **leitura**: abrir a visão 360º grava `CUSTOMER_VIEWED` (deduplicado por ator+alvo em 5 min) — prestação de contas de acesso a dado pessoal
 
 **30c — Dados em massa e LGPD**
-- [ ] 30.9 `GET /v1/admin/customers/export` (`CUSTOMER_EXPORT`, só `SUPER_ADMIN`): CSV em *streaming* (`StreamingResponseBody`), teto de 50 mil linhas, **proteção contra CSV injection** (célula começando com `=`, `+`, `-`, `@` ganha prefixo `'`), filtro usado gravado na auditoria
-- [ ] 30.10 `POST /v1/admin/customers/{id}/anonymize` (`CUSTOMER_ERASE`): irreversível — exige `reason` e frase de confirmação; troca nome/e-mail por valores anônimos determinísticos, revoga tokens, apaga notas, **mantém** reservas/pagamentos (obrigação fiscal), auditoria guarda só o `id`. Autoatendimento do cliente: `GET /v1/users/me/export` (portabilidade) e `DELETE /v1/users/me` (usa o mesmo caso de uso) — telas no M42 do app
+- [x] 30.9 `GET /v1/admin/customers/export` (`CUSTOMER_EXPORT`, só `SUPER_ADMIN`): CSV em *streaming* (`StreamingResponseBody`, `fetchSize` 500), UTF-8 com BOM, teto de 50 mil linhas, **proteção contra CSV injection** (célula começando com `=`, `+`, `-`, `@`, tabulação ou retorno ganha `'`), filtro gravado na auditoria **antes** do primeiro byte. O corpo é escrito num *async dispatch*, onde o JWT não roda e o contexto sem sessão se perde: o `SecurityConfig` libera só `DispatcherType.ASYNC`
+- [x] 30.10 `POST /v1/admin/customers/{id}/anonymize` (`CUSTOMER_ERASE`): irreversível — exige `reason` (10+) e a frase `ANONYMIZE <id>`; nome e e-mail viram valores anônimos (`anonymized-<id>@anonymous.invalid`), conta bloqueada com hash de senha inutilizável (`app_user.anonymized_at`, V34; desbloquear é recusado), sessões encerradas, **apaga** notas, consultas à IA e o nome do titular nos pagamentos, **mantém** reservas, pagamentos e avaliações; auditoria sem nome nem e-mail. **Decisão do "decidir" do 30.12: o e-mail anonimizado não é reutilizável** (só o hash SHA-256 em `anonymized_email`; o registro recusa com `409`), senão quem foi bloqueado por fraude apagaria a conta e voltaria limpo. Autoatendimento: `GET /v1/users/me/export` (todas as páginas, sem teto) e `DELETE /v1/users/me` com a senha (mesmo `CustomerAnonymizer`; senha errada conta no limite do login via `PasswordConfirmation`, que a troca de senha também passou a usar) — telas no M42 do app
 
 **30d — Qualidade**
-- [ ] 30.11 Script de carga (`scripts/seed-customers.sh`, 50 mil clientes com reservas) + `EXPLAIN (ANALYZE)` registrado em `docs/crm.md` provando o uso do índice trigram e do keyset
-- [ ] 30.12 Testes: busca (prefixo, acento, `%` escapado), filtros combinados, N+1, notas (permissões e remoção lógica), bloqueio (efeito no login), export (CSV injection, teto, permissão), anonimização (FK preservadas, e-mail liberado para novo cadastro? — **decidir**: não reutilizar), auditoria de leitura
-- [ ] 30.13 Docs: `docs/crm.md` (visão geral, glossário, LGPD), `endpoints.md`, `CLAUDE.md`, `README.md`
+- [x] 30.11 `scripts/seed-customers.sh` (SQL direto: 50 mil clientes, 60 mil reservas, 20 mil pagamentos, 8 mil avaliações) e `scripts/explain-customers.sql`; resultados em `docs/crm.md`: listagem 0,3 ms, contagem da busca pelo **trigram** 2,7 ms, página funda 32 ms. **A medição achou um problema real:** a contagem de reservas era calculada nas linhas que o `OFFSET` descarta (286 ms em `OFFSET 40000`); o `LIMIT` passou para dentro (`CustomerSql.pageSql`). Não há "keyset" na lista (decidido no 30.1)
+- [x] 30.12 Testes: busca (prefixo, acento, `%` escapado), filtros combinados, N+1, notas (permissões e remoção lógica), bloqueio (efeito no login), export (CSV injection, teto, permissão), anonimização (FK preservadas, e-mail liberado para novo cadastro? — **decidir**: não reutilizar), auditoria de leitura
+- [x] 30.13 Docs: `docs/crm.md` (visão geral, glossário, permissões, medições, LGPD), `endpoints.md`, `testes-e-qualidade.md`, `autenticacao.md`, `CLAUDE.md` (9 conceitos, `crm → identity`, `domain/common`, migration V35), `README.md`
 
-## M31 — Reservas (admin) e reembolso 📋
+**O que a execução ensinou:**
+- **Medir achou o que revisar não achou:** uma subconsulta por linha na lista roda também nas linhas puladas pelo `OFFSET`. Só o `EXPLAIN (ANALYZE)` num volume realista mostrou 40 020 execuções.
+- **Resposta em *streaming* + segurança sem sessão:** o `StreamingResponseBody` termina num *async dispatch*, e o `authorizeHttpRequests` nega (o JWT não roda de novo). Os três testes da exportação reprovaram com `AccessDeniedException`, inclusive com `SUPER_ADMIN`.
+- **A sequência do Postgres não volta atrás:** uma carga que falhou e foi desfeita deixou os ids começando em 50 001, e um id "calculado" no script de medição dava zero linhas.
+- O MockMvc decodifica o corpo como ISO-8859-1 sem charset (`é` virava `Ã©`); os testes de busca leem como UTF-8.
+- **Migration não commitada ainda pode estar aplicada no banco do dono:** por isso o índice de `review(customer_id)` foi para a V32, e não para dentro da V31.
 
-Problema: o suporte só consegue cancelar reservas `PENDING`; uma reserva paga e cancelada hoje não devolve dinheiro. Reembolso é uma máquina de estados nova com dinheiro envolvido — idempotência e concorrência são obrigatórias.
+**Fora do escopo (de propósito):** retenção e *backups* (têm prazo próprio); exportar as notas na portabilidade do titular (são dado da empresa sobre o cliente, não dado do cliente: decisão a rever com o jurídico); apagar o texto de avaliações já publicadas (o autor some, o conteúdo fica); "keyset" na lista de clientes.
 
-- [ ] 31.1 `GET /v1/admin/bookings` (filtros: status, voo, cliente, período, pago/não pago; envelope do M26) e `GET /v1/admin/bookings/{id}` com **linha do tempo**
-- [ ] 31.2 Migration `V34__create_booking_status_history.sql` (`booking_id`, `from_status`, `to_status`, `actor_id`, `occurred_at`) alimentada pelas transições do `Booking` — a linha do tempo não depende de reconstruir a auditoria
-- [ ] 31.3 Domínio: `Refund` (`id`, `paymentId`, `bookingId`, `amount`, `reason` ∈ {`CUSTOMER_REQUEST`, `FLIGHT_CANCELLED`, `DUPLICATE`, `OTHER`}, `status` ∈ {`REQUESTED`, `COMPLETED`, `FAILED`}, `idempotencyKey`, `requestedBy`); `BookingStatus.REFUNDED` (estado terminal); `RefundPolicy` (reembolso integral até 24 h antes da partida; depois disso só `SUPER_ADMIN` com `override=true` e motivo) — testável com `Clock.fixed`
-- [ ] 31.4 **Atenção ao app (achado 4):** `REFUNDED` é valor novo de enum — lançar primeiro a tolerância a enum desconhecido no app (M24 do app) e só então este marco
-- [ ] 31.5 Porta `PaymentGateway.refund(paymentId, amount, idempotencyKey)` com adaptador **falso** (sucesso por padrão, falha configurável para teste); documentar como seria um gateway real. **Mini-saga:** `Refund` nasce `REQUESTED` e persistido → chama o gateway → `COMPLETED` (reserva vira `REFUNDED`, assento liberado, mesma transação) ou `FAILED` (`POST /v1/admin/refunds/{id}/retry`)
-- [ ] 31.6 `POST /v1/admin/bookings/{id}/refund` (`PAYMENT_REFUND`) com `Idempotency-Key`. **Extrair o componente de idempotência** do `RegisterPaymentUseCase` (2º uso real): fingerprint + registro + replay/422/409 num componente comum, sem mudar o comportamento do pagamento (testes do M21 continuam verdes)
-- [ ] 31.7 Corrida: dois atendentes reembolsando a mesma reserva → um vence, o outro `409` (índice único parcial em `refund(booking_id)` onde `status <> 'FAILED'`); teste de concorrência no padrão do `PayingAndCancellingTheSameBookingRace`
-- [ ] 31.8 Auditoria, métricas `dbook.refund{outcome}`, `BookingStatusChanged` registrado; evento de domínio `RefundCompleted` (consumido pelo M36 via outbox)
-- [ ] 31.9 Fora do escopo (registrado): reembolso parcial, gateway real, estorno por item de pagamento com várias reservas além do valor da reserva
-- [ ] 31.10 Testes, `docs/reembolso.md` (máquina de estados, política, diagramas), `endpoints.md`, ADR da mini-saga
+**Checklist de fechamento do M30:**
+- [x] Itens 30.1–30.13 revisados
+- [x] Clean Code / SOLID: o SQL de busca e exportação num só lugar (`CustomerSql`), a anonimização num só lugar (`CustomerAnonymizer`), a confirmação de senha num só lugar (`PasswordConfirmation`), `crm` sem importar `booking`/`payment`/`review`
+- [x] `./gradlew check` com **exit 0** (448 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos (autor edita, deduplicação da leitura, apagar o nome do titular, reuso do e-mail, fórmula do CSV, ordem e filtro de cliente)
+- [x] Docs e instruções do projeto atualizados
 
-## M32 — Catálogo administrativo 📋
+## M31 — Reservas (admin) e reembolso ✅
 
-Problema: hoje só se **cria** voo. Falta listar, editar, cancelar e cadastrar companhias e aeroportos — com integridade (voo com reservas não pode ser editado de forma destrutiva).
+Problema: o suporte só conseguia cancelar reservas `PENDING`; uma reserva paga e cancelada não devolvia dinheiro. Reembolso é uma máquina de estados nova com dinheiro envolvido — idempotência e concorrência são obrigatórias. Feito em 2026-10-04, com autorização do dono para aplicar o backend inteiro; nada commitado ainda.
 
-- [ ] 32.1 `GET /v1/admin/flights` (filtros origem/destino/companhia/período/status) e `GET /{id}` (`FLIGHT_READ`)
-- [ ] 32.2 `PUT /v1/admin/flights/{id}` (`FLIGHT_WRITE`) com **`version` no corpo** (lock otimista: conflito → `409` + `code=STALE_VERSION` — o portal mostra "outro admin editou", M31 do portal). Invariantes no domínio: chegada > partida; `totalCapacity` não pode ficar abaixo dos assentos já reservados; modelo de avião/layout imutável se há reserva; aumentar capacidade gera assentos novos, reduzir remove só `AVAILABLE` do fim
-- [ ] 32.3 Migration `V35__add_flight_status.sql` (`SCHEDULED`/`CANCELLED`); `POST /v1/admin/flights/{id}/cancel`: **fase 1** — recusa (`409`) se houver reservas ativas, informando quantas; **fase 2** (depende de M31 + M35 + M36, entra depois deles) cancela/reembolsa/notifica cada reserva por fila. Busca pública passa a ignorar voo cancelado (comportamento não-quebra)
-- [ ] 32.4 Companhias e aeroportos: CRUD (`CATALOG_WRITE`), código IATA único e validado (formato), região e destino em destaque (M14); remoção só se **não referenciado**; listagens para os seletores do portal
-- [ ] 32.5 `GET /v1/admin/aircraft-models` (somente leitura, M16) para o formulário
-- [ ] 32.6 **Importação em lote:** `POST /v1/admin/flights/import` (CSV), `dryRun=true` por padrão devolvendo erros **por linha**; confirmar grava tudo ou nada numa transação; teto 5 mil linhas; idempotente por `flightNumber + partida` — substitui o `seed-flights.sh` por uma funcionalidade real (o script passa a usar o endpoint)
-- [ ] 32.7 Efeitos colaterais: conferir se `lowest-price`/destinos precisam invalidar algo (hoje não há cache — M47 decide); preço alterado grava histórico (M40)
-- [ ] 32.8 Auditoria antes/depois, testes (cada invariante é uma classe; corrida de duas edições; capacidade abaixo do reservado; importação com linha inválida não grava nada), `docs/catalogo-admin.md`
+- [x] 31.1 `GET /v1/admin/bookings` (status, voo, cliente, período, pago ou não; página, mais recentes primeiro, `PageResponse`) e `GET /v1/admin/bookings/{id}` com pagamento, reembolso e **linha do tempo** (`BOOKING_READ_ANY`). Voo em `LEFT JOIN`: a reserva de algo que não é voo (M42) não some
+- [x] 31.2 Migration **`V35`**`__create_booking_status_history.sql` (+ `booking.created_at`): a linha do tempo é escrita **pelo `BookingRepositoryAdapter`** na própria gravação, quando o status muda (a Booking não sabe de ator): nenhum caso de uso consegue mudar um status sem deixar rastro. Ator = o usuário autenticado na thread; `null` é o sistema (a expiração). Reservas antigas ganham uma entrada de criação com o momento da migração
+- [x] 31.3 Domínio: `Refund` (`REQUESTED`/`COMPLETED`/`FAILED`, `reopen`), `RefundReason`, `Booking.refund()` e `BookingStatus.REFUNDED` (terminal, só de `CONFIRMED`), `RefundPolicy` (24 h; limite exato testado com `Clock.fixed`). **`Refund` mora no conceito `payment`**, por id; sem nota na auditoria de snapshot (ela vai como `reason`)
+- [x] 31.4 Achado do app registrado: `REFUNDED` quebra "Minhas Viagens" no app atual (`wire_enums.dart` lança em enum desconhecido); a tolerância é o primeiro item do front, antes de qualquer reembolso real. **O backend foi feito primeiro, como decidido**
+- [x] 31.5 Porta `PaymentGateway.refund(paymentId, amount, idempotencyKey)` e o `FakePaymentGateway` (sempre aceita; como seria um real, no KDoc e em `docs/reembolso.md`). **Mini-saga em três passos, cada um com a sua transação**, o caso de uso **sem** transação: `RefundRegistrar` (grava `REQUESTED` antes do gateway), `RefundProcessor` (chama o gateway **fora** de transação, com `refund-<id>` como chave, igual em toda tentativa) e `RefundSettler` (`COMPLETED`: reserva `REFUNDED`, assento liberado e auditoria na mesma transação; ou `FAILED`)
+- [x] 31.6 `POST /v1/admin/bookings/{id}/refund` com `Idempotency-Key` (`PAYMENT_REFUND`), `POST /v1/admin/refunds/{id}/retry`, `GET /v1/admin/refunds[/{id}]`. **Idempotência extraída** do pagamento (`fingerprintOf` e `idempotently`, em `application/common`): o 2º uso real; o fingerprint do pagamento continua idêntico (as chaves já gravadas seguem válidas) e os testes dele não mudaram. Um reembolso `FAILED` volta como `201` com o `status` no corpo (o replay devolve a mesma resposta)
+- [x] 31.7 Corrida: índice único **parcial** `refund(booking_id) WHERE status <> 'FAILED'` (V36) + `409`; e `(requested_by, idempotency_key)` para a mesma requisição enviada duas vezes. Teste com **duas threads reais**: `201` e `409`, e o gateway é chamado **uma** vez
+- [x] 31.8 Auditoria (`REFUND_REQUESTED`, `REFUND_RETRIED`, `REFUND_COMPLETED`, `REFUND_FAILED`), métrica `dbook.refund{outcome=completed|failed|replayed|conflict}`. **O evento `RefundCompleted` não entrou:** o consumidor (M36) e o outbox (M35) ainda não existem, e um evento sem destino seria código morto; ele entra com o outbox, na mesma transação do passo 3a
+- [x] 31.9 Fora do escopo (registrado em `docs/reembolso.md`): reembolso parcial, gateway real, estorno por item de pagamento com várias reservas, reembolso pelo cliente (M41)
+- [x] 31.10 Testes: 483 no total (de 448), 0 falhas; `docs/reembolso.md` (estados, política, diagramas, saga e a decisão da mini-saga no lugar de um ADR, já que o projeto não tem `docs/adr/`), `endpoints.md`, `testes-e-qualidade.md`, `README.md`, `.claude/CLAUDE.md` (migration V37)
 
-## M33 — Dashboard de negócio 📋
+**O que a execução ensinou:**
+- **Chamada de rede não cabe dentro de transação:** por isso a saga, e por isso o caso de uso que a conduz não é `@Transactional`. A chave do gateway é o **id do reembolso**, estável entre tentativas, e não a chave do atendente.
+- Um teste "de corrida" com fakes só vale se o fake imitar o índice do banco (uma vaga viva por reserva); o primeiro cenário que escrevi deixava a reserva já `REFUNDED` e nunca chegava ao `INSERT` que perde.
+- Gravar a linha do tempo no adaptador exigiu ler o status anterior **antes** do `save` (o `merge` o sobrescreve na entidade gerenciada).
 
-- [ ] 33.1 **Glossário primeiro** (`docs/dashboard.md`): "receita" = soma de `Booking.price` confirmadas menos reembolsos concluídos; "ocupação" = assentos reservados ÷ capacidade dos voos do período; "conversão" = confirmadas ÷ criadas; fuso de agrupamento `America/Sao_Paulo`. Sem glossário o número vira discussão
-- [ ] 33.2 `GET /v1/admin/dashboard/summary?from&to` (`DASHBOARD_READ`): reservas por status, receita, novos clientes, conversão, taxa de expiração (liga com o M20), ocupação média
-- [ ] 33.3 `GET .../timeseries?metric&granularity=day|week` e `.../top-routes?limit`
-- [ ] 33.4 Consultas SQL agregadas em adaptador de leitura; revisão de índices com `EXPLAIN`; teto de período (400 dias → `400`)
-- [ ] 33.5 Cache em Redis (TTL 60 s, chave com os parâmetros) com métricas de acerto/erro — primeiro uso de cache do projeto, registrado em ADR
-- [ ] 33.6 Testes com `Clock.fixed` e dados controlados (reembolso diminui a receita; virada de mês em fuso de São Paulo), docs
+**Fora do escopo (de propósito):** ver 31.9 e 31.8.
 
-## M34 — Alertas e operação 📋
+**Checklist de fechamento do M31:**
+- [x] Itens 31.1–31.10 revisados (desvios registrados acima)
+- [x] Clean Code / SOLID: a saga em três classes de uma responsabilidade cada, a idempotência num componente, o gateway atrás de uma porta, `crm`/`booking`/`payment` sem importar uns aos outros além do já permitido
+- [x] `./gradlew check` com **exit 0** (483 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos (janela, liberação do assento, linha do tempo, chave estável do gateway)
+- [x] Docs e instruções do projeto atualizados
 
-Problema: temos métricas, logs e traces, mas **ninguém é avisado** — observabilidade sem alerta só serve para investigar depois.
+## M32 — Catálogo administrativo ✅
 
-- [ ] 34.1 Regras Prometheus (`observability/alerts.yml`): taxa de 5xx, latência p95, DLQ não vazia (expor `dbook.sqs.dlq.depth`), `dbook.booking.pending` crescendo, pico de falhas de login, pico de `DENIED` administrativo, `outbox` atrasado (após M35)
-- [ ] 34.2 Alertmanager no perfil `observability` do compose, com receptor *webhook* de exemplo
-- [ ] 34.3 `docs/runbooks.md`: para cada alerta — o que significa, onde olhar (Grafana/Loki/Jaeger), como mitigar
-- [ ] 34.4 SLOs (disponibilidade 99,5 %, p95 da busca < 500 ms) e painel de orçamento de erro no Grafana
-- [ ] 34.5 Teste das regras no CI (`promtool check rules` + `promtool test rules`); alarmes CloudWatch no Terraform (M43)
+Problema: até aqui só se **criava** voo. Faltava listar, editar, cancelar e cadastrar companhias e aeroportos, com integridade (voo com reservas não pode ser editado de forma destrutiva). Feito em 2026-10-05, com autorização do dono para aplicar o backend inteiro; nada commitado ainda.
 
-## M35 — Outbox transacional 📋
+- [x] 32.1 `GET /v1/admin/flights` (origem, destino, companhia, período, status; página, mais cedo primeiro) e `GET /{id}` com assentos livres e reservados, layout, `version` e reservas ativas (`FLIGHT_READ`). O `LIMIT` dentro da consulta, pelo mesmo motivo do M30
+- [x] 32.2 `PUT /v1/admin/flights/{id}` com **`version` no corpo**: `409 STALE_VERSION` se mudou (nova `StaleVersionException`, tratada junto com o lock otimista do JPA; **duas edições simultâneas: uma vence**, testado com threads). Invariantes: chegada > partida e origem ≠ destino (**no `Flight`, o que também protege o cadastro e a importação; antes nada validava isso**); `planSeatChange` (domínio puro): capacidade ≥ reservados, mais capacidade = assentos novos no fim, menos = tira do **fim por posição** (`10A` vem depois de `9F`) só assentos livres e **sem histórico de reserva** (a reserva cancelada o referencia), layout só muda sem nenhuma reserva (aí o mapa é refeito). Voo e assentos na mesma transação: recusa deixa tudo intacto. A geração dos rótulos foi extraída (`generateSeats`) e o cadastro passou a usá-la
+- [x] 32.3 **Sem a coluna de status do plano:** `FlightStatus` é derivado de `Bookable.active` (um voo cancelado é um voo inativo; a coluna seria um segundo jeito de dizer a mesma coisa). `POST /{id}/cancel` fase 1: `409` com quantas reservas ativas; fase 2 fica para M35 + M36. A busca pública passou a ignorar voo inativo, e **achado:** o cadastro de reserva **não checava** `active` (nada impedia reservar um voo desativado); agora recusa com `409`. V37: índices em `booking(bookable_id)` e `flight(departure_time, id)`
+- [x] 32.4 Companhias e aeroportos (`CATALOG_WRITE`; listar com `FLIGHT_READ`): IATA validado no domínio (companhia: 2 letras ou dígitos, como `G3`; aeroporto: 3 letras) e único (`409`); só se remove o que nenhum voo usa (`409` com quantos). Os dados semeados já passam na validação
+- [x] 32.5 `GET /v1/admin/aircraft-models` (somente leitura: nome, layout, assentos por fileira)
+- [x] 32.6 `POST /v1/admin/flights/import` (CSV em `text/csv`, até 5000 linhas): `dryRun=true` por padrão, **todos** os erros com a linha, tudo ou nada em uma transação (`422` com erro e nada gravado), repetível por número do voo + partida (`alreadyExisting`). Leitor de CSV próprio (RFC 4180: aspas, vírgulas e quebras de linha dentro da célula, BOM, número da linha). `scripts/seed-flights.sh` passou a usar o endpoint, **verificado ao vivo** (120 voos e seus assentos numa chamada, contra a aplicação subindo com as migrations V1–V37 num Postgres real)
+- [x] 32.7 Efeitos colaterais: não há cache a invalidar (M47 decide); o preço alterado ainda não grava histórico (M40)
+- [x] 32.8 Auditoria antes e depois (`FLIGHT_UPDATED`, `FLIGHT_CANCELLED`, `AIRLINE_*`, `AIRPORT_*`, `FLIGHTS_IMPORTED`; o `status` entrou no snapshot do voo), testes (cada invariante é uma classe; 40 novos, 523 no total), `docs/catalogo-admin.md`
 
-Problema (achado 7): agendar a expiração no SQS depois do commit deixa uma janela — se o processo cair no meio, a reserva nunca expira. Antes de notificações, fechar isso.
+**O que a execução ensinou:**
+- **Ordenar assentos pelo rótulo tira o assento errado:** `"10A" < "1A"` como texto. A posição vem da fileira e da letra, e o teste cobre a fileira 10.
+- **Uma regra de domínio nova pode quebrar testes antigos que a violavam sem querer:** um teste montava um voo com a mesma origem e destino, e o `Flight` agora o recusa; o snapshot de auditoria do voo (uma lista permitida) ganhou `status`.
+- Mudar uma porta (`FlightRepository`, `SeatRepository`, `AirportRepository`, `AirlineRepository`) obriga todos os fakes de teste: nove classes de seis arquivos receberam o método novo.
+- O `edit()` do meu helper de teste lia o voo antes do `PUT`, e falhava nos casos de `403` e `404` (o voo não podia ser lido): precisou de uma variante que envia um corpo completo sem ler.
 
-- [ ] 35.1 Migration `V36__create_outbox_event.sql` (`id uuid`, `aggregate_type`, `aggregate_id`, `type`, `payload jsonb`, `headers` (inclui `traceparent`), `created_at`, `available_at`, `published_at`, `attempts`); índice parcial dos não publicados
-- [ ] 35.2 Porta `OutboxWriter.add(event)` usada **dentro** da transação do caso de uso
-- [ ] 35.3 Relé `@Scheduled` na entrada: lote com `SELECT ... FOR UPDATE SKIP LOCKED` (várias instâncias sem duplicar), publica na fila, marca `published_at`, *backoff* exponencial em falha, propaga o trace
-- [ ] 35.4 Migrar o agendamento de expiração (M20) para o outbox (`available_at = createdAt + 15 min` no lugar do `DelaySeconds`, removendo o limite de 900 s do SQS como restrição de desenho)
-- [ ] 35.5 Métricas `dbook.outbox.pending`, atraso máximo, falhas; alerta (M34)
-- [ ] 35.6 Limpeza de publicados com mais de 7 dias
-- [ ] 35.7 Testes: queda entre commit e publicação → o relé entrega; dois relés concorrentes sem duplicar; duplicata tolerada (consumidor idempotente); ordem não garantida e documentada
-- [ ] 35.8 `docs/mensageria.md`, ADR (outbox vs. CDC vs. ignorar), `CHECKLIST` (fecha o item 20.6)
+**Fora do escopo (de propósito):** a fase 2 do cancelamento (cancelar, reembolsar e avisar cada reserva); histórico de preço (M40); importar companhias e aeroportos em lote; uma reserva criada no mesmo instante em que o cancelamento confere as reservas pode escapar da contagem (registrado em `docs/catalogo-admin.md`).
 
-## M36 — Notificações 📋  *(GG — incrementos 36a–36c)*
+**Checklist de fechamento do M32:**
+- [x] Itens 32.1–32.8 revisados (desvios registrados acima)
+- [x] Clean Code / SOLID: as regras de assento num só lugar (`planSeatChange`, `generateSeats`), as de voo no `Flight`, a resolução de códigos num só serviço (`CatalogLookup`), a leitura administrativa separada da escrita
+- [x] `./gradlew check` com **exit 0** (523 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos (versão, cancelamento com reservas, voo cancelado reservável, ordem dos assentos)
+- [x] Docs e instruções do projeto atualizados
 
-Eventos: reserva confirmada, expirada, cancelada pelo suporte, reembolso concluído, voo alterado, alerta de preço (M40).
+## M33 — Dashboard de negócio ✅
+
+Feito em 2026-10-05, com autorização do dono para aplicar o backend inteiro; nada commitado ainda.
+
+- [x] 33.1 **Glossário primeiro** (`docs/dashboard.md`): receita = preço congelado das reservas **pagas no período** (pela entrada `CONFIRMED` do histórico de status do M31) menos os reembolsos **concluídos no período**; ocupação = assentos reservados dos voos **que partem** no período ÷ capacidade; conversão = das criadas no período, quantas foram pagas alguma vez; expiração = das criadas, quantas o sistema cancelou (cancelamento sem ator); fuso `America/Sao_Paulo`. Uma taxa sem denominador é `null`
+- [x] 33.2 `GET /v1/admin/dashboard/summary?from&to` (`DASHBOARD_READ`): reservas por status, receita bruta/reembolsado/líquida, clientes novos, conversão, expiração, ocupação média. Sem período: os últimos 30 dias até hoje em São Paulo
+- [x] 33.3 `timeseries?metric=REVENUE|BOOKINGS|NEW_CUSTOMERS&granularity=DAY|WEEK` (baldes vazios como zero, a semana pela segunda-feira, o reembolso negativo no dia em que concluiu) e `top-routes?limit` (1–50)
+- [x] 33.4 Novo conceito `dashboard` (só leitura, SQL em `DashboardSql`, `bucketsOf` puro); V38: `booking_status_history(to_status, occurred_at)` e `refund(completed_at)` parcial. **`EXPLAIN` revisado** com 60 mil reservas e 100 mil linhas de histórico (`scripts/explain-dashboard.sql`; o `seed-customers.sh` agora grava o histórico): todas as consultas usam os índices e levam 5–38 ms, registrado em `docs/dashboard.md`. Teto de 400 dias → `400`
+- [x] 33.5 **Cache em Redis (TTL 60 s)**, o primeiro do projeto, atrás de uma porta do domínio (`DashboardCache`); chave com os parâmetros; **nunca atrapalha a resposta** (Redis fora do ar ou cópia ilegível = calcula e conta); métrica `dbook_cache_total{cache,outcome=hit|miss|error}`. A decisão (por que 60 s, por que só aqui, por que não invalida) está em `docs/dashboard.md` no lugar de um ADR, já que o projeto não tem `docs/adr/`
+- [x] 33.6 Testes (19 novos, 542 no total): cada regra do glossário contra o Postgres com a história inserida nos instantes exatos, **o pagamento às 23:30 de São Paulo cai no dia 30 e não no 31**, o reembolso diminui a receita, a série semanal, o cache (acerto, TTL, Redis fora do ar), permissões e `400`. **Mutação:** sem descontar o reembolso, sem o fuso, com a expiração invertida, sem gravar no cache: os testes reprovam
+
+**O que a execução ensinou:**
+- **O horário de verão passou despercebido:** meu cenário da virada de dia falhou porque em janeiro de 2000 São Paulo estava em UTC−2 (o horário de verão só acabou em 2019). Os testes agora usam janelas em 2023, onde o deslocamento é sempre −03:00; a regra do produto não muda (o `ZoneId` já conhece o histórico).
+- **Um tipo de um campo só não volta do JSON** sem um criador (a armadilha dos DTOs): o `TopRoutes` ganhou o `limit` e continua sem anotar nada de Jackson no domínio.
+- Dados de teste por janela de dias própria resolvem o banco compartilhado: um período "só meu" não vê o resto da suíte.
+
+**Fora do escopo (de propósito):** receita por companhia ou cliente; comparação com o período anterior (conta da tela); invalidar o cache quando algo muda (o prazo é de 60 s, por decisão); as reservas anteriores à V35 ficam atribuídas ao dia da migração.
+
+**Checklist de fechamento do M33:**
+- [x] Itens 33.1–33.6 revisados
+- [x] Clean Code / SOLID: o SQL fora do código que o roda (`DashboardSql`), os baldes numa função pura, o cache atrás de uma porta, o período com a regra do fuso num só lugar
+- [x] `./gradlew check` com **exit 0** (542 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos
+- [x] Docs e instruções do projeto atualizados
+
+## M34 — Alertas e operação ✅
+
+Problema: havia métricas, logs e traces, mas **ninguém era avisado**: observabilidade sem alerta só serve para investigar depois. Feito em 2026-10-05, com autorização do dono para aplicar o backend inteiro; nada commitado ainda.
+
+- [x] 34.1 `observability/alerts.yml`, nove regras em cinco grupos: `DbookDown`, `HighServerErrorRate` (5xx acima de 5 % **com tráfego mínimo**, para uma falha à noite não acordar ninguém), `SearchLatencyHigh` (p95 acima de 500 ms), `ExpirationQueueDeadLetters`, `PendingBookingsPiling` (acima de 200 **e crescendo**), `RefundsFailing`, `LoginFailureSpike`, `AdminDeniedSpike`, `CacheUnavailable`. Gauge novo **`dbook_sqs_dlq_depth`** (`DeadLetterQueueMetrics`, lido do SQS a cada coleta; `NaN`, e não um zero falso, quando o SQS não responde). **O alerta de `outbox` atrasado entra com o M35**, quando houver a métrica
+- [x] 34.2 Alertmanager no perfil `observability` do compose (`prom/alertmanager:v0.27.0`) com um receptor *webhook* de exemplo, agrupamento, repetição mais frequente para `critical` e `DbookDown` inibindo o resto. **Verificado ao vivo:** com a aplicação parada, o `DbookDown` disparou no Prometheus e chegou ao Alertmanager com o runbook
+- [x] 34.3 `docs/runbooks.md`: para cada alerta, o que significa, onde olhar (Grafana, Loki, Jaeger, `curl`) e como mitigar
+- [x] 34.4 SLOs (disponibilidade 99,5 % em 30 dias; p95 da busca < 500 ms) e o painel **"DBook — SLOs e orçamento de erro"** no Grafana (disponibilidade, orçamento restante, p95 da busca, 5xx, fila de mensagens mortas, pendentes, reembolsos), provisionado: verificado que o Grafana o carrega
+- [x] 34.5 `observability/alerts_test.yml`: **cada alerta tem um caso que dispara e um que não** (inclusive o de baixo tráfego e o limite do `for`), rodado com `promtool check rules`, `promtool test rules` e `amtool check-config` num job novo do CI (`alert-rules`, validado com `actionlint`). **Alarmes do CloudWatch no Terraform ficam no M43**
+
+**O que a execução ensinou:**
+- **Um teste de regra que erra o tempo mostra a regra:** meu primeiro caso de `PendingBookingsPiling` esperava silêncio aos 30 minutos, mas o valor passa de 200 no minuto 11 e o `for: 15m` já tinha vencido. A correção foi do teste, e a regra ficou como estava.
+- **`increase()` herda as etiquetas da série:** o `RefundsFailing` vinha com `outcome="failed"` no alerta; um `sum(...)` o deixou com só os rótulos do alerta.
+- `docker compose --profile observability stop` **sem nomes** para todos os serviços, inclusive o Postgres (já dito em `observabilidade.md`): desliguei só os da pilha.
+
+**Fora do escopo (de propósito):** um receptor real (Slack, PagerDuty: a configuração é do time); alarmes do CloudWatch (M43); o alerta do outbox (M35).
+
+**Checklist de fechamento do M34:**
+- [x] Itens 34.1–34.5 revisados (desvios registrados acima)
+- [x] Clean Code: regras pequenas, cada uma com o seu runbook e o seu teste
+- [x] `./gradlew check` com **exit 0** (544 testes, ktlint, detekt, JaCoCo)
+- [x] Regras testadas (`promtool`) e a cadeia verificada ao vivo
+- [x] Docs atualizados (`runbooks.md`, `observabilidade.md`, `README.md`)
+
+## M35 — Outbox transacional ✅
+
+Problema (achado 7): agendar a expiração no SQS depois do commit deixava uma janela: se o processo caísse no meio, a reserva nunca expirava. Feito em 2026-10-05, com autorização do dono para aplicar o backend inteiro; nada commitado ainda.
+
+- [x] 35.1 Migration **`V39`**`__create_outbox_event.sql`: `id uuid`, `aggregate_type`, `aggregate_id`, `type`, `payload jsonb`, `headers jsonb` (leva o `traceparent`), `created_at`, `available_at` (quando **pode** sair), **`next_attempt_at`** (a reserva em uso ou o *backoff*; não estava no plano e separa "quando devia sair" de "quando tento de novo", o que deixa o atraso medido pela hora certa), `published_at`, `attempts`, `last_error`; índice parcial dos não publicados e outro dos publicados (a limpeza)
+- [x] 35.2 Porta `OutboxWriter.add(event)` (novo conceito `messaging` no domínio) que **recusa fora de uma transação** (`Propagation.MANDATORY`): um evento escrito sozinho poderia sobreviver a uma mudança desfeita. `OutboxEvent` carrega o `availableAt`, não um atraso. O adaptador guarda o `traceparent` da requisição nos cabeçalhos
+- [x] 35.3 `OutboxRelay` (`@Scheduled`, 1 s) em três passos, **cada um na sua transação, sem segurar uma transação durante a chamada de rede**: reivindicar um lote (`FOR UPDATE SKIP LOCKED` + `UPDATE ... RETURNING`, com uma reserva de 60 s), entregar à SQS (`SqsOutboxPublisher`, rota pelo tipo; tipo sem rota **falha**), marcar publicado; *backoff* exponencial de 5 s a 15 min; o trace segue como atributo da mensagem. Várias instâncias sem duplicar (testado com duas threads e 60 eventos)
+- [x] 35.4 O agendamento de expiração (M20) migrou: `RegisterBookingUseCase` grava `booking.expiration.requested` com `availableAt = agora + 15 min` na transação da reserva e a SQS recebe a mensagem **sem `DelaySeconds`** (o limite de 900 s deixou de ser restrição). Removidos `BookingExpirationScheduler`, `SqsBookingExpirationScheduler`, `BookingExpirationMessage` e o `@MockBean` do `AbstractIntegrationTest` (sem relé nos testes, as reservas só deixam linhas no outbox, o que dispensa o mock). O formato da mensagem não mudou: o consumidor segue igual
+- [x] 35.5 Métricas `dbook_outbox_pending`, **`dbook_outbox_overdue_seconds`** (o atraso do mais atrasado pela hora em que devia sair), `dbook_outbox_published_total` e `dbook_outbox_failures_total`; alerta **`OutboxOverdue`** (10º do `alerts.yml`, com teste de `promtool` e runbook)
+- [x] 35.6 Limpeza dos publicados há mais de 7 dias, às 03:30
+- [x] 35.7 Testes (11 novos, 555 no total): queda entre o commit e a publicação → o relé entrega; queda depois de reivindicar → entrega ao fim da reserva; **dois relés ao mesmo tempo, 60 eventos, cada um entregue uma vez**; falha com o *backoff* de 5 s e 10 s e entrega ao se recuperar; escrever fora de transação recusado; transação desfeita não deixa evento; a reserva e o evento nascem juntos por HTTP (e uma reserva recusada não deixa evento); o `traceparent` viaja; o publicador contra o LocalStack (corpo, atributos, tipo sem rota, fila inalcançável); duplicata tolerada e ordem não garantida, **documentadas**. **Mutação:** sem o `MANDATORY`, sem a reserva ou sem o *backoff*, os testes reprovam
+- [x] 35.8 `docs/mensageria.md` (com a decisão **outbox × CDC × ignorar** no lugar de um ADR, já que o projeto não tem `docs/adr/`), `docs/expiracao-de-reservas.md` atualizado, e o item 20.6 fechado
+
+**Verificado ao vivo** (aplicação real, Postgres, Redis, LocalStack): a reserva gravou o evento (vencendo em 14 min 59 s), o relé o publicou, o consumidor expirou a reserva e o assento voltou a `AVAILABLE`; e **com o SQS parado** a reserva foi criada (`201`), o evento esperou e tentou de novo guardando o erro, e foi entregue quando o SQS voltou.
+
+**O que a execução ensinou:**
+- **Segurar uma transação durante a chamada de rede é o erro clássico do relé:** reivindicar com uma reserva (`UPDATE ... RETURNING`) e entregar fora da transação evita que um SQS lento trave uma conexão com bloqueios abertos.
+- **Medir o atraso pela próxima tentativa esconde uma queda longa:** com o *backoff* empurrando o evento para 15 minutos adiante, "atrasado" nunca passaria de 15 minutos. Por isso `available_at` (imutável) e `next_attempt_at` são colunas diferentes.
+- O `SKIP LOCKED` não é o que impede a duplicata no teste das duas threads (o Postgres reavalia a linha depois do bloqueio); quem impede é a **reserva**: o teste que remove a reserva é o que reprova.
+- Um `sed`/script que escreve num caminho sem pasta aborta antes de escrever qualquer arquivo: só descobri pela falta dos testes.
+- **Um relógio criado no construtor da classe de teste envelhece enquanto o Spring sobe o contexto:** um teste passava sozinho e falhava na suíte inteira. Os eventos de teste agora vencem em relação ao próprio relógio do teste, nunca ao `Instant.now()`.
+
+**Fora do escopo (de propósito):** ordem entre eventos; entrega exatamente uma vez; trocar a SQS por outro destino (a porta `OutboxPublisher` é o ponto); o Terraform da SQS (20.5).
+
+**Checklist de fechamento do M35:**
+- [x] Itens 35.1–35.8 revisados
+- [x] Clean Code / SOLID: a escrita atrás de uma porta do domínio, o relé, o armazenamento e o publicador em classes de uma responsabilidade, nada de Spring no domínio
+- [x] `./gradlew check` com **exit 0** (555 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos e o fluxo verificado ao vivo, inclusive com o SQS fora do ar
+- [x] Docs atualizados
+
+## M36 — Notificações ✅
+
+Eventos: reserva confirmada, expirada, cancelada pelo suporte, reembolso concluído, voo alterado (o alerta de preço entra com o M40, como um tipo novo).
 
 **36a — Núcleo e in-app**
-- [ ] 36.1 Eventos de domínio (`BookingConfirmed`, `BookingExpired`, `BookingCancelledByStaff`, `RefundCompleted`, `FlightChanged`) escritos via outbox (M35)
-- [ ] 36.2 Migration `V37__create_notification.sql`: `notification` (`user_id`, `type`, `title`, `body`, `data jsonb`, `read_at`, `created_at`), `notification_preference` (`user_id`, `type`, `channel`, `enabled`), `device_token` (`user_id`, `token`, `platform`, `last_seen_at`)
-- [ ] 36.3 Fila `dbook-notifications` + DLQ (LocalStack init + Terraform), consumidor na entrada, **idempotente por `event_id + channel`** (índice único)
-- [ ] 36.4 `GET /v1/notifications` (keyset), `GET /unread-count`, `POST /{id}/read`, `POST /read-all`; preferências `GET/PUT /v1/notifications/preferences`
+- [x] 36.1 Eventos de domínio escritos via outbox (M35), **na mesma transação** da mudança: `booking.confirmed` (um por reserva paga), `booking.expired`, `booking.cancelled-by-staff` (o dono cancelando a própria reserva não avisa ninguém), `refund.completed` (com o valor) e `flight.changed` (um por reserva ativa, só quando número, origem, destino, partida ou chegada mudam; preço e capacidade não). Os tipos são `booking.*`/`refund.*`/`flight.*`, todos roteados para a fila de notificações
+- [x] 36.2 Migration `V40__create_notification.sql` (a V37 prevista já estava ocupada): `notification` (com `event_id` **único**), `notification_preference` (só o que o cliente escolheu; ausente = ligado), `device_token` (token único: muda de dono) e `notification_delivery` (a chave `event_id + channel` da idempotência)
+- [x] 36.3 Fila `dbook-notifications` + DLQ (`scripts/localstack-init/01-sqs.sh` e o módulo `terraform/modules/sqs`, validado com `terraform validate`; a ligação ao ECS fica no M43), `NotificationConsumer` na entrada (com o `SqsMessageLoop` extraído do consumidor da expiração) e o `SqsOutboxPublisher` mandando `eventId` e `eventType`; **idempotente por evento e canal**
+- [x] 36.4 `GET /v1/notifications` (keyset por `id`, `unreadOnly`), `GET /unread-count`, `POST /{id}/read` (`404` se não for sua), `POST /read-all`; `GET/PUT /v1/notifications/preferences`
 
 **36b — Canais**
-- [ ] 36.5 E-mail pelo `EmailSender` (M28), modelos em português, respeitando preferência
-- [ ] 36.6 Push: porta `PushSender` + adaptador falso local; FCM real fica **registrado como evolução** (exige conta Firebase); `POST/DELETE /v1/notifications/devices`
+- [x] 36.5 E-mail pelo `EmailSender`, texto em português, respeitando a preferência; conta anonimizada não recebe
+- [x] 36.6 Push: porta `PushSender` + `LoggingPushSender` (só registra quantos aparelhos, nunca o token); o FCM real fica **registrado como evolução** (exige conta Firebase); `POST/DELETE /v1/notifications/devices`
 
 **36c — Qualidade**
-- [ ] 36.7 Retentativas, DLQ, métricas por canal/resultado, alerta; testes (idempotência, preferência desligada, falha de um canal não impede os outros, ordem), `docs/notificacoes.md`
+- [x] 36.7 Um canal que falha não derruba os outros (a mensagem volta e só o que falhou roda de novo), DLQ depois de 3 tentativas, métrica `dbook_notification_total{channel,outcome}`, o gauge da DLQ agora por fila (`dead-letter-queues.queues`) e o alerta **`DeadLetterQueueNotEmpty`** (substitui o `ExpirationQueueDeadLetters`, testado com `promtool`)
+- [x] 36.8 Testes (53 novos, 608 no total): idempotência por evento e canal (unidade, banco e fila de verdade), preferência desligada, falha de um canal sem barrar os outros e só ele reenviado, push sem aparelho e e-mail de conta anonimizada pulados, texto de cada tipo, caixa paginada por cursor e só do dono, `404` na de outro, preferências e aparelhos (inclusive o token que muda de dono), consumidor contra o LocalStack (notifica e apaga, duplicata notifica uma vez, tipo desconhecido e mensagem sem tipo na DLQ), o claim `NEW`/`RETRY`/`ALREADY_DONE` no Postgres, os eventos escritos junto com pagar, cancelar pela equipe e editar o voo, a anonimização apagando notificações, aparelhos e preferências. **Mutação:** sem a checagem do log de entregas, a duplicata e a retentativa reprovam; sem a preferência, o teste dela reprova
+- [x] 36.9 `docs/notificacoes.md`, `endpoints.md`, `mensageria.md`, `runbooks.md`, `CLAUDE.md` e `README.md`
 
-## M37 — Avaliações públicas, editar/apagar e moderação 📋
+**Verificado ao vivo** (aplicação real, Postgres, Redis, LocalStack): pagar uma reserva e depois mudar o horário do voo geraram `booking.confirmed` e `flight.changed`; o relé os publicou, o consumidor os processou e a caixa do cliente mostrou as duas notificações em português (`unread-count` 2), com `dbook_notification_total` em `in_app`/`email` enviados, `push` pulado (sem aparelho) e as duas DLQs em zero.
 
-- [ ] 37.1 `GET /v1/destinations/{iata}/reviews?page&size&sort=recent|rating` (pública): agregado (média, total, distribuição 1–5) + itens; **privacidade:** autor exibido como primeiro nome + inicial; migration com índice `(destination_iata, created_at desc)`
-- [ ] 37.2 `PATCH` e `DELETE /v1/reviews/{id}` (só o dono; `Review.edit` no domínio — hoje é imutável); a média continua **derivada** (sem coluna armazenada, para não dessincronizar)
-- [ ] 37.3 Denúncia: `POST /v1/reviews/{id}/report` (uma por usuário e avaliação) e moderação `GET /v1/admin/reviews?status=REPORTED`, `POST .../hide|restore` (`REVIEW_MODERATE`, motivo, auditado)
-- [ ] 37.4 Testes (privacidade do autor, dono vs. terceiro `403`, paginação estável, média após editar/apagar/ocultar) e docs
+**O que a execução ensinou:**
+- **Extrair o laço da SQS** (long polling, trace, apagar só depois de tratar) em vez de copiar 60 linhas para o segundo consumidor: o primeiro continuou com o mesmo construtor, então seus testes não mudaram.
+- **A DLQ deixa de ser "da expiração":** o gauge e o alerta viraram por fila (`queue`), e o alerta não filtra mais por nome, então uma terceira fila entra sem mexer na regra.
+- **Os tipos de aviso levam o nome dos eventos de outros conceitos:** a regra de dependências entre conceitos passou a permitir `notification → booking/catalog/payment` e `catalog`/`payment → messaging`, escrito no teste e no `CLAUDE.md`, em vez de duplicar as strings.
+- O `detektMain` e o `detektTest` pegam o que o `detekt` simples não pega (sombreamento de `it`, `!!`): rodar o `check` inteiro, não só o `ktlintCheck detekt`.
 
-## M38 — Favoritos no servidor 📋
+**Fora do escopo (de propósito):** o adaptador real do FCM; modelos de e-mail em HTML; agrupar avisos (*digest*); ordem entre avisos; o tipo "alerta de preço" (M40).
+
+**Checklist de fechamento do M36:**
+- [x] Itens 36.1–36.9 revisados
+- [x] Clean Code / SOLID: o consumidor sem regra (entrega a um caso de uso), cada canal numa classe de uma responsabilidade atrás de uma interface, nada de Spring no domínio
+- [x] `./gradlew check` com **exit 0** (608 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos
+- [x] Docs atualizados
+
+## M37 — Avaliações públicas, editar/apagar e moderação ✅
+
+- [x] 37.1 `GET /v1/destinations/{iata}/reviews?page&size&sort=RECENT|RATING` (pública): agregado (média, total, distribuição 1–5) + itens; **privacidade:** autor exibido como primeiro nome + inicial do último sobrenome (e `Cliente anônimo` para conta anonimizada), sem id do cliente, e-mail nem reserva. Migration `V41` com o índice `flight(destination_airport_id)` (o salto que faltava em `review → booking → flight → airport`); **desvio:** sem coluna `destination_iata` na avaliação, porque o destino do voo pode ser editado (M32) e a cópia ficaria errada
+- [x] 37.2 `PATCH` e `DELETE /v1/reviews/{id}` (só o autor; `Review.edit` no domínio); a média continua **derivada** das visíveis, nada armazenado
+- [x] 37.3 Denúncia `POST /v1/reviews/{id}/report` (uma por cliente e avaliação, pelo índice único) e moderação `GET /v1/admin/reviews?status=REPORTED|HIDDEN|VISIBLE`, `POST .../hide|restore` (`REVIEW_MODERATE`, motivo, auditado: `REVIEW_HIDDEN`, `REVIEW_RESTORED`) + `.../dismiss-reports` (**acrescentado ao plano:** sem ele uma denúncia à toa deixaria a avaliação na fila para sempre)
+- [x] 37.4 Testes (37 novos, 645 no total) e docs (`docs/avaliacoes.md`): privacidade do autor (nome, sem ids nem e-mail, anonimizado), média e distribuição, paginação estável nas duas ordens, média após editar/ocultar/restaurar/apagar (inclusive a de `GET /v1/destinations`), autor × terceiro `403`, `404`, `400`, uma denúncia por cliente e não a própria, ocultar tira da lista e da fila e é auditado **sem o texto**, restaurar, dispensar denúncias, só `REVIEW_MODERATE` entra na fila. **Mutação:** sem o filtro `VISIBLE` na leitura pública, ou na média de `GET /v1/destinations`, os testes reprovam
+
+**Fora do escopo (de propósito):** responder a uma avaliação; avaliar sem reserva; apagar o texto de uma avaliação ao anonimizar o cliente (muda só o nome exibido); notificar o autor de que a avaliação foi ocultada.
+
+**Checklist de fechamento do M37:**
+- [x] Itens 37.1–37.4 revisados
+- [x] Clean Code / SOLID: regras no domínio (`Review.edit/hide/restore`), leituras como *read models*, casos de uso pequenos
+- [x] `./gradlew check` com **exit 0** (645 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação nos pontos críticos
+- [x] Docs atualizados
+
+## M38 — Favoritos no servidor ✅
 
 Problema (achado 6): favoritos só no aparelho → somem ao trocar de celular e não existe fonte única da verdade.
 
-- [ ] 38.1 Migration `V38__create_favorite.sql`: `favorite` (`user_id`, `target_type` ∈ {`DESTINATION`, `FLIGHT`}, `target_id`, `created_at`), único por `(user_id, target_type, target_id)`
-- [ ] 38.2 `PUT /v1/favorites/{type}/{id}` (idempotente, `204`), `DELETE` (`204`, idempotente), `GET /v1/favorites?type&page` ; teto de 200 por usuário (`409` + `code=FAVORITES_LIMIT`)
-- [ ] 38.3 Alvo inexistente → `404`; destino por IATA validado no catálogo
-- [ ] 38.4 Testes (idempotência, isolamento entre usuários, limite) e docs. **App:** migração dos favoritos locais (M39 do app)
+- [x] 38.1 Migration `V42__create_favorite.sql` (a V38 prevista já estava ocupada): `favorite` (`user_id`, `target_type` ∈ {`DESTINATION`, `FLIGHT`}, `target_id` como texto, `created_at`), único por `(user_id, target_type, target_id)`, com o índice da lista
+- [x] 38.2 `PUT /v1/favorites/{type}/{id}` (idempotente, `204`), `DELETE` (`204`, idempotente), `GET /v1/favorites?type&page&size` (mais novos primeiro, com o que o app precisa para desenhar cada um); teto de 200 por usuário (`409` + `code=FAVORITES_LIMIT`), decidido **atomicamente** (trava da linha do cliente), então nem 20 requisições juntas o furam
+- [x] 38.3 Alvo inexistente → `404` (destino validado no catálogo de aeroportos, voo no de voos); id ou tipo mal formados → `400`
+- [x] 38.4 Testes (22 novos, 667 no total) e docs (`docs/favoritos.md`, `endpoints.md`): idempotência de salvar e remover, ordem, filtro por tipo, paginação, detalhes de destino e de voo (e voo fora de venda continua na lista), isolamento entre clientes, o limite (`409` com o código, repetido segue `204`, remover libera), **20 *threads* com limite 5 → exatamente 5**, `404`/`400`/`401`, exportação e anonimização. **Mutação:** sem a trava da linha, o teste de corrida reprova. **App:** migração dos favoritos locais (M39 do app)
 
-## M39 — Código promocional 📋
+**O que a execução ensinou:**
+- Um parâmetro de rota ou de consulta de enum inválido (`/favorites/HOTEL/1`, `?sort=NOPE`) **não** é um `BindException`: virava `sendError(400)` e, por não estar no `permitAll`, um **`401` enganoso**. O `ApiExceptionHandler` ganhou o `MethodArgumentTypeMismatchException` → `400` com `VALIDATION_FAILED` (que corrigiu também a ordenação e o status das avaliações do M37).
+- O `CAST` do id de um voo, numa junção com `OR` de tipos, podia rodar sobre o código de um destino (`GRU`) e quebrar a consulta: o `CASE WHEN` na condição garante que a conversão só roda onde o tipo é voo.
 
-- [ ] 39.1 Migration `V39__create_promo_code.sql`: `promo_code` (`code` único case-insensitive, `type` ∈ {`PERCENT`, `FIXED`}, `value`, `min_amount`, `valid_from`, `valid_until`, `max_redemptions`, `max_per_user`, `redeemed`, `active`, `created_by`) e `promo_redemption` (`promo_id`, `user_id`, `payment_id` único); `payment` ganha `subtotal`, `discount`, `promo_code_id`
-- [ ] 39.2 Domínio: `PromoCode.discountFor(amount, now)` com invariantes (vigência via `Clock`, mínimo, desconto nunca maior que o valor, arredondamento definido e testado)
-- [ ] 39.3 `POST /v1/promo-codes/validate` (prévia do desconto sem consumir) e `POST /v1/payments` aceitando `promoCode` opcional (campo **aditivo** — continua `v1`)
-- [ ] 39.4 **Concorrência:** consumo atômico `UPDATE promo_code SET redeemed = redeemed + 1 WHERE id = ? AND redeemed < max_redemptions` conferindo linhas afetadas — nada de ler-e-escrever; teste com 20 *threads* disputando o último uso
-- [ ] 39.5 Interação com idempotência: o `fingerprint` inclui o código; a repetição devolve o mesmo pagamento com o mesmo desconto, sem consumir de novo
-- [ ] 39.6 Reembolso (M31) devolve o valor **efetivamente pago**; o uso do cupom não é devolvido (regra registrada)
-- [ ] 39.7 Admin: CRUD (`PROMO_WRITE`), listagem com resgates, **desativar em vez de apagar**, auditado
-- [ ] 39.8 Testes, docs (`docs/promocoes.md`), `endpoints.md`
+**Fora do escopo (de propósito):** ordenar favoritos à mão; pastas ou listas; sincronização de favoritos locais (é do app); hotéis (entram no M42 como mais um tipo).
 
-## M40 — Histórico e alerta de preço 📋
+**Checklist de fechamento do M38:**
+- [x] Itens 38.1–38.4 revisados
+- [x] Clean Code / SOLID: a regra do limite e da idempotência atrás da porta `FavoriteRepository`, a leitura como *read model*, casos de uso pequenos
+- [x] `./gradlew check` com **exit 0** (667 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação no ponto crítico (a trava)
+- [x] Docs atualizados
 
-- [ ] 40.1 `flight_price_history` (`flight_id`, `price`, `changed_at`) gravado na criação e em cada alteração (M32); `GET /v1/flights/{id}/price-history`
-- [ ] 40.2 `price_alert` por **rota + data** (`origin`, `destination`, `date`, `target_price`, `active`, `last_notified_at`): CRUD em `/v1/price-alerts`, limite por usuário
-- [ ] 40.3 Avaliador acionado pelo evento de mudança de preço (outbox): busca alertas elegíveis por índice, notifica (M36) com janela de deduplicação
-- [ ] 40.4 Testes (preço cai abaixo → notifica uma vez; sobe e cai de novo respeita a janela; alerta desativado), docs
+## M39 — Código promocional ✅
 
-## M41 — Cancelamento e reembolso pelo cliente 📋
+- [x] 39.1 Migration `V43__create_promo_code.sql` (a V39 prevista já estava ocupada): `promo_code` (código em maiúsculas e único, tipo, valor, mínimo, janela, limites, `redeemed`, `active`, `created_by`) e `promo_redemption` (`payment_id` único); `payment` ganha `subtotal`, `discount`, `promo_code_id` e `promo_code`; **acrescentado ao plano:** `booking.discount`, a parte de cada reserva no desconto, para o reembolso devolver o que foi pago
+- [x] 39.2 Domínio: `PromoCode.discountFor(amount, now, bookingCount)` com as invariantes (janela com o início incluído e o fim excluído, mínimo, ativo, desconto nunca acima do total menos um centavo por reserva, percentual arredondado ao centavo **metade para cima**) e `allocateDiscount` (divisão proporcional ao centavo, soma exata, nenhuma reserva a zero)
+- [x] 39.3 `POST /v1/promo-codes/validate` (prévia sem consumir) e `POST /v1/payments` aceitando `promoCode` opcional (campo **aditivo**, continua `v1`); `422 PROMO_REJECTED` desfaz o pagamento todo e as reservas seguem `PENDING`
+- [x] 39.4 **Concorrência:** consumo atômico `UPDATE promo_code SET redeemed = redeemed + 1 WHERE id = ? AND (max_redemptions IS NULL OR redeemed < max_redemptions) RETURNING max_per_user`, em transação obrigatória, e o limite por cliente protegido pela trava da mesma linha; testado com 20 clientes disputando o último uso, 10 resgates do mesmo cliente e 2 pagamentos simultâneos por HTTP
+- [x] 39.5 Idempotência: o código (normalizado) entra na impressão digital; a repetição devolve o mesmo pagamento com o mesmo desconto sem consumir de novo, e a mesma chave com outro código ou sem código é `422`; sem código a impressão digital é a antiga
+- [x] 39.6 Reembolso (M31) devolve o valor **efetivamente pago** (`paidAmount`); o uso do código não é devolvido (regra registrada em `docs/reembolso.md` e `docs/promocoes.md`)
+- [x] 39.7 Admin: CRUD (`PROMO_WRITE`: criar, listar com os usos, ver, ver resgates, mudar janela e limites, **desativar e reativar em vez de apagar**), auditado (`PROMO_CREATED/UPDATED/ACTIVATED/DEACTIVATED`)
+- [x] 39.8 Testes (57 novos, 724 no total), docs (`docs/promocoes.md`) e `endpoints.md`. **Mutação:** sem a condição `redeemed < max_redemptions` do `UPDATE`, o teste de 20 clientes e o de 2 pagamentos reprovam
 
-- [ ] 41.1 `GET /v1/bookings/{id}/cancellation-policy` → valor reembolsável e prazo (o app mostra **antes** de confirmar)
-- [ ] 41.2 **Endpoint novo** `POST /v1/bookings/{id}/refund-request` (com `Idempotency-Key`) em vez de mudar o `cancel` (que hoje devolve `409` para reserva paga — mudar isso alteraria o contrato da `v1`); reaproveita `Refund`/`RefundPolicy` do M31
-- [ ] 41.3 Testes (dentro/fora do prazo, dono vs. terceiro, repetição idempotente, corrida com o suporte reembolsando junto) e docs
+**O que a execução ensinou:**
+- **`BigDecimal / BigDecimal` do Kotlin arredonda para a escala do numerador, e pela regra do banqueiro** (`HALF_EVEN`): 10 % de 100,05 dava 10,00. O teste de arredondamento reprovou; a divisão agora é `divide(divisor, 2, HALF_UP)`, com escala e modo explícitos, e o mesmo na divisão proporcional.
+- A tentativa de dividir o desconto "por igual" ou "só proporcional" deixa sobras de centavos ou reservas a zero: um teste com 500 combinações aleatórias exige que a soma seja exata e que cada reserva reste com pelo menos um centavo (senão o reembolso dela seria de valor zero, que o domínio recusa).
+- **Reservar o último uso não é "ler e depois gravar":** o `UPDATE` condicional é a decisão, e a trava de linha que ele leva de brinde serializa também o limite por cliente.
 
-## M42 — Hotéis (`Accommodation`) 📋  *(GG — incrementos 42a–42g; paga a dívida de design do M1)*
+**Fora do escopo (de propósito):** cupom por cliente específico; cupom acumulável; devolver o uso no reembolso; limite de tentativas de adivinhar códigos (M46).
 
-- [ ] 42.1 **ADR primeiro (spike):** como `Booking` (hoje preso a `Seat`) representa uma estadia por datas? Alternativas: (A) generalizar `Seat` em "unidade de inventário"; (B) `Booking` com item polimórfico; (C) `Stay` ligado à reserva. Recomendação inicial: **inventário por noite** (`room_night`: tipo de quarto × noite × quantidade restante; reservar = `UPDATE ... WHERE remaining > 0` em cada noite, numa transação) — evita sobreposição de intervalos; alternativa `EXCLUDE USING gist` com `tstzrange` registrada
-- [ ] 42.2 **42a — Domínio e persistência:** `Accommodation : Bookable` (nome, cidade, estrelas, comodidades), `RoomType` (capacidade, tarifa por noite, quantidade), migrations, testes de domínio
-- [ ] 42.3 **42b — Busca:** `GET /v1/accommodations/search?city&checkIn&checkOut&guests` (pública, paginada, preço total da estadia)
-- [ ] 42.4 **42c — Reserva e pagamento:** reaproveita `Booking`/`Payment` (preço congelado = noites × tarifa, M27), expiração (M20/M35) libera as noites
-- [ ] 42.5 **42d — Concorrência:** última vaga do quarto numa noite com 20 *threads*; reservas que se sobrepõem parcialmente
-- [ ] 42.6 **42e — Admin:** CRUD de hotéis/quartos/tarifas no catálogo admin (M32), importação em lote
-- [ ] 42.7 **42f — Avaliações e destinos:** `Review` generalizado para qualquer `Bookable`; hotéis por destino
-- [ ] 42.8 **42g — Tempo real:** disponibilidade por noite no canal existente (ou decisão registrada de não fazer)
-- [ ] 42.9 Docs (`docs/hoteis.md`), `endpoints.md`, `CLAUDE.md` (o `Bookable` deixa de ser promessa)
+**Checklist de fechamento do M39:**
+- [x] Itens 39.1–39.8 revisados
+- [x] Clean Code / SOLID: o cálculo e a divisão no domínio, a atomicidade atrás da porta `PromoRepository`, casos de uso pequenos
+- [x] `./gradlew check` com **exit 0** (724 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação no ponto crítico
+- [x] Docs atualizados
 
-## M43 — Terraform completo 📋
+## M40 — Histórico e alerta de preço ✅
 
-- [ ] 43.1 SQS (filas + DLQ + alarmes), SES (identidade verificada), Secrets Manager (bootstrap do admin, chave TOTP, segredo JWT), parâmetros do portal
-- [ ] 43.2 Portal: bucket S3 privado + CloudFront (OAC), resposta SPA (`index.html` em 403/404), cabeçalhos de segurança (HSTS, CSP, `X-Content-Type-Options`, `Referrer-Policy`), certificado
-- [ ] 43.3 CI: `terraform fmt -check`, `validate`, `tflint` e `checkov` **sem credenciais** (sem conta AWS não há `plan` real — registrado); estimativa de custo em `docs/custos.md`
-- [ ] 43.4 Atualizar o `cd.yml` (gate `check-aws` já existe) para o deploy do portal
+- [x] 40.1 Migration `V44__create_price_history_and_alerts.sql` (a V40 prevista estava ocupada); `flight_price_history` gravado na criação (importação CSV inclusa) e em cada mudança de preço, **na transação que muda o preço** (`FlightPriceRecorder`, que também escreve o evento `flight.price-changed`); o mesmo preço não é mudança; `GET /v1/flights/{id}/price-history` (**público**, como a busca) com atual, menor e maior
+- [x] 40.2 `price_alert` por **rota + data** (`origin`, `destination`, `travel_date`, `target_price`, `active`, `last_notified_at`): `POST/GET/PATCH/DELETE /v1/price-alerts`, um alerta por cliente, rota e data (`409`), limite de 20 ativos (`409` + `code=PRICE_ALERTS_LIMIT`, decidido atomicamente), `404` para o de outro cliente
+- [x] 40.3 Avaliador acionado pelo `flight.price-changed` (o consumidor da fila de notificações o despacha): reivindica, **num único comando**, os alertas ativos da rota e data cujo alvo o preço atende e que não foram avisados em 24 h (índice parcial das ativas), e escreve o `price-alert.triggered`, que o pipeline do M36 transforma na notificação `PRICE_ALERT` (in-app, e-mail e push, com preferências e idempotência)
+- [x] 40.4 Testes (21 novos, 745 no total) e docs (`docs/precos.md`): preço cai abaixo → notifica uma vez e a repetição não; sobe e cai de novo dentro da janela não repete, **e repete depois dela**; o alvo incluído; outra data, outra rota, preço acima e alerta desligado não disparam; mudar o alvo zera a janela; **10 entregas simultâneas → exatamente 1 aviso**; histórico em ordem com menor e maior; preço igual não cria ponto; o evento nasce com a edição; fila de verdade (o evento de preço vira o disparo e o disparo vira a notificação na caixa do cliente); alertas por HTTP (dono, `404`, `409`, limite, `400`). **Mutação:** sem a janela na reivindicação, os três testes de dedup reprovam
+
+**O que a execução ensinou:**
+- **O número que sai do JSON pode ter escala 1** (`80.0`): o evento de preço diferia do histórico (`80.00`). O dinheiro dos eventos agora sempre tem os centavos.
+- **Um consumidor com dois destinos** (notificar ou avaliar alertas) sem ganhar uma segunda fila: o tipo do evento decide, e o avaliador reaproveita todo o pipeline do M36 em vez de ter um canal próprio.
+
+**Fora do escopo (de propósito):** avisar na hora ao criar um alerta com voo já abaixo do alvo; alerta por voo específico ou sem data; gráfico (é do app); exportar os alertas na portabilidade de dados.
+
+**Checklist de fechamento do M40:**
+- [x] Itens 40.1–40.4 revisados
+- [x] Clean Code / SOLID: o registro de preço num colaborador só, a reivindicação atrás da porta `PriceAlertRepository`, casos de uso pequenos
+- [x] `./gradlew check` com **exit 0** (745 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação no ponto crítico
+- [x] Docs atualizados
+
+## M41 — Cancelamento e reembolso pelo cliente ✅
+
+- [x] 41.1 `GET /v1/bookings/{id}/cancellation-policy` → ação possível (`CANCEL`, `REFUND_REQUEST` ou `NONE` com o motivo), valor reembolsável (o **efetivamente pago**) e prazo (24 h antes da partida); o app mostra **antes** de confirmar
+- [x] 41.2 **Endpoint novo** `POST /v1/bookings/{id}/refund-request` (com `Idempotency-Key`) em vez de mudar o `cancel` (que continua `409` para reserva paga, preservando a `v1`); reaproveita `RefundBookingUseCase`/`RefundPolicy` do M31 com o cliente como ator e **sem o override**; só o dono (`403` para outro)
+- [x] 41.3 Testes (25 novos, 770 no total) e docs (`reembolso.md`, `endpoints.md`): dentro e fora do prazo, dono × terceiro, repetição idempotente (um reembolso, uma chamada ao gateway) e chave reaproveitada `422`, reserva paga com desconto devolve o valor pago, gateway que recusa e nova tentativa com outra chave, política em cada estado (paga, dentro da janela, pendente, reembolsada, reembolso em andamento), e a **corrida do cliente com o suporte** (um `201`, um `409`, um reembolso). **Mutação:** sem a checagem do dono, os testes de terceiro reprovam
+
+**Fora do escopo (de propósito):** o cliente cancelar uma reserva paga por `/cancel` (mudaria a `v1`); reembolso parcial; contestar um reembolso que falhou sem a equipe.
+
+**Checklist de fechamento do M41:**
+- [x] Itens 41.1–41.3 revisados
+- [x] Clean Code / SOLID: a política num caso de uso só de leitura, o pedido reaproveitando o mecanismo da equipe em vez de duplicá-lo
+- [x] `./gradlew check` com **exit 0** (770 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação no ponto crítico
+- [x] Docs atualizados
+
+## M42 — Hotéis (`Accommodation`) ✅  *(paga a dívida de design do M1)*
+
+- [x] 42.1 **A decisão (spike, em `docs/hoteis.md`, que faz as vezes do ADR):** a `Booking` guarda **o que** reservou: `seatId` passou a ser opcional e ganhou um `Stay` (tipo de quarto, noites, hóspedes, **diária congelada**), nunca os dois (invariante do domínio e `CHECK` no banco). O estoque é **por noite** (`room_night`: tipo de quarto × noite → quartos ocupados) e reservar é **um comando condicional por noite**, numa transação; a alternativa `EXCLUDE USING gist` com `tstzrange` fica registrada (serve quando cada quarto físico é uma entidade). Generalizar o `Seat` e um item polimórfico foram descartados com motivo
+- [x] 42.2 **42a — Domínio e persistência:** `Accommodation : Bookable` (nome, destino, endereço, estrelas, comodidades), `RoomType` (capacidade, diária, quantidade), `Stay`, a entidade JPA do hotel na hierarquia `Bookable` (JOINED) e JDBC para os quartos e o estoque; migration `V45` (a V41 prevista já estava ocupada)
+- [x] 42.3 **42b — Busca:** `GET /v1/accommodations/search?destination&checkIn&checkOut&guests` (pública, paginada, mais barato primeiro): só os hotéis com um tipo de quarto livre **em todas as noites**, com o **preço da estadia inteira**, a nota e o número de avaliações; `GET /v1/accommodations/{id}`
+- [x] 42.4 **42c — Reserva e pagamento:** `POST /v1/accommodations/{id}/bookings` reaproveita `Booking` e `Payment` (preço congelado = noites × diária, M27; código promocional e reembolso funcionam), a expiração (M20/M35) e o cancelamento devolvem as noites (`BookingInventoryReleaser`)
+- [x] 42.5 **42d — Concorrência:** a última vaga do quarto numa noite com 20 *threads* (exatamente 1 vence), 10 *threads* para 3 quartos (exatamente 3), duas reservas por HTTP, três reservas que se sobrepõem em pares (nenhuma noite ocupada duas vezes) e uma estadia cuja última noite está cheia desfaz as anteriores
+- [x] 42.6 **42e — Admin:** CRUD de hotéis, tipos de quarto e diárias no catálogo admin (`CATALOG_WRITE`, auditado), tirar de venda e repor, a quantidade nunca abaixo do já reservado. **A importação em lote ficou de fora** (decisão registrada em `docs/hoteis.md`: os hotéis se cadastram um a um; a importação CSV do M32 é de voos)
+- [x] 42.7 **42f — Avaliações e destinos:** a leitura das avaliações por destino e a média de `GET /v1/destinations` passam a contar voos **e** hotéis (o destino de uma avaliação é onde o voo chega ou onde o hotel está); `GET /v1/accommodations/{id}/reviews`
+- [x] 42.8 **42g — Tempo real:** **decisão registrada de não fazer**: o canal anuncia um número único e vivo (assentos livres); a disponibilidade de um hotel é por noite e por tipo, e a tela consulta a busca (`409` ao reservar é a garantia)
+- [x] 42.9 Docs (`docs/hoteis.md`), `endpoints.md`, `CLAUDE.md` (o `Bookable` deixa de ser promessa; 16 conceitos; próxima migration V46) e `README.md`
+
+**Testes (45 novos, 815 no total):** o conjunto de hotéis (domínio da estadia, do quarto e do hotel; a reserva e o que a impede; o fim da reserva devolvendo as noites; o estoque contra o Postgres; busca, admin, avaliações e corridas por HTTP). **Mutação:** sem a condição `booked < quantity` do comando por noite, os testes de corrida reprovam.
+
+**O que a execução ensinou:**
+- **O Jackson daqui não aplica o valor padrão de um campo que falta** (não há o módulo Kotlin): um `Boolean` ausente vira `false` e um `Int` ausente vira `0`. O tipo de quarto criado sem `active` nascia **fora de venda**, e os testes de busca não achavam o hotel. Todos os campos opcionais com padrão "ligado" ou "1" (`active`, `maxPerUser`, `minAmount`, as listas) viraram nuláveis, com o padrão aplicado no `toXxx()`; o mesmo problema estava escondido no cupom (M39), onde um `POST` sem `maxPerUser` dava `400`, e agora há um teste.
+- **A validação do Hibernate (`ddl-auto: validate`) reprova `SMALLINT` para um `Int`:** a coluna `stars` é `INTEGER`.
+- Com a reserva generalizada (assento opcional), tudo o que lia o assento por `JOIN` virou `LEFT JOIN` (lista do admin, histórico do CRM), senão a estadia **sumia** das listas.
+- **Tirar a devolução do estoque de dois casos de uso** (cancelar e reembolsar) para um colaborador (`BookingInventoryReleaser`) evitou repetir a decisão "assento ou noites" nos dois, e é o ponto onde um terceiro tipo de reservável entraria.
+
+**Fora do escopo (de propósito):** importação em lote de hotéis; tempo real da disponibilidade; escolher o quarto físico; tarifa por noite diferente (alta temporada); política de cancelamento própria do hotel.
+
+**Checklist de fechamento do M42:**
+- [x] Itens 42.1–42.9 revisados
+- [x] Clean Code / SOLID: a invariante "assento ou estadia" no domínio, o estoque atrás da porta `RoomInventory`, a devolução num colaborador único, casos de uso pequenos
+- [x] `./gradlew check` com **exit 0** (815 testes, ktlint, detekt, JaCoCo)
+- [x] Mutação no ponto crítico
+- [x] Docs atualizados
+
+## M43 — Terraform completo ✅
+
+- [x] 43.1 SQS (as duas filas, as mortas, **criptografia**, **alarmes** de mensagem morta e a política do papel da aplicação), SES (a identidade do remetente e a permissão de só enviar como ela), Secrets Manager (a senha do administrador de partida e a chave do 2FA, além do JWT e do banco) e a ligação à aplicação (as URLs das filas, a origem do portal, a senha do administrador só quando o e-mail foi dado); o **papel da tarefa separado do de execução** no ECS. Tudo validado com `terraform validate`
+- [x] 43.2 Portal: bucket S3 **privado** (sem acesso público, versionado, criptografado, com ciclo de vida) + CloudFront com **origin access control**, `index.html` para 403 e 404, política de **cabeçalhos de segurança** (HSTS, CSP restrita a si e à API, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), domínio e certificado opcionais (com uma pré-condição que recusa domínio sem certificado)
+- [x] 43.3 CI: job `terraform` (`fmt -check`, `validate`, `tflint`, `checkov`) **sem credenciais** (sem conta AWS não há `plan` real: registrado em `docs/custos.md`), com o `checkov` rodando de `terraform/.checkov.yaml` (cada verificação ignorada com o motivo); cada módulo ganhou o seu `versions.tf`; estimativa de custo em `docs/custos.md` (≈ US$ 55 por mês)
+- [x] 43.4 `cd.yml`: o job `deploy-portal` (atrás do mesmo gate `check-aws`; constrói o Flutter Web, sobe com `index.html` sem cache, invalida o CloudFront) e o papel do GitHub com **só** o que esse deploy precisa; validado com `actionlint`
+
+**O que a execução ensinou:**
+- Um `checkov` que **reprova tudo** não serve de portão; um que ignora tudo também não. A saída foi uma lista de verificações ignoradas **com o motivo em cada linha** (site estático, projeto de estudo, infraestrutura anterior que forçaria recriar o banco): o que entra de novo e falha quebra o build, e a lista é a dívida visível.
+- O `tflint` recomendado pediu `required_version` e `required_providers` em **cada** módulo (10 arquivos `versions.tf`), e achou uma variável sem uso no módulo do SES, que passou a marcar a identidade com o nome.
+- **A chave da tarefa separada:** o papel de execução e o da tarefa eram o mesmo; quando a aplicação passou a usar SQS e SES, juntar os dois daria ao agente do ECS permissões da aplicação (e vice-versa).
+
+**Fora do escopo (de propósito):** o `plan` e o `apply` reais (não há conta AWS persistente); o adaptador do SES na aplicação (só o `LoggingEmailSender` existe); o balanceador e o domínio da API; o WAF e os logs de acesso do CloudFront.
+
+**Checklist de fechamento do M43:**
+- [x] Itens 43.1–43.4 revisados
+- [x] `terraform fmt`, `validate`, `tflint` e `checkov` limpos; `actionlint` limpo
+- [x] Docs atualizados (`nuvem-e-cicd.md`, `custos.md`)
 
 ## M44 — Ciclo de vida da API e versão mínima do app 📋
 
@@ -941,6 +1140,7 @@ Fecha o item "Não feito" do M24.
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
 - **Integração com API real de voos**: buscar voos de um provedor externo (AviationStack, Amadeus, OpenSky...) em vez de dados só cadastrados via `/admin/flights`. Maior escopo — exige escolher provedor, lidar com API key/rate limit/custo, mapear o schema deles pro domínio, decidir estratégia de sincronização.
+- **Dividir em módulos Gradle** (decisão de 2026-10-04: **agora não, reavaliar depois do M45**). Hoje há um deploy, um banco e uma relação JPA entre conceitos, e as regras do ArchUnit já impõem camadas, ciclos e dependências permitidas; o módulo acrescentaria imposição em tempo de compilação, build incremental e dono por módulo. Corte provável: **plataforma** (`identity`, `audit`, `common`), **negócio** (`catalog`, `seating`, `booking`, `payment`, `review`, `accommodation`) e **admin** (`crm` e os controllers de `/v1/admin/**`, possivelmente um deploy próprio). *Pré-requisito:* M45 (ciclo `catalog ↔ seating`) e os limites do M35/M42 assentados — dividir antes é mover código duas vezes. *Preparar já:* nenhuma exceção nova no ArchUnit; conceitos só por id; `common/` sem regra de negócio; o SQL do `crm` que lê `booking`/`payment`/`review` fica todo em `infrastructure/persistence/crm/` (num corte, vira view mantida pelo dono da tabela ou chamada por id às portas do outro conceito). *Gatilhos:* precisar de um segundo deploy (o admin), build lento ou times separados, exceções permanentes nas regras de arquitetura.
 
 ## Checklist de fechamento de módulo
 

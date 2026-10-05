@@ -1,6 +1,7 @@
 package com.dbook.application.identity.registeruserusecase
 
 import com.dbook.application.identity.RegisterUserUseCase
+import com.dbook.application.identity.staff.InMemoryAnonymizedEmails
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
@@ -50,5 +51,6 @@ class FakePasswordHasher : PasswordHasher {
 
 abstract class RegisterUserUseCaseFixture {
     protected val userRepository = FakeUserRepository()
-    protected val useCase = RegisterUserUseCase(userRepository, FakePasswordHasher())
+    protected val anonymizedEmails = InMemoryAnonymizedEmails()
+    protected val useCase = RegisterUserUseCase(userRepository, FakePasswordHasher(), anonymizedEmails)
 }

@@ -2,6 +2,17 @@
 # (./gradlew bootRun), so from inside the container it is host.docker.internal.
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
+
+# the alert rules (tested with promtool, see alerts_test.yml) and where firing alerts are sent
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
   - job_name: dbook
     metrics_path: /actuator/prometheus

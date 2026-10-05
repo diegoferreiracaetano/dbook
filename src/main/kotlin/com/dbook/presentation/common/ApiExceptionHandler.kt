@@ -5,6 +5,7 @@ import com.dbook.domain.booking.NotBookingOwnerException
 import com.dbook.domain.catalog.AirlineNotFoundException
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.catalog.BookableNotFoundException
+import com.dbook.domain.common.StaleVersionException
 import com.dbook.domain.identity.DuplicateOpenInvitationException
 import com.dbook.domain.identity.InvitationNotFoundException
 import com.dbook.domain.identity.UserAlreadyExistsException
@@ -20,6 +21,7 @@ import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 @RestControllerAdvice
 class ApiExceptionHandler {
@@ -48,6 +50,13 @@ class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleMalformedRequest(): ErrorResponse = ErrorResponse("Malformed request body", ErrorCode.MALFORMED_REQUEST)
+
+    // A query or path parameter of the wrong kind (an unknown enum value, text where a number goes) is a 400. Same
+    // sendError(400) trap as above, so it is answered here.
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleParameterMismatch(ex: MethodArgumentTypeMismatchException): ErrorResponse =
+        ErrorResponse("Invalid value for '${ex.name}'", ErrorCode.VALIDATION_FAILED)
 
     // A query parameter that cannot be read (an unknown enum value, a malformed date) fails the binding of the
     // request object; same sendError(400) trap as above, so it is answered here.
@@ -82,9 +91,9 @@ class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     fun handleConflict(ex: Exception): ErrorResponse = ErrorResponse(ex.message ?: "Conflict", ErrorCode.CONFLICT)
 
-    @ExceptionHandler(OptimisticLockingFailureException::class)
+    @ExceptionHandler(OptimisticLockingFailureException::class, StaleVersionException::class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    fun handleStaleVersion(ex: OptimisticLockingFailureException): ErrorResponse =
+    fun handleStaleVersion(ex: RuntimeException): ErrorResponse =
         ErrorResponse(ex.message ?: "The record was changed by someone else", ErrorCode.STALE_VERSION)
 
     @ExceptionHandler(NotBookingOwnerException::class, ForbiddenOriginException::class)

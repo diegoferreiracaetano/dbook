@@ -1,5 +1,6 @@
 package com.dbook.application.identity.staff
 
+import com.dbook.domain.identity.AnonymizedEmailRepository
 import com.dbook.domain.identity.EmailSender
 import com.dbook.domain.identity.InvitationTokenGenerator
 import com.dbook.domain.identity.Role
@@ -41,6 +42,16 @@ class InMemoryUserRepository(vararg initial: User) : UserRepository {
 
     override fun lockActiveByRole(role: Role): List<User> =
         users.filter { it.role == role && !it.isBlocked }.sortedBy { it.id }
+}
+
+class InMemoryAnonymizedEmails : AnonymizedEmailRepository {
+    private val hashes = mutableSetOf<String>()
+
+    override fun remember(email: String) {
+        hashes += email.trim().lowercase()
+    }
+
+    override fun isRemembered(email: String): Boolean = email.trim().lowercase() in hashes
 }
 
 class InMemoryInvitationRepository : StaffInvitationRepository {

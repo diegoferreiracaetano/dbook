@@ -11,9 +11,10 @@ interface ReviewJpaRepository : JpaRepository<ReviewJpaEntity, Long> {
         value =
             "SELECT AVG(r.rating) FROM review r " +
                 "JOIN booking b ON b.id = r.booking_id " +
-                "JOIN flight f ON f.id = b.bookable_id " +
-                "JOIN airport a ON a.id = f.destination_airport_id " +
-                "WHERE a.iata_code = :destinationIataCode",
+                "LEFT JOIN flight f ON f.id = b.bookable_id " +
+                "LEFT JOIN accommodation ac ON ac.id = b.bookable_id " +
+                "JOIN airport a ON a.id = COALESCE(f.destination_airport_id, ac.destination_airport_id) " +
+                "WHERE a.iata_code = :destinationIataCode AND r.status = 'VISIBLE'",
         nativeQuery = true,
     )
     fun findAverageRatingByDestination(

@@ -36,4 +36,9 @@ class FakeFlightRepository(private val lowestPrice: BigDecimal?) : FlightReposit
         lastTo = to
         return lowestPrice
     }
+
+    override fun update(
+        flight: Flight,
+        expectedVersion: Long?,
+    ): Flight = error("not needed for this test")
 }

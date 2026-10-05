@@ -66,3 +66,20 @@ variable "redis_endpoint" {
 variable "redis_port" {
   type = number
 }
+
+variable "environment_extra" {
+  description = "More environment variables for the container (the queue urls, the portal origin...): Spring relaxed binding, so BOOKING_EXPIRATION_QUEUE_URL sets booking-expiration.queue-url."
+  type        = map(string)
+  default     = {}
+}
+
+variable "secrets_extra" {
+  description = "More secrets for the container: environment variable name -> Secrets Manager ARN. Injected at start, never written into the task definition."
+  type        = map(string)
+  default     = {}
+}
+
+variable "task_policy_json" {
+  description = "What the application itself may do on AWS (the queues, the mail): the policy of the task role, apart from the execution role that only starts the container."
+  type        = string
+}

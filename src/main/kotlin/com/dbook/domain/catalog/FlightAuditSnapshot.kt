@@ -13,4 +13,5 @@ fun Flight.toAuditSnapshot(): Map<String, Any?> =
         "price" to price,
         "totalCapacity" to totalCapacity,
         "aircraftType" to aircraftType,
+        "status" to status.name,
     )

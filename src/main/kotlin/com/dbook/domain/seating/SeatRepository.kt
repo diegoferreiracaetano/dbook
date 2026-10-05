@@ -12,6 +12,9 @@ interface SeatRepository {
 
     fun saveAll(seats: List<Seat>): List<Seat>
 
+    /** Removes seats that were never booked (see `planSeatChange`). */
+    fun deleteAll(seatIds: List<Long>)
+
     /** Atomically flips the seat to RESERVED under an optimistic lock; throws if it isn't AVAILABLE. */
     fun reserve(seatId: Long): Seat
 

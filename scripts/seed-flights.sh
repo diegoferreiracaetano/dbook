@@ -1,7 +1,7 @@
 #!/bin/bash
 # Populates the local database with realistic flight data for demos/manual testing —
-# reuses the same REST endpoints already covered by the test suite (no direct SQL
-# inserts for flights), so it can never drift from what the API actually accepts.
+# through POST /v1/admin/flights/import (the same endpoint the portal uses, covered by the test suite), so it can
+# never drift from what the API actually accepts and runs again without duplicating flights.
 #
 # Local dev only: promotes the seed user to SUPER_ADMIN via a direct SQL UPDATE, since there's
 # no self-promotion endpoint (closed security decision — see CHECKLIST.md M3). Never run
@@ -61,7 +61,11 @@ date_days_ahead() {
   fi
 }
 
-echo "Creating $FLIGHT_COUNT flights..."
+echo "Building $FLIGHT_COUNT flights..."
+HEADER="flightNumber,airlineIataCode,originIataCode,destinationIataCode,departureTime,arrivalTime,seatClass,price,totalCapacity,aircraftType"
+CSV_FILE="$(mktemp)"
+trap 'rm -f "$CSV_FILE"' EXIT
+echo "$HEADER" > "$CSV_FILE"
 for i in $(seq 1 "$FLIGHT_COUNT"); do
   route="${ROUTES[$((RANDOM % ${#ROUTES[@]}))]}"
   origin="${route%%:*}"
@@ -82,22 +86,24 @@ for i in $(seq 1 "$FLIGHT_COUNT"); do
   capacity=$((RANDOM % 150 + 50))
   flight_number="DBS$(printf '%05d' "$i")"
 
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/v1/admin/flights" \
-    -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN" \
-    -d "{
-      \"flightNumber\": \"$flight_number\",
-      \"airlineIataCode\": \"$airline\",
-      \"originIataCode\": \"$origin\",
-      \"destinationIataCode\": \"$destination\",
-      \"departureTime\": \"${base_date}T${dep_hour}:00:00\",
-      \"arrivalTime\": \"${base_date}T${arr_hour}:00:00\",
-      \"seatClass\": \"$seat_class\",
-      \"price\": $price.00,
-      \"totalCapacity\": $capacity,
-      \"aircraftType\": \"$aircraft_type\"
-    }")
+  echo "$flight_number,$airline,$origin,$destination,${base_date}T${dep_hour}:00:00,${base_date}T${arr_hour}:00:00,$seat_class,$price.00,$capacity,$aircraft_type" >> "$CSV_FILE"
+done
 
-  echo "  [$http_code] $flight_number ($airline) $origin->$destination on $base_date"
+# One request per 5000 lines (the endpoint's limit), all or nothing within each. The endpoint skips a flight whose number
+# and departure already exist, but this script draws new random dates on every run, so each run adds new flights.
+BATCH=5000
+TOTAL=$(($(wc -l < "$CSV_FILE") - 1))
+echo "Importing $TOTAL flights through POST /v1/admin/flights/import (dryRun=false)..."
+start=2
+while [ "$start" -le $((TOTAL + 1)) ]; do
+  chunk="$(mktemp)"
+  echo "$HEADER" > "$chunk"
+  sed -n "${start},$((start + BATCH - 1))p" "$CSV_FILE" >> "$chunk"
+  response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/v1/admin/flights/import?dryRun=false" \
+    -H "Content-Type: text/csv" -H "Authorization: Bearer $ACCESS_TOKEN" --data-binary "@$chunk")
+  rm -f "$chunk"
+  echo "  [$(echo "$response" | tail -n1)] $(echo "$response" | head -n1)"
+  start=$((start + BATCH))
 done
 
 echo "Done."

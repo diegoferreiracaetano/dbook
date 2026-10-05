@@ -1,5 +1,6 @@
 package com.dbook.application.identity
 
+import com.dbook.domain.identity.AnonymizedEmailRepository
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.PasswordPolicy
 import com.dbook.domain.identity.Role
@@ -21,6 +22,7 @@ data class RegisterUserCommand(
 class RegisterUserUseCase(
     private val userRepository: UserRepository,
     private val passwordHasher: PasswordHasher,
+    private val anonymizedEmails: AnonymizedEmailRepository,
 ) {
     // Public registration always creates a CLIENT — there is no way to self-promote
     // to a staff through this endpoint. Promoting a user is a manual DB operation for
@@ -28,7 +30,8 @@ class RegisterUserUseCase(
     fun execute(command: RegisterUserCommand): User {
         PasswordPolicy.validate(command.password, command.email)
 
-        if (userRepository.findByEmail(command.email) != null) {
+        // an anonymized account's address is never reused: deleting a blocked account must not clear its record
+        if (userRepository.findByEmail(command.email) != null || anonymizedEmails.isRemembered(command.email)) {
             throw UserAlreadyExistsException(command.email)
         }
         val user =

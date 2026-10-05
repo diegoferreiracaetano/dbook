@@ -26,6 +26,9 @@ class OpenApiConfig {
     fun v1Api(): GroupedOpenApi = GroupedOpenApi.builder().group("v1").pathsToMatch("/v1/**").build()
 
     @Bean
+    fun v2Api(): GroupedOpenApi = GroupedOpenApi.builder().group("v2").pathsToMatch("/v2/**").build()
+
+    @Bean
     fun operationalApi(): GroupedOpenApi = GroupedOpenApi.builder().group("operational").pathsToMatch("/health").build()
 
     // GlobalOpenApiCustomizer, not a plain OpenApiCustomizer: once the docs are split into groups,

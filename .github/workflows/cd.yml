@@ -134,3 +134,68 @@ jobs:
           terraform apply -auto-approve
           -var="use_localstack=false"
           -var="image_tag=${{ needs.build-and-push.outputs.image-tag }}"
+
+  # The admin portal (Flutter Web, apps/dbook_admin) is a static site: build it, put it in its bucket and make
+  # CloudFront forget the old files. It waits for the infrastructure (the bucket and the distribution come from the
+  # same Terraform) and skips itself when the portal does not exist yet in this repository.
+  deploy-portal:
+    needs: [check-aws, deploy-dev]
+    if: github.event.workflow_run.conclusion == 'success' && needs.check-aws.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Is there a portal to deploy?
+        id: portal
+        run: echo "present=$([ -f apps/dbook_admin/pubspec.yaml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Flutter
+        if: steps.portal.outputs.present == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build the portal
+        if: steps.portal.outputs.present == 'true'
+        working-directory: apps/dbook_admin
+        run: flutter build web --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+
+      - name: Configure AWS credentials
+        if: steps.portal.outputs.present == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        if: steps.portal.outputs.present == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Where does the portal go?
+        if: steps.portal.outputs.present == 'true'
+        id: target
+        working-directory: terraform
+        run: |
+          terraform init -backend-config=backend-aws.hcl
+          echo "bucket=$(terraform output -raw portal_bucket)" >> "$GITHUB_OUTPUT"
+          echo "distribution=$(terraform output -raw portal_distribution_id)" >> "$GITHUB_OUTPUT"
+
+      # index.html is never cached (a new deploy must be seen at once); the hashed files Flutter generates can be
+      - name: Upload the portal
+        if: steps.portal.outputs.present == 'true'
+        run: |
+          aws s3 sync apps/dbook_admin/build/web "s3://${{ steps.target.outputs.bucket }}" --delete \
+            --exclude index.html --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp apps/dbook_admin/build/web/index.html "s3://${{ steps.target.outputs.bucket }}/index.html" \
+            --cache-control "no-cache"
+
+      - name: Invalidate the cache
+        if: steps.portal.outputs.present == 'true'
+        run: aws cloudfront create-invalidation --distribution-id "${{ steps.target.outputs.distribution }}" --paths "/*"
+

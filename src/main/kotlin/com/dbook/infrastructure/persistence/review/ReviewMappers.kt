@@ -10,6 +10,11 @@ fun ReviewJpaEntity.toDomain(): Review =
         rating = rating,
         comment = comment,
         createdAt = createdAt,
+        status = status,
+        updatedAt = updatedAt,
+        hiddenReason = hiddenReason,
+        hiddenBy = hiddenBy,
+        hiddenAt = hiddenAt,
     )
 
 fun Review.toJpaEntity(): ReviewJpaEntity =
@@ -20,4 +25,9 @@ fun Review.toJpaEntity(): ReviewJpaEntity =
         rating = rating,
         comment = comment,
         createdAt = createdAt,
+        status = status,
+        updatedAt = updatedAt,
+        hiddenReason = hiddenReason,
+        hiddenBy = hiddenBy,
+        hiddenAt = hiddenAt,
     )

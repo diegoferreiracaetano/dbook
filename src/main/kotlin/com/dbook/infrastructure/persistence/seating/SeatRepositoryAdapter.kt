@@ -30,6 +30,8 @@ class SeatRepositoryAdapter(
         return seatJpaRepository.saveAll(entities).map { it.toDomain() }
     }
 
+    override fun deleteAll(seatIds: List<Long>) = seatJpaRepository.deleteAllByIdInBatch(seatIds)
+
     @Transactional
     override fun reserve(seatId: Long): Seat {
         val entity = findEntityOrThrow(seatId)
