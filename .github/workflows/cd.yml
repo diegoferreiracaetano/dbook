@@ -89,7 +89,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Terraform init
         run: terraform init -backend-config=backend-aws.hcl
@@ -124,7 +124,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Terraform init
         run: terraform init -backend-config=backend-aws.hcl
@@ -173,7 +173,7 @@ jobs:
 
       - name: Set up Terraform
         if: steps.portal.outputs.present == 'true'
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
 
