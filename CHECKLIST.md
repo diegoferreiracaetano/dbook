@@ -1182,6 +1182,47 @@ Fecha o item "Não feito" do M24.
 - [x] Mutação (cache, disjuntor/anteparo, pool de jobs) e carga real
 - [x] Docs atualizados (`docs/desempenho.md`, runbooks, observabilidade)
 
+## M48 — Modularização do backend por responsabilidade 📋
+
+Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilidade.md) (revisão 3, módulos: `core`, `audit`, `identity`, `catalog`, `booking`, `flight`, `accommodation`, `pricing`, `favorite`, `ai`, `payment`, `review`, `trips`, `notification`, `admin` e `app`). **Passo a passo, riscos e provas em [docs/plano-modularizacao.md](docs/plano-modularizacao.md).** Sem mudança de comportamento em nenhum passo; cada passo termina com `./gradlew check` verde.
+
+**Fase A — Ensaiar (nada muda de lugar)**
+- [ ] 48.1 A regra do grafo alvo em **todas** as camadas, com as violações de hoje congeladas (`FreezingArchRule`): a lista congelada é a lista de trabalho
+- [ ] 48.2 `build-logic` (convention plugin) com Kotlin, Spring, ktlint, detekt, JaCoCo e a configuração dos testes, ainda com um módulo só
+
+**Fase B — Separar os pacotes (um módulo Gradle ainda)**
+- [ ] 48.3 `flight` nasce como conceito (sai de `catalog`; `seating` continua, marcado como do módulo `flight`)
+- [ ] 48.4 `trips` nasce como conceito ("minhas viagens" sai de `booking`; a rota não muda)
+
+**Fase C — Desfazer os ciclos (um por commit)**
+- [ ] 48.5 `Actor` e `AuditLog` para o `core` (ciclo 10)
+- [ ] 48.6 `flight` publica o fato do preço e `pricing` o ouve (ciclo 7)
+- [ ] 48.7 `DestinationRatings` e a rota de avaliações do hotel para `review` (ciclos 8 e 9)
+- [ ] 48.8 `booking` sem `review` (ciclo 6, resolvido pelo 48.4: aqui só se confirma)
+- [ ] 48.9 O registro de mapeadores de `Bookable` (ciclo 5)
+- [ ] 48.10 `seatId` e `paymentId` como colunas, sem `@ManyToOne` (ciclos 3 e 4)
+- [ ] 48.11 A porta `InventoryReleaser` com as implementações de `flight` e `accommodation` (ciclo 2)
+- [ ] 48.12 A reserva de assento passa para `flight`; os eventos sem `Flight` (ciclo 1)
+- [ ] 48.13 A lista congelada vazia: a regra vira definitiva; o k6 de reserva e de pagamento roda contra a aplicação
+
+**Fase D — Os módulos Gradle (de baixo para cima, um commit por módulo)**
+- [ ] 48.14 `:core` (com `testFixtures`)
+- [ ] 48.15 `:audit`, `:identity`
+- [ ] 48.16 `:catalog`, `:booking`
+- [ ] 48.17 `:flight`, `:accommodation`
+- [ ] 48.18 `:pricing`, `:favorite`, `:ai`
+- [ ] 48.19 `:payment` (com `promo`), `:review`, `:trips`
+- [ ] 48.20 `:notification`, `:admin`
+- [ ] 48.21 `:app` (main, configuração, migrations, Dockerfile, testes de integração, regras do ArchUnit)
+- [ ] 48.22 Cobertura agregada (mínimo 75 %), cache de build, CI
+- [ ] 48.23 Fechamento: `CLAUDE.md`, `README`, ADR "aceita", k6, memória
+
+**Checklist de fechamento do M48:**
+- [ ] Itens revisados; ADR 0001 em "aceita"
+- [ ] `./gradlew check` com **exit 0** em cada passo e no final
+- [ ] Nenhum teste mudou de comportamento (só de lugar), nenhuma migration nova, a baseline do OpenAPI igual
+- [ ] A regra do ArchUnit e a compilação dos módulos dizem o mesmo grafo
+
 ---
 
 **Checklist de fechamento — vale para TODO marco acima (além do checklist padrão abaixo):**
@@ -1200,7 +1241,7 @@ Fecha o item "Não feito" do M24.
 
 - [x] **Script de seed de dados** ✅ (2026-09-09, atualizado 2026-09-13) — `scripts/seed-flights.sh`: cria um admin (promovido via SQL direto, local only), gera N voos (padrão **1000**, aumentado de 30 pra testar a tela de resultados com volume real) com rotas/preços/datas/companhias variados entre os 3 aeroportos e 6 companhias seedadas, tudo via `POST /admin/flights` (os mesmos endpoints testados, sem INSERT direto). Testado de ponta a ponta: 10 voos criados com 201, busca por rota/data confirmou os voos certos.
 - **Integração com API real de voos**: buscar voos de um provedor externo (AviationStack, Amadeus, OpenSky...) em vez de dados só cadastrados via `/admin/flights`. Maior escopo — exige escolher provedor, lidar com API key/rate limit/custo, mapear o schema deles pro domínio, decidir estratégia de sincronização.
-- **Dividir em módulos Gradle** (decisão de 2026-10-04: **agora não, reavaliar depois do M45**). Hoje há um deploy, um banco e uma relação JPA entre conceitos, e as regras do ArchUnit já impõem camadas, ciclos e dependências permitidas; o módulo acrescentaria imposição em tempo de compilação, build incremental e dono por módulo. Corte provável: **plataforma** (`identity`, `audit`, `common`), **negócio** (`catalog`, `seating`, `booking`, `payment`, `review`, `accommodation`) e **admin** (`crm` e os controllers de `/v1/admin/**`, possivelmente um deploy próprio). *Pré-requisito:* M45 (ciclo `catalog ↔ seating`) e os limites do M35/M42 assentados — dividir antes é mover código duas vezes. *Preparar já:* nenhuma exceção nova no ArchUnit; conceitos só por id; `common/` sem regra de negócio; o SQL do `crm` que lê `booking`/`payment`/`review` fica todo em `infrastructure/persistence/crm/` (num corte, vira view mantida pelo dono da tabela ou chamada por id às portas do outro conceito). *Gatilhos:* precisar de um segundo deploy (o admin), build lento ou times separados, exceções permanentes nas regras de arquitetura.
+- **Dividir em módulos Gradle** (decisão de 2026-10-04: **agora não, reavaliar depois do M45** → reavaliada em 2026-10-05: **sim, por responsabilidade**, ver o M48 e o ADR 0001). Hoje há um deploy, um banco e uma relação JPA entre conceitos, e as regras do ArchUnit já impõem camadas, ciclos e dependências permitidas; o módulo acrescentaria imposição em tempo de compilação, build incremental e dono por módulo. Corte provável: **plataforma** (`identity`, `audit`, `common`), **negócio** (`catalog`, `seating`, `booking`, `payment`, `review`, `accommodation`) e **admin** (`crm` e os controllers de `/v1/admin/**`, possivelmente um deploy próprio). *Pré-requisito:* M45 (ciclo `catalog ↔ seating`) e os limites do M35/M42 assentados — dividir antes é mover código duas vezes. *Preparar já:* nenhuma exceção nova no ArchUnit; conceitos só por id; `common/` sem regra de negócio; o SQL do `crm` que lê `booking`/`payment`/`review` fica todo em `infrastructure/persistence/crm/` (num corte, vira view mantida pelo dono da tabela ou chamada por id às portas do outro conceito). *Gatilhos:* precisar de um segundo deploy (o admin), build lento ou times separados, exceções permanentes nas regras de arquitetura.
 
 ## Checklist de fechamento de módulo
 
