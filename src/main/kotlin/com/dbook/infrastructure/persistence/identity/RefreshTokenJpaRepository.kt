@@ -9,6 +9,18 @@ interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenJpaEntity, Long>
     fun findByTokenHash(tokenHash: String): RefreshTokenJpaEntity?
 
     @Modifying
+    @Query("UPDATE RefreshTokenJpaEntity t SET t.revoked = true WHERE t.id = :id AND t.revoked = false")
+    fun consumeById(
+        @Param("id") id: Long,
+    ): Int
+
+    @Modifying
+    @Query("UPDATE RefreshTokenJpaEntity t SET t.revoked = true WHERE t.familyId = :familyId AND t.revoked = false")
+    fun revokeAllByFamilyId(
+        @Param("familyId") familyId: java.util.UUID,
+    )
+
+    @Modifying
     @Query("UPDATE RefreshTokenJpaEntity t SET t.revoked = true WHERE t.userId = :userId AND t.revoked = false")
     fun revokeAllByUserId(
         @Param("userId") userId: Long,

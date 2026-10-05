@@ -106,6 +106,8 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 | [Tempo real](docs/tempo-real.md) | disponibilidade de assentos por WebSocket + Redis |
 | [IA](docs/ia.md) | sugestões de voo com AWS Bedrock |
 | [Nuvem e CI/CD](docs/nuvem-e-cicd.md) | Terraform + AWS e os pipelines |
+| [Desempenho](docs/desempenho.md) | carga com k6, pool, N+1, cache da busca, disjuntor da IA, threads dos jobs |
+| [Segurança](docs/seguranca.md) | o modelo de ameaças consolidado e onde cada defesa é testada |
 | [Custos](docs/custos.md) | quanto a infraestrutura custa por mês e o que o CI prova dela |
 | [Testes e qualidade](docs/testes-e-qualidade.md) | estratégia de testes e verificações automáticas |
 | [CHECKLIST](CHECKLIST.md) | o que exatamente foi feito em cada marco, e o que falta |
@@ -154,5 +156,12 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M42 — Hotéis** (o `Bookable` ganha o segundo filho: estadia por noites com estoque contado por noite e um comando condicional por noite, sem que duas estadias dividam o último quarto, mesma reserva, pagamento, expiração e reembolso do voo — ver [docs/hoteis.md](docs/hoteis.md))
 
 - ✅ **M43 — Terraform completo** (filas com mortas e alarmes, SES, segredos, papel da tarefa separado, o portal em S3 privado + CloudFront com cabeçalhos de segurança, e o CI de infraestrutura sem credenciais — ver [docs/nuvem-e-cicd.md](docs/nuvem-e-cicd.md) e [docs/custos.md](docs/custos.md))
+
+- ✅ **M44 — Ciclo de vida da API** (cabeçalhos de depreciação, versão do app em log e métrica, `GET /v1/app-config`, diff de contrato executável com `oasdiff` no CI, ensaio de `/v2` e `/v1/ws` — ver [docs/versionamento.md](docs/versionamento.md))
+
+- ✅ **M45 — Ciclo `catalog ↔ seating`** (a porta `SeatAvailability`; a persistência sem nenhuma exceção de ciclo)
+- ✅ **M46 — Endurecimento de segurança** (varreduras no CI, rotação da chave do JWT, detecção de reuso do refresh token, limites de corpo e de taxa, cabeçalhos, BCrypt 12 e o teste de logs sem dado pessoal — ver [docs/seguranca.md](docs/seguranca.md))
+- ✅ **M47 — Desempenho e resiliência** (k6 com a corrida do assento, pool do Hikari, N+1 como teste, cache da busca de voos, disjuntor e anteparo do Bedrock, pool próprio dos jobs agendados — ver [docs/desempenho.md](docs/desempenho.md))
+- ✅ **M29 — Segundo fator (TOTP) para a equipe** (RFC 6238, segredo cifrado, códigos de recuperação, obrigatório por papel, reset auditado; fechou também o login do cliente como porta em volta e o token de renovação como acesso — ver [docs/autenticacao.md](docs/autenticacao.md))
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

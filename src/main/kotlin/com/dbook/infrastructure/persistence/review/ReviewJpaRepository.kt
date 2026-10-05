@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param
 interface ReviewJpaRepository : JpaRepository<ReviewJpaEntity, Long> {
     fun findByBookingId(bookingId: Long): ReviewJpaEntity?
 
+    fun findByBookingIdIn(bookingIds: Collection<Long>): List<ReviewJpaEntity>
+
     @Query(
         value =
             "SELECT AVG(r.rating) FROM review r " +

@@ -7,6 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    id("org.owasp.dependencycheck") version "10.0.4"
     jacoco
 }
 
@@ -40,6 +41,9 @@ dependencies {
     implementation("software.amazon.awssdk:bedrockruntime:2.28.29")
     implementation("software.amazon.awssdk:sqs:2.28.29")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
+    // the circuit breaker and the bulkhead in front of Bedrock (core modules only, no Spring starter)
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-bulkhead:2.2.0")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
@@ -137,4 +141,12 @@ tasks.withType<Test> {
     // Desktop rejects with a 400 ("Could not find a valid Docker environment"). It reads
     // this system property, not the DOCKER_API_VERSION env var the CLI tools use.
     systemProperty("api.version", "1.41")
+}
+
+// Run by the Security workflow (and by hand: ./gradlew dependencyCheckAnalyze), not by `check`: it downloads the
+// vulnerability database, which is slow and needs the network. A known vulnerability of CVSS 7 or more fails it.
+dependencyCheck {
+    failBuildOnCVSS = 7.0f
+    nvd.apiKey = System.getenv("NVD_API_KEY")
+    analyzers.assemblyEnabled = false
 }

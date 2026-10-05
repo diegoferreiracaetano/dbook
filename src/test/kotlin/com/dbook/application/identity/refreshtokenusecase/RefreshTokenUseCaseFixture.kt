@@ -9,6 +9,7 @@ import com.dbook.application.identity.loginusecase.SingleUserRepository
 import com.dbook.domain.identity.RefreshToken
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -19,6 +20,7 @@ abstract class RefreshTokenUseCaseFixture {
 
     protected val now: Instant = Instant.parse("2026-10-04T12:00:00Z")
     protected val refreshTokens = FakeRefreshTokenRepository()
+    protected val meters = SimpleMeterRegistry()
     protected val useCase by lazy {
         refreshTokens.save(RefreshToken(userId = 1, tokenHash = "hash:valid-token", expiresAt = now.plusSeconds(3600)))
         RefreshTokenUseCase(
@@ -27,6 +29,7 @@ abstract class RefreshTokenUseCaseFixture {
             FakeTokenService(),
             IssueTokenPairService(FakeTokenService(), refreshTokens),
             Clock.fixed(now, ZoneOffset.UTC),
+            meters,
         )
     }
 

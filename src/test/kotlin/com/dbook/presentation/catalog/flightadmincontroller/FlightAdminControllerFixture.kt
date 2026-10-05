@@ -13,6 +13,7 @@ import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
+import com.dbook.infrastructure.web.FixedWindowCounter
 import com.dbook.presentation.catalog.FlightAdminController
 import com.dbook.presentation.catalog.RegisterFlightRequest
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -59,6 +60,10 @@ abstract class FlightAdminControllerFixture {
 
     @MockBean
     lateinit var userRepository: UserRepository
+
+    // the request limits sit in front of every controller; the slice has no Redis to count in
+    @MockBean
+    lateinit var requestCounter: FixedWindowCounter
 
     protected val objectMapper: ObjectMapper = ObjectMapper().registerModule(JavaTimeModule())
 

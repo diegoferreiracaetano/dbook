@@ -40,6 +40,7 @@ fun RefreshTokenJpaEntity.toDomain(): RefreshToken =
         tokenHash = tokenHash,
         expiresAt = expiresAt,
         revoked = revoked,
+        familyId = familyId.toString(),
     )
 
 fun RefreshToken.toJpaEntity(): RefreshTokenJpaEntity =
@@ -49,4 +50,5 @@ fun RefreshToken.toJpaEntity(): RefreshTokenJpaEntity =
         tokenHash = tokenHash,
         expiresAt = expiresAt,
         revoked = revoked,
+        familyId = java.util.UUID.fromString(familyId),
     )

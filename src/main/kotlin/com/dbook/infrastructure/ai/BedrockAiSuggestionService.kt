@@ -21,6 +21,7 @@ class BedrockAiSuggestionService(
     private val bedrockRuntimeClient: BedrockRuntimeClient,
     private val objectMapper: ObjectMapper,
     @Value("\${ai.bedrock.model-id}") private val modelId: String,
+    private val guard: BedrockGuard,
 ) : AiSuggestionService {
     override fun suggest(
         query: String,
@@ -29,7 +30,7 @@ class BedrockAiSuggestionService(
         val requestBody = buildRequestBody(query, candidates)
         val rawResponse =
             try {
-                val response =
+                guard.call {
                     bedrockRuntimeClient.invokeModel(
                         InvokeModelRequest.builder()
                             .modelId(modelId)
@@ -37,8 +38,8 @@ class BedrockAiSuggestionService(
                             .accept("application/json")
                             .body(SdkBytes.fromUtf8String(requestBody))
                             .build(),
-                    )
-                response.body().asUtf8String()
+                    ).body().asUtf8String()
+                }
             } catch (e: SdkException) {
                 throw AiServiceUnavailableException("Bedrock call failed: ${e.message}", e)
             }

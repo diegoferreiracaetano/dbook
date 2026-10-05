@@ -73,6 +73,54 @@ Contador de **falhas** no Redis (compartilhado entre instâncias, expira sozinho
 
 Métrica: `dbook.auth.login{outcome=success|invalid_credentials|blocked|rate_limited, audience=client|staff}`.
 
+## Refresh token: família e reuso
+
+Todo login abre uma **família** de refresh tokens (`family_id`); cada renovação gasta o token e emite o próximo na mesma família. A troca é um `UPDATE` condicional (gastar o token e perceber que já estava gasto são a mesma operação), então dois refreshes simultâneos com o mesmo token têm um só vencedor. Apresentar um token **já gasto** é sinal de roubo (o ladrão ou o dono está usando uma cópia velha): a família inteira é revogada, quem tinha o último token precisa entrar de novo, e a métrica `dbook.auth.refresh{outcome=reuse_detected}` conta o caso.
+
+## Chave de assinatura e rotação
+
+O token leva o `kid` da chave que o assinou. `jwt-keys.active-key-id` diz qual assina; `jwt-keys.retired` (id → segredo em Base64) guarda as aposentadas, que **só verificam**. Um token sem `kid` (emitido antes da rotação existir) é verificado pela chave `legacy`, se configurada, senão pela ativa. O procedimento passo a passo está em [seguranca.md](seguranca.md#rotacionar-a-chave-do-jwt).
+
+## Segundo fator para a equipe (TOTP)
+
+Um aplicativo autenticador (Google Authenticator, 1Password, Authy...) gera um código de 6 dígitos a cada 30 segundos a partir de um segredo que só ele e o servidor têm (RFC 6238: HMAC-SHA1 do passo de tempo). Quem rouba a senha da equipe não entra sem o telefone.
+
+**Como o segredo é guardado.** Cifrado com AES-256-GCM (da JVM; autenticada: um valor alterado não decifra) com a chave de `totp.encryption-key` (Secrets Manager em produção, nunca no repositório), com um IV aleatório por valor e o prefixo `v1:` para uma troca futura de chave. O banco nunca vê o segredo em claro. Os **códigos de recuperação** (10, `XXXXX-XXXXX`, ~50 bits cada) são mostrados **uma vez** e só o *hash* fica guardado.
+
+**O desenho do login em duas etapas** (`POST /v1/admin/auth/login`):
+
+| Situação da conta | Resposta |
+|---|---|
+| sem segundo fator e o papel não o exige | `200` com a sessão, como sempre |
+| com o segundo fator ligado | `202 {challengeToken, enrollmentRequired: false}`, **sem sessão e sem cookie** |
+| sem segundo fator e o papel o exige (`admin.two-factor.required-roles`, `SUPER_ADMIN` em produção) | `202 {challengeToken, enrollmentRequired: true}`: a conta só entra depois de cadastrar o autenticador |
+
+O `challengeToken` é um JWT de **5 minutos** que só prova "a senha estava certa" e diz o que vem a seguir (`use=2fa-verify` ou `2fa-enroll`): não abre nenhum endpoint (o filtro só aceita `use=access`). Com ele:
+
+- `POST /v1/admin/auth/2fa/verify {challengeToken, code}`: o código de 6 dígitos **ou um código de recuperação** → `200` com a sessão e o cookie.
+- `POST /v1/admin/auth/2fa/enroll {challengeToken}` → `{otpauthUri, manualEntryKey}` (o URI vira o QR; a chave é para digitar à mão) e `POST /v1/admin/auth/2fa/confirm {challengeToken, code}` → a sessão **e os códigos de recuperação**, uma vez.
+
+**Quem já está logado** liga e desliga o segundo fator da própria conta em `POST /v1/admin/2fa/enroll`, `/confirm {code}` (devolve os 10 códigos) e `/disable {password, code}` (pede a senha **e** um código: uma sessão roubada sozinha não o desliga; recusado, `409`, para o papel que o exige). `GET /v1/admin/auth/me` diz `twoFactorEnabled` e `twoFactorRequired`.
+
+**O que protege cada código:**
+
+- **Uso único.** O passo de tempo do último código aceito (`last_used_step`) é gravado por um `UPDATE ... WHERE last_used_step < :passo`, cujo número de linhas é a decisão: dois pedidos com o mesmo código, só um passa; um código visto por cima do ombro não serve de novo, nem um mais antigo. Vale o passo atual **e um de cada lado** (relógios que se desencontram).
+- **Tentativas limitadas.** Os erros contam num limite próprio (por conta, 5 por 15 minutos, e por IP), o mesmo limitador do login, então 6 dígitos não se adivinham com calma (`429`).
+- **Código de recuperação** gasto por um `UPDATE ... WHERE used_at IS NULL`: vale uma vez.
+- **Um código errado é `400 INVALID_TWO_FACTOR_CODE`**, não 401: o pedido é que está errado, a sessão não, e um cliente não deve confundi-lo com um login que expirou.
+
+**A porta dos fundos fechada.** O `POST /v1/auth/login` (o do cliente) aceita qualquer papel com a senha certa, e o token que ele devolve abre `/v1/admin/**` do mesmo jeito: sem cuidado, seria um caminho em volta do segundo passo. Por isso uma conta de **equipe** com o segundo fator ligado **ou** de um papel que o exige é recusada nesse endpoint com `403 TWO_FACTOR_REQUIRED`. Cliente e equipe sem segundo fator (e sem exigência) entram como antes.
+
+**Quem perde o telefone e os códigos:** outro `SUPER_ADMIN` chama `POST /v1/admin/staff/{id}/2fa/reset {reason}` (`ADMIN_MANAGE`, motivo de ao menos 10 caracteres): remove o segundo fator e **encerra as sessões** da pessoa, auditado como `TWO_FACTOR_RESET` com o motivo. Ninguém reseta a própria conta (seria a porta que o segundo fator fecha) e o `404` esconde quem é cliente.
+
+**O tipo de cada token (`use`).** Junto com o desafio nasceu um achado: o token de acesso e o de renovação tinham o mesmo formato, então o de renovação (7 dias) abriria qualquer endpoint como se fosse de acesso. Agora cada token leva `use` (`access`, `refresh`, `2fa-verify`, `2fa-enroll`) e só `access` abre endpoint. Um token sem `use` (emitido antes disso) vale como de acesso até o último expirar.
+
+Configuração: `admin.two-factor.required-roles` (`ADMIN_2FA_REQUIRED_ROLES`, vazio no desenvolvimento local, `SUPER_ADMIN` na Terraform), `admin.two-factor.issuer` (o nome que o aplicativo mostra) e `totp.encryption-key` (`TOTP_ENCRYPTION_KEY`).
+
+## Custo do BCrypt
+
+`security.bcrypt-strength` (padrão **12**; os testes usam 4 para ficarem rápidos). O custo vai dentro do próprio *hash*: subir o valor não invalida nenhuma senha existente, as novas é que usam o custo novo.
+
 ## Política de senha
 
 Mínimo de **8** caracteres para cliente (**12** para a equipe), no máximo 72 **bytes** (o BCrypt ignora o que passa disso), diferente do e-mail e fora de uma lista de senhas comuns. Sem regra de composição (NIST 800-63B). Viola: `400` com `code=VALIDATION_FAILED`.

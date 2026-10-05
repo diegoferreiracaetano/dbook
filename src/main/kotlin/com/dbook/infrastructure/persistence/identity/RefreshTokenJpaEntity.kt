@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
+import java.util.UUID
 
 // user_id is a plain column, not a @ManyToOne: nothing here ever needs to navigate to
 // the full User object, just its id. The FK constraint still lives at the DB level
@@ -24,4 +25,6 @@ class RefreshTokenJpaEntity(
     @Column(name = "expires_at")
     var expiresAt: Instant = Instant.EPOCH,
     var revoked: Boolean = false,
+    @Column(name = "family_id")
+    var familyId: UUID = UUID.randomUUID(),
 )

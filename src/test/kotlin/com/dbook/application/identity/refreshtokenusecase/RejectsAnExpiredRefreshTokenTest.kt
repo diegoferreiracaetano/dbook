@@ -24,6 +24,7 @@ class RejectsAnExpiredRefreshTokenTest : RefreshTokenUseCaseFixture() {
                 FakeTokenService(),
                 IssueTokenPairService(FakeTokenService(), FakeRefreshTokenRepository()),
                 twoHoursLater,
+                meters,
             )
 
         assertFailsWith<InvalidTokenException> { lateUseCase.execute("valid-token") }

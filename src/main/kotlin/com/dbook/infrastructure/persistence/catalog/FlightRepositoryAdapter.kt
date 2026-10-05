@@ -3,9 +3,9 @@ package com.dbook.infrastructure.persistence.catalog
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.FlightNotFoundException
 import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.catalog.FlightSearchCache
 import com.dbook.domain.common.StaleVersionException
-import com.dbook.domain.seating.SeatStatus
-import com.dbook.infrastructure.persistence.seating.SeatJpaRepository
+import com.dbook.domain.seating.SeatAvailability
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -16,7 +16,8 @@ class FlightRepositoryAdapter(
     private val flightJpaRepository: FlightJpaRepository,
     private val airlineJpaRepository: AirlineJpaRepository,
     private val airportJpaRepository: AirportJpaRepository,
-    private val seatJpaRepository: SeatJpaRepository,
+    private val seatAvailability: SeatAvailability,
+    private val searchCache: FlightSearchCache,
 ) : FlightRepository {
     override fun findById(id: Long): Flight? =
         flightJpaRepository.findById(id).orElse(null)?.toDomain(availableCapacityOf(id))
@@ -29,6 +30,7 @@ class FlightRepositoryAdapter(
         val originRef = airportJpaRepository.getReferenceById(originId)
         val destinationRef = airportJpaRepository.getReferenceById(destinationId)
         val saved = flightJpaRepository.save(flight.toJpaEntity(airlineRef, originRef, destinationRef))
+        searchCache.invalidateAll()
         // origin/destination here are proxies (getReferenceById) with only the id set;
         // reading them outside the transaction throws LazyInitializationException. We
         // reuse the full domain objects the caller already had, only refreshing the
@@ -76,6 +78,7 @@ class FlightRepositoryAdapter(
         entity.aircraftType = flight.aircraftType
         // flushed now: the version moves and a concurrent change shows up here, not at some later commit
         flightJpaRepository.saveAndFlush(entity)
+        searchCache.invalidateAll()
         return flight
     }
 
@@ -86,19 +89,19 @@ class FlightRepositoryAdapter(
     ): List<Flight> {
         val start = date.atStartOfDay()
         val end = date.plusDays(1).atStartOfDay()
-        return flightJpaRepository
-            .findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetweenAndActiveTrue(
-                originIataCode,
-                destinationIataCode,
-                start,
-                end,
-            )
-            .map { it.toDomain(availableCapacityOf(requireNotNull(it.id))) }
+        return withAvailability(
+            flightJpaRepository
+                .findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetweenAndActiveTrue(
+                    originIataCode,
+                    destinationIataCode,
+                    start,
+                    end,
+                ),
+        )
     }
 
     override fun findActive(): List<Flight> =
-        flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc()
-            .map { it.toDomain(availableCapacityOf(requireNotNull(it.id))) }
+        withAvailability(flightJpaRepository.findTop50ByActiveTrueOrderByDepartureTimeAsc())
 
     override fun findLowestPrice(
         destinationIataCode: String,
@@ -111,6 +114,11 @@ class FlightRepositoryAdapter(
             to.plusDays(1).atStartOfDay(),
         )
 
-    private fun availableCapacityOf(bookableId: Long): Int =
-        seatJpaRepository.countByBookable_IdAndStatus(bookableId, SeatStatus.AVAILABLE)
+    private fun availableCapacityOf(bookableId: Long): Int = seatAvailability.availableSeats(bookableId)
+
+    // the free seats of every flight of a list in one query, not one query each
+    private fun withAvailability(entities: List<FlightJpaEntity>): List<Flight> {
+        val free = seatAvailability.availableSeatsOf(entities.map { requireNotNull(it.id) })
+        return entities.map { it.toDomain(free[it.id] ?: 0) }
+    }
 }

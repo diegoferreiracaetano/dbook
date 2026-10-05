@@ -723,16 +723,28 @@ Problema: a promoção era SQL manual (de propósito: sem endpoint de autopromo�
 - [x] Revisão de código (10 achados corrigidos) e mutação nos pontos críticos
 - [x] Docs e instruções do projeto atualizados
 
-## M29 — Autenticação em dois fatores (TOTP) para a equipe 📋
+## M29 — Autenticação em dois fatores (TOTP) para a equipe ✅
 
-Incremental: pode ser entregue depois do portal estar de pé; o backend sai antes.
+- [x] 29.1 Migration `V47__create_staff_two_factor.sql`: `staff_totp` (`user_id`, `secret_encrypted`, `confirmed_at`, `last_used_step`) e `staff_recovery_code` (`user_id`, `code_hash`, `used_at`, único por usuário e hash)
+- [x] 29.2 Portas `TotpService` (RFC 6238, HMAC-SHA1 da JVM, 6 dígitos, passo de 30 s, tolerância de ±1 passo, **vetores de teste da RFC**), `SecretCipher` (AES-256-GCM da JVM, IV por valor, prefixo `v1:`, chave de `totp.encryption-key`: o SHA-256 de um texto longo; Secrets Manager em produção, já ligado na Terraform) e `RecoveryCodeGenerator`
+- [x] 29.3 Cadastro avulso `POST /v1/admin/2fa/enroll` e `/confirm` (URI `otpauth://` para o QR e a chave para digitar; 10 códigos de recuperação **uma vez**, só o *hash* guardado) e `/disable` (senha **e** código; recusado para o papel que o exige)
+- [x] 29.4 Login em duas etapas: senha certa + segundo fator → `202 {challengeToken}` (JWT de 5 min com `use=2fa-verify`) → `POST /v1/admin/auth/2fa/verify` → sessão. Anti-replay por `UPDATE ... WHERE last_used_step < :passo`, tentativas limitadas (limitador próprio por conta e por IP), código de recuperação gasto por `UPDATE ... WHERE used_at IS NULL`
+- [x] 29.5 Política: obrigatório por papel (`admin.two-factor.required-roles`, `SUPER_ADMIN` na Terraform): a conta sem segundo fator recebe `202 enrollmentRequired` e só entra depois de cadastrar (`/auth/2fa/enroll` e `/confirm` com o desafio); reset por **outro** `SUPER_ADMIN` (`ADMIN_MANAGE`, motivo ≥ 10, auditado, encerra as sessões)
+- [x] 29.6 Testes (vetores da RFC, janela de tempo com relógio manual, replay, recuperação, reset auditado, corrida de 20 *threads* no `UPDATE`, o segredo cifrado no banco) e docs (`autenticacao.md`, `seguranca.md`, `endpoints.md`, `auditoria.md`)
 
-- [ ] 29.1 Migration `V35__create_staff_totp.sql`: `staff_totp` (`user_id`, `secret_encrypted`, `confirmed_at`, `last_used_step`), `staff_recovery_code` (`user_id`, `code_hash`, `used_at`)
-- [ ] 29.2 Portas `TotpService` (RFC 6238: HMAC-SHA1, 6 dígitos, passo de 30 s, tolerância ±1 passo; **vetores de teste da RFC**) e `SecretCipher` (AES-GCM, chave vinda de configuração/Secrets Manager — nunca no repositório). HMAC via JCA, sem inventar criptografia
-- [ ] 29.3 Cadastro: `POST /v1/admin/auth/2fa/enroll` (devolve a URI `otpauth://` para o QR) e `.../confirm` (código válido ativa); 10 códigos de recuperação exibidos **uma vez**, guardados com hash
-- [ ] 29.4 Login em duas etapas: senha correta + 2FA ativo → `challengeToken` (JWT de 5 min, escopo `2fa`) → `POST /v1/admin/auth/2fa/verify` → tokens. Anti-replay (`last_used_step`), limite de tentativas, código de recuperação consumível uma vez
-- [ ] 29.5 Política: obrigatório para `SUPER_ADMIN` (`admin.2fa.required`, configurável); reset por outro `SUPER_ADMIN` (`ADMIN_MANAGE`, auditado, exige motivo)
-- [ ] 29.6 Testes (vetores da RFC, janela de tempo com `Clock.fixed`, replay, recuperação, reset auditado) e docs
+**O que a execução ensinou (e que não estava no plano):**
+- **O login do cliente era uma porta em volta do segundo fator.** `POST /v1/auth/login` aceita qualquer papel com a senha certa, e o token que devolve abre `/v1/admin/**`. Sem fechar isso, o 2FA seria decorativo: agora a conta da equipe com o segundo fator (ou de papel que o exige) leva `403 TWO_FACTOR_REQUIRED` ali.
+- **O token de renovação (7 dias) abria qualquer endpoint como se fosse de acesso:** os dois tinham o mesmo formato. O desafio do 2FA, que tem de **não** abrir endpoint nenhum, forçou a distinção: todo token leva `use` e só `access` abre endpoint (sem `use`, de antes, vale como acesso até expirar).
+- A chave que a Terraform gera (44 letras e números) não é um Base64 de 32 bytes: a chave do AES é o SHA-256 do texto, e qualquer texto longo serve.
+- O código errado é `400`, não `401`: um cliente não deve tomá-lo por login vencido.
+
+**Fora do escopo (de propósito):** WebAuthn/chaves de segurança, 2FA do cliente do app, troca da chave do AES (o prefixo `v1:` deixa o caminho aberto), lembrar o dispositivo.
+
+**Checklist de fechamento do M29:**
+- [x] Itens 29.1–29.6 revisados
+- [x] `./gradlew check` com **exit 0**
+- [x] Mutação (replay, porta do cliente, tipo do token) verificada
+- [x] Docs atualizados
 
 ## M30 — CRM de clientes (backend) ✅  *(GG — incrementos 30a–30d)*
 
@@ -1094,33 +1106,81 @@ Problema (achado 6): favoritos só no aparelho → somem ao trocar de celular e 
 - [x] `terraform fmt`, `validate`, `tflint` e `checkov` limpos; `actionlint` limpo
 - [x] Docs atualizados (`nuvem-e-cicd.md`, `custos.md`)
 
-## M44 — Ciclo de vida da API e versão mínima do app 📋
+## M44 — Ciclo de vida da API e versão mínima do app ✅
 
 Fecha o item "Não feito" do M24.
 
-- [ ] 44.1 Anotação `@DeprecatedApi(sunset, link)` + interceptor que devolve `Deprecation`, `Sunset` e `Link` (RFC 8594); métrica `dbook.api.deprecated.calls{path,appVersion}`
-- [ ] 44.2 Cabeçalho `X-App-Version` enviado pelo app/portal, registrado em MDC e métrica — **base para decidir quando uma versão pode morrer**
-- [ ] 44.3 `GET /v1/app-config` → `minSupportedVersion` por plataforma (tela de "atualize o app" no app, M44 do app)
-- [ ] 44.4 **Diff de contrato no CI:** gerar o OpenAPI e comparar com o da `main` (`oasdiff`) — reprova mudança quebrante sem `/v2` (a política de `docs/versionamento.md` vira regra executável)
-- [ ] 44.5 Ensaio de `/v2` com uma mudança trivial para provar o processo; versionamento do `/ws` (decisão registrada: `/v1/ws` com redirecionamento do antigo)
+- [x] 44.1 `@DeprecatedApi(since, sunset, link)` + interceptor que devolve `Deprecation`, `Sunset` e `Link` (RFC 9745 e 8594); métrica `dbook.api.deprecated.calls{path,appVersion}`
+- [x] 44.2 `X-App-Version` e `X-App-Platform` registrados no log (MDC) e na métrica `dbook.app.requests{platform,appVersion}`, **normalizados para um conjunto fechado** (a base para decidir quando uma versão pode morrer, sem abrir séries sem fim)
+- [x] 44.3 `GET /v1/app-config` (público) → `minSupportedVersion`, `latestVersion` e `storeUrl` por plataforma, de configuração
+- [x] 44.4 **Diff de contrato no CI:** o contrato de cada versão commitado (`docs/openapi/`), um teste que o mantém igual ao que o código publica, e o job `contract` com `oasdiff breaking --fail-on ERR` contra a base (verificado: remover um endpoint sem depreciação reprova)
+- [x] 44.5 Ensaio de `/v2` (`GET /v2/destinations` ao lado do v1, que ficou obsoleto) e `/v1/ws` (decisão registrada: o `/ws` antigo continua, porque redirecionar o *handshake* não funciona)
 
-## M45 — Ciclo `catalog ↔ seating` na persistência 📋
+**Testes (12 novos, 827 + os do contrato):** a normalização da versão e da plataforma (lixo e hostil viram `unknown`), os cabeçalhos e a contagem de um endpoint obsoleto, a contagem por app em toda requisição, o `app-config` público, a `v1` e a `v2` respondendo juntas em formas diferentes, `/v1/ws` e `/ws` aceitando um token válido e o `/v1/ws` recusando sem token, e o teste da linha de base do OpenAPI.
 
-- [ ] 45.1 Introduzir a porta de domínio `SeatAvailability` (disponibilidade por voo) implementada em `seating`; o catálogo deixa de importar `SeatJpaRepository`
-- [ ] 45.2 Remover a exceção de `PersistenceConceptsAreFreeOfCyclesTest`; medir se a consulta de busca piorou (`EXPLAIN`, teste de contagem de queries)
+**O que a execução ensinou:** um filtro novo que exige `MeterRegistry` quebrou todos os testes de fatia web (`@WebMvcTest`), que não têm registro de métricas: a dependência passou a ser um `ObjectProvider` com um registro descartável de reserva.
 
-## M46 — Endurecimento de segurança 📋  *(cada item: verificar o que já existe antes de fazer)*
+**Fora do escopo (de propósito):** recusar (`426`) uma versão abaixo do mínimo no servidor (o app decide, pelo `app-config`); a tela "atualize o app" (é do app).
 
-- [ ] 46.1 CI: varredura de dependências (Dependabot + OWASP dependency-check), de segredos (gitleaks) e SAST (CodeQL)
-- [ ] 46.2 Rotação de chave JWT (`kid` + chaves múltiplas), **detecção de reuso de refresh token** (reuso de um revogado revoga a família inteira)
-- [ ] 46.3 Cabeçalhos HTTP de segurança no backend, limite de tamanho de corpo, limite de taxa geral por IP/usuário (hoje só `/ai/**` e o login)
-- [ ] 46.4 Revisão do custo do BCrypt, logs sem PII (teste que busca CPF/e-mail/token nos logs do teste de integração), `docs/seguranca.md` (modelo de ameaças consolidado)
+**Checklist de fechamento do M44:**
+- [x] Itens 44.1–44.5 revisados
+- [x] `./gradlew check` com **exit 0**
+- [x] Docs atualizados (`versionamento.md`, `endpoints.md`, `README.md`)
 
-## M47 — Desempenho e resiliência 📋
+## M45 — Ciclo `catalog ↔ seating` na persistência ✅
 
-- [ ] 47.1 Teste de carga com k6 (busca, reserva concorrente, pagamento) com metas e relatório em `docs/desempenho.md`
-- [ ] 47.2 Pool de conexões (métricas do Hikari, dimensionamento), detecção de N+1 como teste em listas críticas, cache da busca de voos (Redis) com invalidação por mudança de voo
-- [ ] 47.3 Tempo-limite e *circuit breaker* para o Bedrock (hoje 502/503 mapeados, sem proteção de latência), *bulkhead* do consumidor de fila
+- [x] 45.1 Porta de domínio `SeatAvailability` (assentos livres de um reservável) implementada em `seating` (`SeatAvailabilityAdapter`); os adaptadores do catálogo (`FlightRepositoryAdapter`, `BookableRepositoryAdapter`) deixam de importar o `SeatJpaRepository`
+- [x] 45.2 A exceção saiu de `PersistenceConceptsAreFreeOfCyclesTest` (a regra agora não tem exceção nenhuma); a busca de voos **não piorou**: medido antes e depois, **7 queries para 3 voos**, fixado em `TheFlightSearchAsksForSeatsThroughThePortOncePerFlightTest`
+
+**O que a execução ensinou:** o custo por voo da busca (2 queries) já existia; reduzi-lo é trabalho do M47 (N+1), e agora há um número medido para melhorar.
+
+**Pré-requisito do corte em módulos Gradle (ver "Ideias futuras"):** cumprido: as regras do ArchUnit já não têm exceção.
+
+**Checklist de fechamento do M45:**
+- [x] Itens 45.1–45.2 revisados
+- [x] `./gradlew check` com **exit 0**
+- [x] Docs atualizados (`CLAUDE.md`)
+
+## M46 — Endurecimento de segurança ✅
+
+- [x] 46.1 CI: **Dependabot** (Gradle, Actions, Docker, Terraform), **OWASP dependency-check** (reprova CVSS ≥ 7; plugin do Gradle), **gitleaks** sobre o histórico inteiro (com a lista de valores públicos de propósito, cada um com o motivo; verificado localmente: sem vazamentos) e **CodeQL** (Java/Kotlin), no `security.yml` a cada PR e toda segunda; validado com `actionlint`
+- [x] 46.2 Rotação da chave do JWT (`kid` no cabeçalho, a chave ativa assina, as aposentadas só verificam, `legacy` para o que foi emitido antes) e **detecção de reuso do refresh token**: V46 (`family_id`), troca atômica do token (`consume`), reuso revoga a família inteira, métrica `reuse_detected`
+- [x] 46.3 Cabeçalhos HTTP de segurança no backend (CSP `default-src 'none'`, `Referrer-Policy`, `Permissions-Policy`, HSTS sobre HTTPS), **limite de tamanho do corpo** (`413`) e **limite de taxa geral por IP e por usuário** em Redis (`429` com `Retry-After`, falha aberta); o login e a IA mantêm os seus
+- [x] 46.4 BCrypt de custo **12** (configurável, o custo vai no *hash*), **logs sem dado pessoal** (o teste coleta tudo o que a jornada inteira loga e procura e-mail, nome, senha, tokens e titular; verificado por mutação), `docs/seguranca.md` (modelo de ameaças consolidado)
+
+**O que a execução ensinou:**
+- O teste de rotação falhou "sempre nulo" por um motivo que nada tinha a ver com a chave: o analisador do JWT confere a expiração contra o **relógio de verdade**, e o teste fabricava tokens num relógio fixo no passado.
+- Dois reusos, não um: depois de a família ser revogada, o filho que o ladrão ou o cliente apresenta também é um token gasto, então a métrica soma os dois (e está certo).
+- Um filtro de limites **antes** da segurança não conhece o usuário: o limite por usuário é um interceptor que roda depois da autenticação, e o por IP é o filtro.
+
+**Fora do escopo (de propósito):** o IP atrás de um balanceador (confiar no `X-Forwarded-For` é decisão para quando houver balanceador); o limite de corpo sem `Content-Length`. (O 2FA, que ficou fora aqui, é o M29, já feito.)
+
+**Checklist de fechamento do M46:**
+- [x] Itens 46.1–46.4 revisados
+- [x] `./gradlew check` com **exit 0**
+- [x] Mutação (logs) e testes de corrida/limite
+- [x] Docs atualizados
+
+## M47 — Desempenho e resiliência ✅
+
+- [x] 47.1 Teste de carga com **k6** em `loadtest/` (busca com metas de p95/p99, **corrida de 50 clientes pelo mesmo assento** com limiar de contagem — exatamente 1 vence, 49 × `409`, nenhum 5xx —, e a compra inteira), rodados de verdade contra a API local com os números em `docs/desempenho.md`
+- [x] 47.2 **Pool de conexões** dimensionado e observado (`hikari.*`, alerta `DatabasePoolSaturated` com runbook e teste de `promtool`); **testes de N+1** em listas críticas (`presentation/performance/`), que acharam e levaram a corrigir duas (a busca pública: 1 + 2 por voo → 2 consultas; "minhas viagens": 1 + 5 por reserva → fixo); **cache da busca de voos** em Redis (época por `INCR`, invalidação ao confirmar a transação, falha aberta, TTL 30 s)
+- [x] 47.3 **Tempo-limite, disjuntor e anteparo** para o Bedrock (`BedrockGuard`, resilience4j; alerta `AiCircuitOpen`), e o **anteparo dos jobs** (`SchedulingConfig`: os `@Scheduled` rodavam no agendador do WebSocket; agora têm um pool próprio, com teste que conta os jobs)
+
+**O que a execução ensinou:**
+- O teste de N+1 reprovou na primeira rodada: "minhas viagens" custava 5 consultas **por reserva**. A busca de voos, medida no M45 como "normal" (7 consultas para 3 voos), era a mesma doença, só que sem teste que a nomeasse.
+- Os `@Scheduled` nunca tiveram agendador próprio: usavam o do broker do WebSocket, por ser o único `TaskScheduler` do contexto. Só apareceu quando o teste do pool leu o nome da thread (`MessageBroker-`).
+- `ThreadPoolTaskScheduler.getPoolSize()` devolve as threads que existem agora, não as permitidas (nascem sob demanda): o teste lê `corePoolSize`.
+- A variável de ambiente de `request-limits.rate-limit-enabled` é `REQUESTLIMITS_RATELIMITENABLED` (o Spring tira os hífens). Com `REQUEST_LIMITS_...` o k6 levou `429` do limite do M46, o que mostrou que o limite funciona.
+- Filtro, interceptador ou *job* que dependa de Redis exige `@MockBean` nos cinco `@WebMvcTest` (repetição do M46).
+
+**Fora do escopo (de propósito):** k6 no CI, réplica de leitura, particionamento, cache de outras leituras.
+
+**Checklist de fechamento do M47:**
+- [x] Itens 47.1–47.3 revisados
+- [x] `./gradlew check` com **exit 0**
+- [x] Mutação (cache, disjuntor/anteparo, pool de jobs) e carga real
+- [x] Docs atualizados (`docs/desempenho.md`, runbooks, observabilidade)
 
 ---
 

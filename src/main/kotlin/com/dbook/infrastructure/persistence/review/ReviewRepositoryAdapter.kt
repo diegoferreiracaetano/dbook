@@ -12,6 +12,9 @@ class ReviewRepositoryAdapter(
 
     override fun findByBookingId(bookingId: Long): Review? = reviewJpaRepository.findByBookingId(bookingId)?.toDomain()
 
+    override fun findByBookingIds(bookingIds: Collection<Long>): List<Review> =
+        reviewJpaRepository.findByBookingIdIn(bookingIds).map { it.toDomain() }
+
     override fun save(review: Review): Review = reviewJpaRepository.save(review.toJpaEntity()).toDomain()
 
     override fun delete(id: Long) = reviewJpaRepository.deleteById(id)

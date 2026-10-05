@@ -16,6 +16,15 @@ interface TokenService {
     /** Returns the role encoded in the token, or null if the token is missing/invalid/expired. */
     fun parseRole(token: String): Role?
 
+    /** A short-lived token that proves the password was right and says what comes next; it opens no endpoint. */
+    fun generateChallengeToken(
+        userId: Long,
+        purpose: ChallengePurpose,
+    ): String
+
+    /** The challenge in the token, or null if it is missing, invalid, expired or not a challenge token. */
+    fun parseChallenge(token: String): TwoFactorChallenge?
+
     fun hashToken(token: String): String
 
     fun refreshTokenExpiresAt(): Instant

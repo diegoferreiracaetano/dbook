@@ -11,6 +11,9 @@ Toda ação administrativa deixa um **registro imutável**, gravado na mesma tra
 | `FLIGHT_CREATED` | um membro da equipe cadastra um voo | `FLIGHT` (id do voo) | depois: o voo |
 | `BOOKING_CANCELLED_BY_STAFF` | alguém **com** `BOOKING_CANCEL_ANY` cancela a reserva **de outra pessoa** | `BOOKING` (id da reserva) | antes e depois: a reserva (o status muda) |
 | `ACCESS_DENIED` | alguém autenticado tenta algo em `/v1/admin/**` sem a permissão (403) | `ENDPOINT` (`POST /v1/admin/flights`) | — (resultado `DENIED`) |
+| `TWO_FACTOR_ENABLED` | alguém confirma o primeiro código do autenticador (pelo cadastro avulso ou no login) | `STAFF` (id de quem ligou) | — (o segredo e os códigos **nunca** entram) |
+| `TWO_FACTOR_DISABLED` | alguém desliga o segundo fator da própria conta (senha e código) | `STAFF` | — |
+| `TWO_FACTOR_RESET` | outro `SUPER_ADMIN` remove o segundo fator de quem perdeu o telefone | `STAFF` (id de quem foi resetado) | `reason` obrigatório |
 
 O cliente cancelando a **própria** reserva não é ação administrativa e não entra. Cada ação nova entra no enum `AuditAction` (que já declara o tipo do alvo) e no caso de uso que a executa.
 

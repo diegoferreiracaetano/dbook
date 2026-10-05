@@ -6,6 +6,7 @@ import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.User
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
+import java.util.UUID
 
 data class TokenPair(
     val accessToken: String,
@@ -22,7 +23,11 @@ class IssueTokenPairService(
     private val tokenService: TokenService,
     private val refreshTokenRepository: RefreshTokenRepository,
 ) {
-    fun issueFor(user: User): TokenPair {
+    // [familyId]: the chain this pair continues (a refresh); a new sign-in starts a family of its own
+    fun issueFor(
+        user: User,
+        familyId: String = UUID.randomUUID().toString(),
+    ): TokenPair {
         val userId = requireNotNull(user.id) { "Cannot issue tokens for a user that hasn't been persisted" }
         val accessToken = tokenService.generateAccessToken(user)
         val refreshToken = tokenService.generateRefreshToken(user)
@@ -31,6 +36,7 @@ class IssueTokenPairService(
                 userId = userId,
                 tokenHash = tokenService.hashToken(refreshToken),
                 expiresAt = tokenService.refreshTokenExpiresAt(),
+                familyId = familyId,
             ),
         )
         return TokenPair(accessToken, refreshToken)

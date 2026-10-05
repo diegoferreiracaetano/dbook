@@ -6,6 +6,7 @@ import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
+import com.dbook.infrastructure.web.FixedWindowCounter
 import com.dbook.presentation.catalog.FlightSearchController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -37,6 +38,10 @@ abstract class FlightSearchControllerFixture {
 
     @MockBean
     lateinit var userRepository: UserRepository
+
+    // the request limits sit in front of every controller; the slice has no Redis to count in
+    @MockBean
+    lateinit var requestCounter: FixedWindowCounter
 
     protected val gru =
         Airport(

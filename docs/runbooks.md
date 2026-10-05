@@ -62,3 +62,15 @@ Os 0,5 % que sobram são o **orçamento de erro**: o painel mostra quanto dele r
 **Aviso.** O cache falha há 10 minutos (`dbook_cache_total{outcome="error"}`). As respostas continuam saindo, só mais lentas (o dashboard recalcula).
 - **Onde olhar:** a saúde do Redis (`/actuator/health/readiness` mostra `redis`); o log ("The dashboard cache is unavailable").
 - **Mitigar:** devolver o Redis. Enquanto isso, o limitador de login também deixa passar (fail-open), então vale acompanhar o `LoginFailureSpike`.
+
+## DatabasePoolSaturated
+**Aviso.** Há requisições esperando uma conexão com o banco há 2 minutos (`hikaricp_connections_pending > 0`). Quem espera mais de 3 s (`connection-timeout`) leva um erro 500.
+- **Onde olhar:** `hikaricp_connections_active` contra `hikaricp_connections_max`, e `hikaricp_connections_usage_seconds` (quanto tempo cada conexão fica emprestada); no log, o aviso "Connection leak detection triggered" aponta quem segura a conexão; consultas lentas no banco (`pg_stat_activity`).
+- **Mitigar:** primeiro achar quem segura a conexão (uma consulta lenta, uma transação aberta esperando uma chamada externa) em vez de subir o pool; se for só carga, subir `DB_POOL_SIZE` **sem passar** do que o banco aguenta (instâncias × pool ≤ `max_connections` menos a folga), ou subir mais uma instância.
+- **Prevenir:** nenhuma chamada de rede (gateway, SQS, Bedrock) dentro de uma transação; o teste de N+1 reprova listas que crescem em consultas.
+
+## AiCircuitOpen
+**Aviso.** O circuito do modelo de IA está aberto há 5 minutos: as sugestões respondem `503` na hora (a busca comum não é afetada).
+- **Onde olhar:** `dbook_ai_bedrock_calls_total{outcome}` (`failure` subindo antes de `circuit_open`), o log ("Bedrock call failed"), o painel de serviço da AWS e as cotas do Bedrock na região.
+- **Mitigar:** nada a fazer na aplicação: depois de 30 s o circuito deixa passar duas chamadas de teste e fecha sozinho quando o modelo volta. Se o modelo foi aposentado, trocar `ai.bedrock.model-id`.
+

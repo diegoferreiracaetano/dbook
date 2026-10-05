@@ -3,6 +3,7 @@ package com.dbook.presentation.catalog.destinationcontroller
 import com.dbook.application.catalog.GetFeaturedDestinationsUseCase
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
+import com.dbook.infrastructure.web.FixedWindowCounter
 import com.dbook.presentation.catalog.DestinationController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -31,4 +32,8 @@ abstract class DestinationControllerFixture {
 
     @MockBean
     lateinit var userRepository: UserRepository
+
+    // the request limits sit in front of every controller; the slice has no Redis to count in
+    @MockBean
+    lateinit var requestCounter: FixedWindowCounter
 }

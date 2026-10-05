@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.persistence.catalog
 
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -7,6 +8,8 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 interface FlightJpaRepository : JpaRepository<FlightJpaEntity, Long> {
+    // the airline and the two airports come in the same query: without the graph each flight costs three more
+    @EntityGraph(attributePaths = ["airline", "origin", "destination"])
     @Suppress("FunctionName")
     fun findByOrigin_IataCodeAndDestination_IataCodeAndDepartureTimeBetweenAndActiveTrue(
         originIataCode: String,
@@ -15,6 +18,7 @@ interface FlightJpaRepository : JpaRepository<FlightJpaEntity, Long> {
         end: LocalDateTime,
     ): List<FlightJpaEntity>
 
+    @EntityGraph(attributePaths = ["airline", "origin", "destination"])
     fun findTop50ByActiveTrueOrderByDepartureTimeAsc(): List<FlightJpaEntity>
 
     @Query(

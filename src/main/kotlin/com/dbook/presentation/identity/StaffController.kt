@@ -5,6 +5,8 @@ import com.dbook.application.identity.BlockStaffUseCase
 import com.dbook.application.identity.ChangeStaffRoleCommand
 import com.dbook.application.identity.ChangeStaffRoleUseCase
 import com.dbook.application.identity.ListStaffUseCase
+import com.dbook.application.identity.ResetTwoFactorCommand
+import com.dbook.application.identity.ResetTwoFactorUseCase
 import com.dbook.application.identity.UnblockStaffCommand
 import com.dbook.application.identity.UnblockStaffUseCase
 import com.dbook.presentation.common.ApiPaths
@@ -12,6 +14,7 @@ import com.dbook.presentation.common.currentActor
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 /** `/admin/staff` — the team: listing, changing roles, blocking. All of it needs ADMIN_MANAGE. */
@@ -32,6 +36,7 @@ class StaffController(
     private val changeStaffRoleUseCase: ChangeStaffRoleUseCase,
     private val blockStaffUseCase: BlockStaffUseCase,
     private val unblockStaffUseCase: UnblockStaffUseCase,
+    private val resetTwoFactorUseCase: ResetTwoFactorUseCase,
 ) {
     @Operation(summary = "Lists the staff, blocked ones included")
     @PreAuthorize("hasAuthority('ADMIN_MANAGE')")
@@ -72,4 +77,18 @@ class StaffController(
         authentication: Authentication,
     ): StaffMemberResponse =
         StaffMemberResponse.from(unblockStaffUseCase.execute(UnblockStaffCommand(authentication.currentActor(), id)))
+
+    @Operation(
+        summary = "Removes a staff member's second factor and ends their sessions (never your own)",
+    )
+    @PreAuthorize("hasAuthority('ADMIN_MANAGE')")
+    @PostMapping("/{id}/2fa/reset")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun resetTwoFactor(
+        @PathVariable id: Long,
+        @RequestBody request: ResetTwoFactorRequest,
+        authentication: Authentication,
+    ) {
+        resetTwoFactorUseCase.execute(ResetTwoFactorCommand(authentication.currentActor(), id, request.reason))
+    }
 }

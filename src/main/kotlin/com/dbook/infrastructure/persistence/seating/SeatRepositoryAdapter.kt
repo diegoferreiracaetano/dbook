@@ -15,6 +15,9 @@ class SeatRepositoryAdapter(
 ) : SeatRepository {
     override fun findById(id: Long): Seat? = seatJpaRepository.findById(id).orElse(null)?.toDomain()
 
+    override fun findAllById(ids: Collection<Long>): List<Seat> =
+        seatJpaRepository.findAllWithBookable(ids).map { it.toDomain() }
+
     override fun findByBookableId(bookableId: Long): List<Seat> =
         seatJpaRepository.findByBookable_IdOrderByLabel(bookableId).map { it.toDomain() }
 

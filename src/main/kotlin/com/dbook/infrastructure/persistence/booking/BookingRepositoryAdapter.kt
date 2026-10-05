@@ -7,6 +7,7 @@ import com.dbook.infrastructure.persistence.catalog.BookableJpaRepository
 import com.dbook.infrastructure.persistence.payment.PaymentJpaRepository
 import com.dbook.infrastructure.persistence.seating.SeatJpaRepository
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class BookingRepositoryAdapter(
@@ -21,10 +22,22 @@ class BookingRepositoryAdapter(
             entity.toDomain(availableCapacityOf(requireNotNull(entity.bookable.id)))
         }
 
-    override fun findByCustomerId(customerId: Long): List<Booking> =
-        bookingJpaRepository.findByCustomerId(customerId).map { entity ->
-            entity.toDomain(availableCapacityOf(requireNotNull(entity.bookable.id)))
-        }
+    // one session for the whole list: a flight's airline and airports are loaded once however many bookings share them
+    @Transactional(readOnly = true)
+    override fun findByCustomerId(customerId: Long): List<Booking> {
+        val entities = bookingJpaRepository.findByCustomerId(customerId)
+        val free =
+            if (entities.isEmpty()) {
+                emptyMap()
+            } else {
+                seatJpaRepository.countByBookableIds(
+                    entities.map { requireNotNull(it.bookable.id) },
+                    SeatStatus.AVAILABLE,
+                )
+                    .associate { (it[0] as Long) to (it[1] as Long).toInt() }
+            }
+        return entities.map { it.toDomain(free[it.bookable.id] ?: 0) }
+    }
 
     override fun save(booking: Booking): Booking {
         val bookableId = requireNotNull(booking.bookable.id) { "Booking.bookable must be persisted" }

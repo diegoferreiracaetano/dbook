@@ -1,0 +1,22 @@
+# Secret scan (gitleaks) in CI. The only allowances are values that are public on purpose, each with its reason.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "development-only values"
+regexes = [
+  # application.yml: the local-dev JWT key. Production reads the real one from Secrets Manager (see docs/seguranca.md).
+  '''baB82M7DHaS9cSjspi0J4hJS05eUKmSLOu0hbOivY0k=''',
+  # the Base32 of the RFC 6238 test secret "12345678901234567890": a published test vector, in the TOTP tests
+  '''GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ''',
+]
+paths = [
+  # example Idempotency-Key (a UUID the client makes up) in the docs, and the fixture that sends one
+  '''docs/endpoints\.md''',
+  # the Idempotency-Key example (a UUID) shown in the Swagger documentation
+  '''src/main/kotlin/com/dbook/config/OpenApiConfig\.kt''',
+  '''src/test/kotlin/com/dbook/presentation/payment/paymentcontroller/PaymentControllerFixture\.kt''',
+  '''build/.*''',
+  '''docs/openapi/.*\.json''',
+  '''observability/.*''',
+]

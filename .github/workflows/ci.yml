@@ -68,6 +68,31 @@ jobs:
           docker run --rm -v "$PWD:/tf" bridgecrew/checkov:3.3.22
           --config-file /tf/.checkov.yaml -d /tf
 
+  # The contract of each API version is committed (docs/openapi) and a test keeps it equal to what the code publishes.
+  # Here the committed contract is compared with the one of the base (the pull request's target, or the previous
+  # commit on main): a breaking change in /v1 fails the build. A new /v2 is the way to change a contract.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare with the base
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          for version in v1 v2; do
+            file="docs/openapi/openapi-$version.json"
+            if [ -n "$BASE" ] && git cat-file -e "$BASE:$file" 2>/dev/null; then
+              git show "$BASE:$file" > "/tmp/base-$version.json"
+              docker run --rm -v "$PWD:/w" -v /tmp:/t tufin/oasdiff:latest breaking \
+                "/t/base-$version.json" "/w/$file" --fail-on ERR
+            else
+              echo "No $file on the base yet: nothing to compare"
+            fi
+          done
+
   check:
     runs-on: ubuntu-latest
     steps:

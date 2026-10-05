@@ -14,7 +14,7 @@ O consumidor principal é o **app mobile**. Ao contrário de uma página web, n�
 |---|---|---|
 | API de negócio | `/v1/bookings`, `/v1/payments`, `/v1/auth/login`, ... | **sim** |
 | Saúde da aplicação | `/health` | não (operacional) |
-| WebSocket | `/ws` | não (por ora; o contrato dele — tópicos e formato da mensagem — pode ganhar versão se mudar) |
+| WebSocket | `/v1/ws` (e o antigo `/ws`, mantido) | sim, ver [O WebSocket](#o-websocket) |
 | Swagger | `/swagger-ui`, `/v3/api-docs/...` | não |
 | Actuator | `:8081/actuator/...` | não (porta de gestão própria) |
 
@@ -60,10 +60,19 @@ Suponha que `GET /destinations` passe a devolver `rating: { average, count }` em
 
 ## Como aposentar uma versão
 
-Uma versão só pode sair quando ninguém mais a usa, e a observabilidade responde isso com uma consulta:
+Uma versão só pode sair quando ninguém mais a usa. O M44 transformou isso em mecanismo:
 
-```promql
-sum(rate(http_server_requests_seconds_count{uri=~"/v1/.*"}[1d]))
-```
+- **`@DeprecatedApi(since, sunset, link)`** num endpoint ou controller: toda resposta passa a levar `Deprecation: @<segundos>` (RFC 9745), `Sunset: <data HTTP>` (RFC 8594) e `Link: <...>; rel="deprecation"`, e cada chamada é contada em **`dbook.api.deprecated.calls{path, appVersion}`** (o `path` é o padrão da rota, nunca o caminho real).
+- **`X-App-Version` e `X-App-Platform`**: o app manda os dois em toda chamada. O servidor os normaliza para um conjunto pequeno (`1.4.2+17` vira `1.4`; plataforma só `android`, `ios`, `web` ou `unknown`; lixo vira `unknown`, para ninguém criar séries sem fim) e os põe no log (`appVersion`, `appPlatform`) e em **`dbook.app.requests{platform, appVersion}`**. É o que responde "a versão 1.2 do app já pode morrer?": no dia em que ela chega a zero.
+- **`GET /v1/app-config`** (público): `minSupportedVersion`, `latestVersion` e `storeUrl` por plataforma, de `app-config.*` (variáveis `APP_MIN_VERSION_ANDROID` etc.). O app compara a própria versão e mostra "atualize o app". Subir o mínimo é mudar configuração, não código.
+- **O diff de contrato é executável:** o contrato de cada versão fica commitado em `docs/openapi/openapi-v1.json` e `openapi-v2.json`. O teste `TheOpenApiBaselineMatchesTheCodeTest` garante que eles são o que o código publica (para aceitar uma mudança de propósito: `UPDATE_OPENAPI=true ./gradlew test --tests '*OpenApiBaseline*'`), e o job `contract` do CI compara o arquivo do pull request com o da base com o **`oasdiff breaking`**: remover endpoint ou campo, mudar tipo ou tornar obrigatório o que era opcional na `/v1` **reprova o build**. A tabela "o que quebra" acima deixou de ser só recomendação.
 
-O ciclo recomendado: lançar a `v2` → marcar a `v1` como obsoleta (cabeçalhos `Deprecation` e `Sunset`, a data de fim) → acompanhar no dashboard o tráfego da `v1` cair → remover. Este mecanismo de cabeçalhos **ainda não foi implementado**: não era necessário enquanto só existe a `v1`.
+O ciclo: lançar a `v2` → marcar a `v1` como obsoleta → acompanhar `dbook.api.deprecated.calls` e `dbook.app.requests` cair → remover (o `oasdiff` só aceita remover um caminho que já estava marcado como obsoleto).
+
+## O ensaio de uma v2
+
+Para provar o processo antes de precisar dele, o `GET /v2/destinations` responde **ao mesmo tempo** que o v1, com o mesmo caso de uso e outra forma (`price: {lowest}` e `rating: {average}` no lugar de `lowestPrice` e `averageRating`). O `GET /v1/destinations` foi marcado `@DeprecatedApi` (desde 2026-10-05, fim em 2027-10-05). O que o ensaio mostrou: o controller novo, o `ApiPaths.V2`, a rota pública em `SecurityConfig` e o grupo `v2` do Swagger bastam, e o domínio não soube de nada (`ANewVersionAnswersAlongsideTheOldOneTest`).
+
+## O WebSocket
+
+Decisão: o endpoint versionado é **`/v1/ws`**, e o **`/ws` continua respondendo** para os apps já publicados. Um redirecionamento HTTP no *handshake* de WebSocket não é seguido pela maioria dos clientes, então "redirecionar o antigo" não funciona; o app novo passa a usar `/v1/ws` (no marco dele) e o `/ws` sai quando `dbook.app.requests` mostrar que os apps antigos acabaram. O contrato dos tópicos continua o mesmo.

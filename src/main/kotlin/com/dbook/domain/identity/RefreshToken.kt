@@ -1,6 +1,7 @@
 package com.dbook.domain.identity
 
 import java.time.Instant
+import java.util.UUID
 
 /**
  * A single-use, rotating refresh token. Stored only as [tokenHash] — the raw token
@@ -12,6 +13,8 @@ class RefreshToken(
     val tokenHash: String,
     val expiresAt: Instant,
     val revoked: Boolean = false,
+    // the sign-in this token descends from: a spent token seen again revokes the whole family
+    val familyId: String = UUID.randomUUID().toString(),
 ) {
     fun isValid(now: Instant): Boolean = !revoked && expiresAt.isAfter(now)
 }

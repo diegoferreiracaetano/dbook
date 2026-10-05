@@ -222,3 +222,41 @@ tests:
             exp_annotations:
               summary: "The cache has been failing for 10 minutes (answers still work, only slower)"
               runbook: "docs/runbooks.md#cacheunavailable"
+
+  - name: DatabasePoolSaturated fires after two minutes of waiting requests
+    interval: 1m
+    input_series:
+      - series: 'hikaricp_connections_pending{pool="dbook-pool"}'
+        values: "0 0 3 3 3 3 3"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: DatabasePoolSaturated
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: DatabasePoolSaturated
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              pool: dbook-pool
+            exp_annotations:
+              summary: "Requests are waiting for a database connection: the pool is exhausted"
+              runbook: "docs/runbooks.md#databasepoolsaturated"
+
+  - name: AiCircuitOpen fires after five minutes with the circuit open
+    interval: 1m
+    input_series:
+      - series: 'dbook_ai_circuit_state{}'
+        values: "0 1x10"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: AiCircuitOpen
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: AiCircuitOpen
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "The AI model has been refused for 5 minutes (circuit open): suggestions are unavailable"
+              runbook: "docs/runbooks.md#aicircuitopen"
+

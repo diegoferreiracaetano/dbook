@@ -109,3 +109,23 @@ groups:
         annotations:
           summary: "The cache has been failing for 10 minutes (answers still work, only slower)"
           runbook: "docs/runbooks.md#cacheunavailable"
+
+      # requests wait for a database connection: the pool is too small, or a connection is held too long
+      - alert: DatabasePoolSaturated
+        expr: hikaricp_connections_pending > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requests are waiting for a database connection: the pool is exhausted"
+          runbook: "docs/runbooks.md#databasepoolsaturated"
+
+      # the circuit in front of the AI model is open: suggestions answer 503 at once, the plain search is unaffected
+      - alert: AiCircuitOpen
+        expr: dbook_ai_circuit_state == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The AI model has been refused for 5 minutes (circuit open): suggestions are unavailable"
+          runbook: "docs/runbooks.md#aicircuitopen"

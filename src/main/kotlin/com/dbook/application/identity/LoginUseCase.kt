@@ -5,6 +5,8 @@ import com.dbook.domain.identity.AccountBlockedException
 import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.TooManyLoginAttemptsException
+import com.dbook.domain.identity.TwoFactorRequiredException
+import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.observation.annotation.Observed
@@ -25,6 +27,7 @@ class LoginUseCase(
     private val passwordHasher: PasswordHasher,
     private val issueTokenPairService: IssueTokenPairService,
     private val attemptGuard: LoginAttemptGuard,
+    private val twoFactorGate: TwoFactorGate,
     private val meterRegistry: MeterRegistry,
     private val clock: Clock,
 ) {
@@ -32,7 +35,14 @@ class LoginUseCase(
     // as long as a wrong password, so the response time does not say which emails are registered
     private val unknownUserHash by lazy { passwordHasher.hash("unknown-user") }
 
-    fun execute(command: LoginCommand): TokenPair {
+    fun execute(command: LoginCommand): TokenPair = complete(authenticate(command), command)
+
+    /**
+     * Checks who is signing in (the password, the audience, the account's status) and nothing more: no session yet.
+     * A staff account that has a second factor, or must have one, is not let in with the password alone through the
+     * client endpoint: that would be a door around the portal's second step.
+     */
+    fun authenticate(command: LoginCommand): User {
         attemptGuard.lockedFor(command.email, command.clientIp)?.let { retryAfter ->
             countOutcome(command, "rate_limited")
             throw TooManyLoginAttemptsException(retryAfter)
@@ -42,11 +52,30 @@ class LoginUseCase(
         if (user == null || !passwordMatches || !command.audience.accepts(user.role)) {
             rejectCredentials(command)
         }
-        // checked only after the credentials were right: a blocked account is not revealed to a guesser
+        requireMaySignIn(command, user)
+        return user
+    }
+
+    // checked only after the credentials were right: a blocked account is not revealed to a guesser
+    private fun requireMaySignIn(
+        command: LoginCommand,
+        user: User,
+    ) {
         if (user.isBlocked) {
             countOutcome(command, "blocked")
             throw AccountBlockedException()
         }
+        if (command.audience == SessionAudience.CLIENT && twoFactorGate.guards(user)) {
+            countOutcome(command, "second_factor_required")
+            throw TwoFactorRequiredException()
+        }
+    }
+
+    /** The sign-in is done (the password and, if there is one, the second factor): records it, issues the session. */
+    fun complete(
+        user: User,
+        command: LoginCommand,
+    ): TokenPair {
         attemptGuard.clear(command.email)
         userRepository.recordLogin(requireNotNull(user.id), clock.instant())
         countOutcome(command, "success")

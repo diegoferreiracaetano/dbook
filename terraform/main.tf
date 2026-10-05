@@ -151,11 +151,17 @@ module "ecs" {
     CORS_ALLOWED_ORIGINS  = module.portal.url
     # both or neither: the application refuses to start with half of it
     DBOOK_BOOTSTRAP_ADMIN_EMAIL = var.bootstrap_admin_email
+    # the roles that cannot sign in to the portal without an authenticator (see docs/autenticacao.md)
+    ADMIN_2FA_REQUIRED_ROLES = "SUPER_ADMIN"
   }
 
-  secrets_extra = var.bootstrap_admin_email == "" ? {} : {
-    DBOOK_BOOTSTRAP_ADMIN_PASSWORD = module.secrets.bootstrap_admin_password_arn
-  }
+  secrets_extra = merge(
+    # the key that keeps the authenticator secrets unreadable in the database
+    { TOTP_ENCRYPTION_KEY = module.secrets.totp_encryption_key_arn },
+    var.bootstrap_admin_email == "" ? {} : {
+      DBOOK_BOOTSTRAP_ADMIN_PASSWORD = module.secrets.bootstrap_admin_password_arn
+    },
+  )
 }
 
 module "github_oidc" {

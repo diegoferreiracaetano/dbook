@@ -4,6 +4,9 @@ package com.dbook.domain.seating
 interface SeatRepository {
     fun findById(id: Long): Seat?
 
+    /** Several seats in one query, for a list. */
+    fun findAllById(ids: Collection<Long>): List<Seat> = ids.mapNotNull { findById(it) }
+
     /** The full seat map for a [Bookable], e.g. for `GET /bookables/{id}/seats`. */
     fun findByBookableId(bookableId: Long): List<Seat>
 

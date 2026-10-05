@@ -4,7 +4,9 @@ import com.dbook.domain.identity.AccountBlockedException
 import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.InvalidInvitationException
 import com.dbook.domain.identity.InvalidTokenException
+import com.dbook.domain.identity.InvalidTwoFactorCodeException
 import com.dbook.domain.identity.TooManyLoginAttemptsException
+import com.dbook.domain.identity.TwoFactorRequiredException
 import com.dbook.presentation.common.ErrorCode
 import com.dbook.presentation.common.ErrorResponse
 import org.springframework.http.HttpHeaders
@@ -35,6 +37,17 @@ class IdentityExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun handleAccountBlocked(ex: AccountBlockedException): ErrorResponse =
         ErrorResponse(ex.message ?: "Account blocked", ErrorCode.ACCOUNT_BLOCKED)
+
+    // the code is wrong, not the session: a 400, so that a client does not take it for an expired login and retry
+    @ExceptionHandler(InvalidTwoFactorCodeException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidTwoFactorCode(ex: InvalidTwoFactorCodeException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Invalid code", ErrorCode.INVALID_TWO_FACTOR_CODE)
+
+    @ExceptionHandler(TwoFactorRequiredException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun handleTwoFactorRequired(ex: TwoFactorRequiredException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Second factor required", ErrorCode.TWO_FACTOR_REQUIRED)
 
     @ExceptionHandler(TooManyLoginAttemptsException::class)
     fun handleTooManyLoginAttempts(ex: TooManyLoginAttemptsException): ResponseEntity<ErrorResponse> =

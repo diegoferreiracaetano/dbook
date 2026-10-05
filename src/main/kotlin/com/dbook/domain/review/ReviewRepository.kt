@@ -5,6 +5,9 @@ interface ReviewRepository {
 
     fun findByBookingId(bookingId: Long): Review?
 
+    /** The reviews of several bookings in one query, for a list. */
+    fun findByBookingIds(bookingIds: Collection<Long>): List<Review> = bookingIds.mapNotNull { findByBookingId(it) }
+
     fun save(review: Review): Review
 
     fun delete(id: Long)

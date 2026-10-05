@@ -27,10 +27,14 @@ class ListMyBookingsUseCase(
     private val seatRepository: SeatRepository,
     private val reviewRepository: ReviewRepository,
 ) {
-    fun execute(customerId: Long): List<BookingWithDetails> =
-        bookingRepository.findByCustomerId(customerId).map { booking ->
-            val seat = booking.seatId?.let { requireNotNull(seatRepository.findById(it)) { "Seat $it not found" } }
-            val review = booking.id?.let { reviewRepository.findByBookingId(it) }
-            BookingWithDetails(booking, seat, review)
+    fun execute(customerId: Long): List<BookingWithDetails> {
+        val bookings = bookingRepository.findByCustomerId(customerId)
+        // the seats and the reviews of the whole list are asked for once, not once per booking
+        val seats = seatRepository.findAllById(bookings.mapNotNull { it.seatId }).associateBy { it.id }
+        val reviews = reviewRepository.findByBookingIds(bookings.mapNotNull { it.id }).associateBy { it.bookingId }
+        return bookings.map { booking ->
+            val seat = booking.seatId?.let { requireNotNull(seats[it]) { "Seat $it not found" } }
+            BookingWithDetails(booking, seat, booking.id?.let { reviews[it] })
         }
+    }
 }

@@ -22,5 +22,12 @@ class RefreshTokenRepositoryAdapter(
     }
 
     @Transactional
+    override fun consume(id: Long): Boolean = refreshTokenJpaRepository.consumeById(id) == 1
+
+    @Transactional
+    override fun revokeFamily(familyId: String) =
+        refreshTokenJpaRepository.revokeAllByFamilyId(java.util.UUID.fromString(familyId))
+
+    @Transactional
     override fun revokeAllForUser(userId: Long) = refreshTokenJpaRepository.revokeAllByUserId(userId)
 }

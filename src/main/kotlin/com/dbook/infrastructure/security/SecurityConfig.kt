@@ -12,6 +12,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+import org.springframework.security.web.header.writers.StaticHeadersWriter
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher
+import org.springframework.security.web.util.matcher.OrRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -44,6 +51,25 @@ class SecurityConfig(
         http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
+            .headers { headers ->
+                headers.httpStrictTransportSecurity { it.includeSubDomains(true).maxAgeInSeconds(HSTS_SECONDS) }
+                headers.referrerPolicy { it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER) }
+                headers.addHeaderWriter(
+                    StaticHeadersWriter("Permissions-Policy", "geolocation=(), camera=(), microphone=()"),
+                )
+                // an API serves data, never a page: nothing may be loaded or framed (Swagger UI is a page: left out)
+                headers.addHeaderWriter(
+                    DelegatingRequestMatcherHeaderWriter(
+                        NegatedRequestMatcher(
+                            OrRequestMatcher(
+                                AntPathRequestMatcher("/swagger-ui/**"),
+                                AntPathRequestMatcher("/v3/api-docs/**"),
+                            ),
+                        ),
+                        ContentSecurityPolicyHeaderWriter("default-src 'none'; frame-ancestors 'none'"),
+                    ),
+                )
+            }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
@@ -74,6 +100,9 @@ class SecurityConfig(
                         "/v1/admin/auth/login",
                         "/v1/admin/auth/refresh",
                         "/v1/admin/auth/logout",
+                        "/v1/admin/auth/2fa/verify",
+                        "/v1/admin/auth/2fa/enroll",
+                        "/v1/admin/auth/2fa/confirm",
                         "/v1/admin/invitations/accept",
                         "/v1/flights/search",
                         "/v1/flights/lowest-price",
@@ -91,4 +120,8 @@ class SecurityConfig(
                 it.accessDeniedHandler(accessDeniedHandler)
             }.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
+
+    private companion object {
+        const val HSTS_SECONDS = 31_536_000L
+    }
 }

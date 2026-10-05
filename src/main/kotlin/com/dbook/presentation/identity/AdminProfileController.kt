@@ -2,6 +2,7 @@ package com.dbook.presentation.identity
 
 import com.dbook.application.identity.ChangePasswordCommand
 import com.dbook.application.identity.ChangePasswordUseCase
+import com.dbook.application.identity.TwoFactorGate
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.identity.UserRepository
 import com.dbook.presentation.common.ApiPaths
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController
 @SecurityRequirement(name = "bearerAuth")
 class AdminProfileController(
     private val userRepository: UserRepository,
+    private val twoFactorGate: TwoFactorGate,
     private val changePasswordUseCase: ChangePasswordUseCase,
 ) {
     @Operation(summary = "Returns the staff member's profile, role and permissions")
@@ -36,7 +38,11 @@ class AdminProfileController(
         val user =
             userRepository.findById(authentication.currentUserId())
                 ?: throw UserNotFoundException(authentication.currentUserId())
-        return AdminProfileResponse.from(user)
+        return AdminProfileResponse.from(
+            user,
+            twoFactorEnabled = twoFactorGate.isEnabled(authentication.currentUserId()),
+            twoFactorRequired = twoFactorGate.isRequiredFor(user.role),
+        )
     }
 
     @Operation(summary = "Changes the staff member's own password and ends every session (log in again afterwards)")

@@ -13,6 +13,16 @@ spring:
     url: jdbc:postgresql://localhost:5432/dbook
     username: dbook
     password: dbook
+    hikari:
+      pool-name: dbook-pool
+      # see docs/desempenho.md: the pool is small on purpose, the database does the work with few connections
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_POOL_SIZE:10}
+      # a request that cannot get a connection in 3 s fails instead of piling up behind the others
+      connection-timeout: 3000
+      # a connection held longer than this is logged with the stack of who took it (a leak or a slow call inside a
+      # transaction), the warning behind the DatabasePoolSaturated runbook
+      leak-detection-threshold: 20000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -25,18 +35,40 @@ spring:
       port: 6379
 server:
   port: 8080
+# The second factor of the team (see docs/autenticacao.md). The key that keeps the TOTP secrets unreadable in the
+# database: local-dev only here, production reads it from Secrets Manager (TOTP_ENCRYPTION_KEY).
+totp:
+  encryption-key: ${TOTP_ENCRYPTION_KEY:dev-only-totp-key-never-use-it-in-production-0000}
+admin:
+  two-factor:
+    # the roles that MUST have a second factor (comma separated); empty in local dev so the seed script and the
+    # tests can sign in with a password alone. Production sets ADMIN_2FA_REQUIRED_ROLES=SUPER_ADMIN.
+    required-roles: ${ADMIN_2FA_REQUIRED_ROLES:}
+    issuer: DBook
 jwt:
   # Local-dev only secret. Production reads this from AWS Secrets Manager (M6 decision),
   # never committed as a real secret.
   secret: baB82M7DHaS9cSjspi0J4hJS05eUKmSLOu0hbOivY0k=
   access-token-expiration-minutes: 15
   refresh-token-expiration-days: 7
+# Key rotation (see JwtKeyProperties): jwt.secret is the active key and signs; the retired ones only verify.
+# To rotate: JWT_KEYS_RETIRED_<OLDID>=<old secret>, JWT_SECRET=<new>, JWT_KEYS_ACTIVE_KEY_ID=<new id>.
+jwt-keys:
+  active-key-id: ${JWT_KEYS_ACTIVE_KEY_ID:k1}
 login-attempts:
   window-minutes: 15
   max-failures-per-email: 5
   max-failures-per-ip: 20
 cors:
   allowed-origins: http://localhost:*,http://127.0.0.1:*
+scheduling:
+  # a thread per @Scheduled job (4 today) plus room to grow, see SchedulingConfig; EachScheduledJobHasAThreadOfItsOwnTest
+  # fails when a job is added beyond this
+  pool-size: 6
+flight-search-cache:
+  # the public search is kept in Redis this long; seats taken meanwhile show up when the copy expires
+  enabled: ${FLIGHT_SEARCH_CACHE_ENABLED:true}
+  ttl-seconds: ${FLIGHT_SEARCH_CACHE_TTL_SECONDS:30}
 dashboard:
   # how long a dashboard answer is kept in Redis; a number can be this old
   cache-ttl-seconds: ${DASHBOARD_CACHE_TTL_SECONDS:60}
@@ -74,6 +106,13 @@ ai:
     # (needs bedrock:ListFoundationModels, which this lab's IAM denies) or the Bedrock
     # console before relying on this in a real environment, and update this value.
     model-id: anthropic.claude-3-5-sonnet-20241022-v2:0
+    # a slower answer is not worth waiting for (the customer has the plain search): the whole call, and each attempt
+    timeout-seconds: ${AI_BEDROCK_TIMEOUT_SECONDS:10}
+    attempt-timeout-seconds: ${AI_BEDROCK_ATTEMPT_TIMEOUT_SECONDS:6}
+    # circuit breaker and bulkhead in front of the model (ai.bedrock.guard.*, see BedrockGuard)
+    guard:
+      open-seconds: 30
+      max-concurrent-calls: 10
 aws:
   sqs:
     region: us-east-1

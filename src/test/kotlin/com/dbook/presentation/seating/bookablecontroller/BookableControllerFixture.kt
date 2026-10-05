@@ -3,6 +3,7 @@ package com.dbook.presentation.seating.bookablecontroller
 import com.dbook.application.seating.GetSeatMapUseCase
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
+import com.dbook.infrastructure.web.FixedWindowCounter
 import com.dbook.presentation.seating.BookableController
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -27,4 +28,8 @@ abstract class BookableControllerFixture {
 
     @MockBean
     lateinit var userRepository: UserRepository
+
+    // the request limits sit in front of every controller; the slice has no Redis to count in
+    @MockBean
+    lateinit var requestCounter: FixedWindowCounter
 }

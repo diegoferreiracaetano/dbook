@@ -5,7 +5,10 @@ import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Flight
 import com.dbook.domain.catalog.SeatClass
 import com.dbook.infrastructure.ai.BedrockAiSuggestionService
+import com.dbook.infrastructure.ai.BedrockGuard
+import com.dbook.infrastructure.ai.BedrockGuardSettings
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
 import java.math.BigDecimal
@@ -18,7 +21,13 @@ import java.time.LocalDateTime
 // session (see CHECKLIST.md).
 abstract class BedrockAiSuggestionServiceFixture {
     private val client = BedrockRuntimeClient.builder().region(Region.US_EAST_1).build()
-    protected val service = BedrockAiSuggestionService(client, ObjectMapper(), modelId = "test-model")
+    protected val service =
+        BedrockAiSuggestionService(
+            client,
+            ObjectMapper(),
+            modelId = "test-model",
+            guard = BedrockGuard(BedrockGuardSettings(), SimpleMeterRegistry()),
+        )
 
     protected val flight =
         Flight(

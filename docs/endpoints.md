@@ -21,6 +21,8 @@ Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`
 | `INVALID_CREDENTIALS` | 401 | e-mail/senha errados (também para um cliente no portal) |
 | `INVALID_TOKEN` | 401 | refresh token inexistente, vencido, usado ou de outra porta de entrada |
 | `INVALID_INVITATION` | 400 | convite de equipe desconhecido, vencido, já usado ou revogado (o mesmo erro para todos, de propósito) |
+| `TWO_FACTOR_REQUIRED` | 403 | conta da equipe com segundo fator (ou de papel que o exige) usou o login do cliente |
+| `INVALID_TWO_FACTOR_CODE` | 400 | código do autenticador ou de recuperação errado, ou já usado |
 | `FORBIDDEN` | 403 | sem permissão, não é o dono, ou `Origin` não permitido |
 | `ACCOUNT_BLOCKED` | 403 | conta bloqueada (só depois de a senha estar certa) |
 | `NOT_FOUND` | 404 | recurso inexistente |
@@ -28,7 +30,8 @@ Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`
 | `STALE_VERSION` | 409 | outra pessoa alterou o mesmo registro antes (lock otimista) |
 | `IDEMPOTENCY_KEY_REUSED` | 422 | mesma `Idempotency-Key` para outro pedido |
 | `TOO_MANY_ATTEMPTS` | 429 | falhas de login demais (`Retry-After` em segundos) |
-| `RATE_LIMITED` | 429 | limite de uso da IA |
+| `RATE_LIMITED` | 429 | limite de uso: da IA, ou o geral por IP / por usuário (`Retry-After` em segundos) |
+| `PAYLOAD_TOO_LARGE` | 413 | corpo acima do limite (256 KB; 5 MB na importação CSV de voos) |
 | `AI_RESPONSE_INVALID` / `AI_UNAVAILABLE` | 502 / 503 | modelo de IA |
 
 ## `GET /v1/admin/audit` (requer a permissão `AUDIT_READ`)
@@ -44,10 +47,13 @@ Filtros opcionais: `actorId`, `action` (`FLIGHT_CREATED`, `BOOKING_CANCELLED_BY_
 ## Portal administrativo: sessão (`/v1/admin/auth/*`)
 Detalhes e exemplos em [Autenticação](autenticacao.md#portal-administrativo-sessão).
 
-- `POST /v1/admin/auth/login` (aberta): `{email, password}` → `200 {accessToken}` + cookie de renovação. `401` para senha errada **ou** para quem não é staff, `403 ACCOUNT_BLOCKED`, `429 TOO_MANY_ATTEMPTS`.
+- `POST /v1/admin/auth/login` (aberta): `{email, password}` → `200 {accessToken}` + cookie de renovação, ou **`202 {challengeToken, enrollmentRequired}`** quando a conta precisa do segundo fator (sem sessão e sem cookie). `401` para senha errada **ou** para quem não é staff, `403 ACCOUNT_BLOCKED`, `429 TOO_MANY_ATTEMPTS`.
+- `POST /v1/admin/auth/2fa/verify` (aberta): `{challengeToken, code}` (6 dígitos ou código de recuperação) → `200 {accessToken}` + cookie; `400 INVALID_TWO_FACTOR_CODE`, `401` com desafio inválido ou vencido, `429`.
+- `POST /v1/admin/auth/2fa/enroll` (aberta): `{challengeToken}` → `{otpauthUri, manualEntryKey}`; `POST /v1/admin/auth/2fa/confirm` (aberta): `{challengeToken, code}` → `200 {accessToken, recoveryCodes[]}` + cookie (os códigos aparecem **só aqui**).
+- `POST /v1/admin/2fa/enroll` (staff) → `{otpauthUri, manualEntryKey}`; `POST /v1/admin/2fa/confirm` `{code}` → `{recoveryCodes[]}`; `POST /v1/admin/2fa/disable` `{password, code}` → `204` (`409` se o papel exige; `401` com a senha errada; `400 INVALID_TWO_FACTOR_CODE`). `409` se já está ligado / não há cadastro pendente.
 - `POST /v1/admin/auth/refresh` (aberta, exige `Origin` do portal e o cookie): `200 {accessToken}` + cookie novo; `401` sem cookie ou com cookie usado/inválido, `403` com `Origin` ausente ou de outro site.
 - `POST /v1/admin/auth/logout` (aberta, mesmo `Origin`): `204`, revoga o token e apaga o cookie.
-- `GET /v1/admin/auth/me` (staff): `{id, name, email, role, permissions[]}`; `403` para cliente.
+- `GET /v1/admin/auth/me` (staff): `{id, name, email, role, permissions[], twoFactorEnabled, twoFactorRequired}`; `403` para cliente.
 - `POST /v1/admin/auth/change-password` (staff): `{currentPassword, newPassword}` → `204`, encerra todas as sessões. `401 INVALID_CREDENTIALS` com a senha atual errada, `400 VALIDATION_FAILED` com a nova fraca, `429 TOO_MANY_ATTEMPTS`.
 
 ## Equipe: convites e gestão (requer a permissão `ADMIN_MANAGE`)
@@ -230,6 +236,14 @@ A caixa de entrada, as preferências e os aparelhos do **próprio** usuário. De
 - `PUT /v1/notifications/preferences` com `[{"type": "BOOKING_CONFIRMED", "channel": "EMAIL", "enabled": false}]` → a lista em vigor; `400` para tipo ou canal desconhecido.
 - `POST /v1/notifications/devices` com `{"token": "...", "platform": "ANDROID"}` → `204`.
 - `DELETE /v1/notifications/devices/{token}` → `204`.
+
+## Ciclo de vida da API
+Detalhes em [versionamento.md](versionamento.md).
+
+- `GET /v1/app-config` (**público**) → `{android: {minSupportedVersion, latestVersion, storeUrl}, ios: {...}}`.
+- `GET /v2/destinations` (**público**) → destinos com `price: {lowest}` e `rating: {average}` (o v1, `GET /v1/destinations`, está **obsoleto**: responde com `Deprecation`, `Sunset` e `Link`).
+- Todo cliente deve mandar `X-App-Version` e `X-App-Platform`.
+- WebSocket em `/v1/ws` (o `/ws` antigo segue respondendo).
 
 ## Hotéis (`/v1/accommodations`)
 Detalhes em [hoteis.md](hoteis.md).

@@ -1,0 +1,21 @@
+# Dependencies are kept current by pull requests, never by hand: the build (check, contract, terraform) then says
+# whether the update is safe. Security updates open on their own, apart from this schedule.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: terraform
+    directory: /terraform
+    schedule:
+      interval: weekly

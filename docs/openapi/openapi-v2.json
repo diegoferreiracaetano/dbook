@@ -1,0 +1,189 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost",
+    "description" : "Generated server url"
+  } ],
+  "tags" : [ {
+    "name" : "Destinations (public, v2)",
+    "description" : "Featured destinations, price and rating as objects"
+  } ],
+  "paths" : {
+    "/v2/destinations" : {
+      "get" : {
+        "tags" : [ "Destinations (public, v2)" ],
+        "summary" : "Lists every known destination with its lowest price and rating",
+        "description" : "`rating.average` (1-5) is null until a destination has at least one review.",
+        "operationId" : "list",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Conflict",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502" : {
+            "description" : "Bad Gateway",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Service Unavailable",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "Unprocessable Entity",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Unauthorized",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DestinationResponseV2"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ErrorResponse" : {
+        "type" : "object",
+        "properties" : {
+          "error" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string",
+            "enum" : [ "VALIDATION_FAILED", "MALFORMED_REQUEST", "MISSING_HEADER", "NOT_FOUND", "CONFLICT", "STALE_VERSION", "IDEMPOTENCY_KEY_REUSED", "UNAUTHORIZED", "INVALID_CREDENTIALS", "INVALID_TOKEN", "INVALID_INVITATION", "ACCOUNT_BLOCKED", "TWO_FACTOR_REQUIRED", "INVALID_TWO_FACTOR_CODE", "FORBIDDEN", "REFUND_WINDOW_CLOSED", "FAVORITES_LIMIT", "PROMO_REJECTED", "PRICE_ALERTS_LIMIT", "ROOM_UNAVAILABLE", "PAYLOAD_TOO_LARGE", "TOO_MANY_ATTEMPTS", "RATE_LIMITED", "AI_RESPONSE_INVALID", "AI_UNAVAILABLE" ]
+          }
+        }
+      },
+      "DestinationResponseV2" : {
+        "type" : "object",
+        "properties" : {
+          "iataCode" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "country" : {
+            "type" : "string"
+          },
+          "photoUrl" : {
+            "type" : "string"
+          },
+          "region" : {
+            "type" : "string"
+          },
+          "price" : {
+            "$ref" : "#/components/schemas/PriceV2"
+          },
+          "rating" : {
+            "$ref" : "#/components/schemas/RatingV2"
+          },
+          "isPopular" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PriceV2" : {
+        "type" : "object",
+        "properties" : {
+          "lowest" : {
+            "type" : "number"
+          }
+        }
+      },
+      "RatingV2" : {
+        "type" : "object",
+        "properties" : {
+          "average" : {
+            "type" : "number",
+            "format" : "double"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      }
+    }
+  }
+}

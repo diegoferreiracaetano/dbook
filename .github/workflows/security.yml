@@ -1,0 +1,77 @@
+name: Security
+
+# Scans that look for what the tests cannot: a leaked secret, a vulnerable dependency, an unsafe pattern in the code.
+# They run on every pull request and every week (a new vulnerability appears in a dependency that did not change).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # the whole history, not just the last commit: a secret removed later is still a leaked secret
+      - name: Scan for secrets
+        run: >
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2
+          detect --source /repo --config /repo/.gitleaks.toml --redact --verbose
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # fails the build for a known vulnerability of CVSS 7 or more; the NVD key (a secret) only makes the download faster
+      - name: OWASP dependency-check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./gradlew dependencyCheckAnalyze --console=plain
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+
+      - name: Build
+        run: ./gradlew compileKotlin --console=plain
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3

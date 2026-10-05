@@ -5,6 +5,7 @@ import com.dbook.application.payment.RegisterPaymentUseCase
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
 import com.dbook.domain.payment.Payment
+import com.dbook.infrastructure.web.FixedWindowCounter
 import com.dbook.presentation.payment.PaymentController
 import com.dbook.presentation.payment.RegisterPaymentRequest
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -33,6 +34,10 @@ abstract class PaymentControllerFixture {
 
     @MockBean
     lateinit var userRepository: UserRepository
+
+    // the request limits sit in front of every controller; the slice has no Redis to count in
+    @MockBean
+    lateinit var requestCounter: FixedWindowCounter
 
     protected val objectMapper = ObjectMapper()
     protected val userId = 1L

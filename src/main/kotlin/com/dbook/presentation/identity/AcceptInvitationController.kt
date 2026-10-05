@@ -2,6 +2,7 @@ package com.dbook.presentation.identity
 
 import com.dbook.application.identity.AcceptInvitationCommand
 import com.dbook.application.identity.AcceptInvitationUseCase
+import com.dbook.application.identity.TwoFactorGate
 import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.PublicEndpoints
 import io.swagger.v3.oas.annotations.Operation
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 @PublicEndpoints
 class AcceptInvitationController(
     private val acceptInvitationUseCase: AcceptInvitationUseCase,
+    private val twoFactorGate: TwoFactorGate,
 ) {
     @Operation(summary = "Accepts an invitation: chooses a name and a password and becomes a staff member")
     @PostMapping("/accept")
@@ -30,6 +32,12 @@ class AcceptInvitationController(
             acceptInvitationUseCase.execute(
                 AcceptInvitationCommand(request.token, request.name, request.password),
             )
-        return ResponseEntity.status(HttpStatus.CREATED).body(AdminProfileResponse.from(user))
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            AdminProfileResponse.from(
+                user,
+                twoFactorEnabled = false,
+                twoFactorRequired = twoFactorGate.isRequiredFor(user.role),
+            ),
+        )
     }
 }

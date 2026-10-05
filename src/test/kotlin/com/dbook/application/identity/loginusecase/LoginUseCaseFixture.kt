@@ -6,12 +6,17 @@ import com.dbook.application.identity.LoginAttemptsPolicy
 import com.dbook.application.identity.LoginCommand
 import com.dbook.application.identity.LoginUseCase
 import com.dbook.application.identity.SessionAudience
+import com.dbook.application.identity.TwoFactorGate
+import com.dbook.application.identity.TwoFactorPolicy
+import com.dbook.application.identity.twofactor.FakeTwoFactorRepository
+import com.dbook.domain.identity.ChallengePurpose
 import com.dbook.domain.identity.LoginAttemptLimiter
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.RefreshToken
 import com.dbook.domain.identity.RefreshTokenRepository
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TokenService
+import com.dbook.domain.identity.TwoFactorChallenge
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -28,6 +33,17 @@ class FakeTokenService : TokenService {
 
     override fun parseRole(token: String): Role? = null
 
+    // "challenge-VERIFY-7": readable in a failing assertion, and nothing else is a challenge
+    override fun generateChallengeToken(
+        userId: Long,
+        purpose: ChallengePurpose,
+    ): String = "challenge-${purpose.name}-$userId"
+
+    override fun parseChallenge(token: String): TwoFactorChallenge? =
+        Regex("^challenge-(\\w+)-(\\d+)$").matchEntire(token)?.destructured?.let { (purpose, userId) ->
+            TwoFactorChallenge(userId.toLong(), ChallengePurpose.valueOf(purpose))
+        }
+
     override fun hashToken(token: String): String = "hash:$token"
 
     override fun refreshTokenExpiresAt(): Instant = Instant.now().plusSeconds(3600)
@@ -40,7 +56,14 @@ class FakeRefreshTokenRepository : RefreshTokenRepository {
     override fun findByTokenHash(tokenHash: String): RefreshToken? = saved.find { it.tokenHash == tokenHash }
 
     override fun save(refreshToken: RefreshToken): RefreshToken {
-        val stored = RefreshToken(saved.size + 1L, refreshToken.userId, refreshToken.tokenHash, refreshToken.expiresAt)
+        val stored =
+            RefreshToken(
+                saved.size + 1L,
+                refreshToken.userId,
+                refreshToken.tokenHash,
+                refreshToken.expiresAt,
+                familyId = refreshToken.familyId,
+            )
         saved += stored
         return stored
     }
@@ -48,7 +71,34 @@ class FakeRefreshTokenRepository : RefreshTokenRepository {
     override fun revoke(id: Long) {
         val index = saved.indexOfFirst { it.id == id }
         val token = saved[index]
-        saved[index] = RefreshToken(token.id, token.userId, token.tokenHash, token.expiresAt, revoked = true)
+        saved[index] = RefreshToken(token.id, token.userId, token.tokenHash, token.expiresAt, true, token.familyId)
+    }
+
+    val familiesRevoked = mutableListOf<String>()
+
+    override fun consume(id: Long): Boolean {
+        val token = saved.first { it.id == id }
+        if (token.revoked) return false
+        revoke(id)
+        return true
+    }
+
+    override fun revokeFamily(familyId: String) {
+        familiesRevoked += familyId
+        saved.replaceAll {
+            if (it.familyId == familyId) {
+                RefreshToken(
+                    it.id,
+                    it.userId,
+                    it.tokenHash,
+                    it.expiresAt,
+                    true,
+                    it.familyId,
+                )
+            } else {
+                it
+            }
+        }
     }
 
     override fun revokeAllForUser(userId: Long) {
@@ -139,6 +189,7 @@ abstract class LoginUseCaseFixture {
             hasher,
             issueTokenPairService,
             LoginAttemptGuard(limiter, LoginAttemptsPolicy(maxFailuresPerEmail = 3, maxFailuresPerIp = 5)),
+            TwoFactorGate(FakeTwoFactorRepository(), TwoFactorPolicy(emptySet())),
             meterRegistry,
             Clock.fixed(now, ZoneOffset.UTC),
         )
