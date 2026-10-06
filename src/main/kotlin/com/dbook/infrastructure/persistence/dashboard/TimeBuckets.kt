@@ -12,7 +12,7 @@ private const val WEEK_DAYS = 7L
  * Every bucket of the period, in order: each day, or each Monday (the first one may be before the period starts, like
  * Postgres' `date_trunc('week')`). The query only returns the buckets that have something; the rest are zeros.
  */
-internal fun bucketsOf(
+fun bucketsOf(
     period: DashboardPeriod,
     granularity: Granularity,
 ): List<LocalDate> {

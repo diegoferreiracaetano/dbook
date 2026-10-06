@@ -11,7 +11,7 @@ import java.sql.Timestamp
 
 // The SQL of "which customers, in what order, as which row", shared by the paged search and the CSV export so
 // the two can never disagree about what a filter means.
-internal object CustomerSql {
+object CustomerSql {
     const val SELECT_SUMMARY =
         "SELECT u.id, u.name, u.email, u.status, u.created_at, u.last_login_at, " +
             "(SELECT count(*) FROM booking b WHERE b.customer_id = u.id) AS booking_count FROM app_user u"

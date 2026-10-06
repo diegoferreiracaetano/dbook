@@ -104,4 +104,4 @@ class AccommodationRepositoryAdapter(
         }
 }
 
-internal fun zeroIfNull(value: BigDecimal?): BigDecimal = value ?: BigDecimal.ZERO
+fun zeroIfNull(value: BigDecimal?): BigDecimal = value ?: BigDecimal.ZERO

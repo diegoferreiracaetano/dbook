@@ -9,6 +9,7 @@ plugins {
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
+    implementation(project(":core"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -98,4 +99,9 @@ dependencyCheck {
     failBuildOnCVSS = 7.0f
     nvd.apiKey = System.getenv("NVD_API_KEY")
     analyzers.assemblyEnabled = false
+}
+
+// the checks of every module (style, static analysis) are part of the application's check
+tasks.check {
+    dependsOn(subprojects.map { "${it.path}:check" })
 }

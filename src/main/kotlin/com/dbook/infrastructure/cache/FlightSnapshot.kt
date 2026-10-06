@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 // A flight written to JSON and read back by hand. The API's mapper has no Kotlin module, so it cannot rebuild these
 // classes by itself, and a cache that quietly zeroes a field is worse than no cache: the test of the round trip
 // compares every field.
-internal class FlightSnapshot(private val mapper: ObjectMapper) {
+class FlightSnapshot(private val mapper: ObjectMapper) {
     fun write(flights: List<Flight>): String = mapper.writeValueAsString(flights.map(::toNode))
 
     fun read(json: String): List<Flight> = mapper.readTree(json).map(::fromNode)

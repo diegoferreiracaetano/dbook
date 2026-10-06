@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-/** `GET /accommodations/{id}/reviews`: what a hotel's guests wrote. It shares the path of the hotels, and lives apart. */
+/** `GET /accommodations/{id}/reviews`: what a hotel's guests wrote. It shares the hotels' path and lives apart. */
 @RestController
 @RequestMapping("${ApiPaths.V1}/accommodations")
 @Tag(name = "Accommodations", description = "Hotels: search, details, reviews and booking a stay")

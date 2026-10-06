@@ -1229,7 +1229,7 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 - [x] 48.13 A lista congelada **zerou** e foi apagada (`archunit_store` e `archunit.properties`): a regra do grafo é agora uma regra comum, sem `FreezingArchRule` e sem nenhuma exceção. O k6 rodou contra a aplicação de verdade depois da refatoração: **a corrida de 30 clientes pelo mesmo assento deu 1 reserva e 29 × `409`, nenhum 5xx**, e a compra (reserva e pagamento) deu 0 % de erro, p95 de 73 ms e 76 ms. (Uma primeira rodada, com a máquina a mais de 200 de carga, estourou o tempo de preparação do k6 e deu latências de segundos: era o notebook, não o código; os scripts ganharam `setupTimeout: '5m'`.)
 
 **Fase D — Os módulos Gradle (de baixo para cima, um commit por módulo)**
-- [ ] 48.14 `:core` (com `testFixtures`)
+- [x] 48.14 `:core` é o primeiro módulo Gradle de verdade (`core/`): `common` e `messaging` das camadas de domínio, aplicação e apresentação, a persistência comum e as propriedades de CORS. Veio junto o `dbook.library-conventions` (o plugin de convenção dos módulos: as convenções do Kotlin, o BOM do Spring Boot e **uma base de bibliotecas de terceiros compartilhada**; o que é estrito entre os módulos é o grafo dos **nossos** módulos). O projeto raiz continua sendo o `:app` (decisão: não mover `src/` para `app/`, o que quebraria Dockerfile, CI e caminhos). Descobertas: os `internal` que atravessam módulos precisam ser públicos (o `queryPage`, e os que os testes usam); os **testes ficam todos no `:app`** por ora (separá-los pede `testFixtures` e é uma etapa à parte)
 - [ ] 48.15 `:audit`, `:identity`
 - [ ] 48.16 `:catalog`, `:booking`
 - [ ] 48.17 `:flight`, `:accommodation`

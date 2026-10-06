@@ -9,7 +9,7 @@ import java.sql.ResultSet
 // The count and the page, in that order: a page past the end skips the second query. [pageSql] is complete: it
 // carries its own ORDER BY and the `:limit` and `:offset` placeholders, because where the LIMIT goes matters (see
 // CustomerSql.pageSql).
-internal fun <T> NamedParameterJdbcTemplate.queryPage(
+fun <T> NamedParameterJdbcTemplate.queryPage(
     countSql: String,
     pageSql: String,
     params: MapSqlParameterSource,

@@ -5,7 +5,7 @@ import com.dbook.domain.dashboard.TimeSeriesMetric
 // The SQL of every dashboard number, kept apart from the code that runs it. A booking's "paid" moment is its CONFIRMED
 // entry in booking_status_history, which is also what makes a refund count in the period it was completed and not in
 // the one of the booking. Periods are `[start, end)` instants (São Paulo midnight to midnight).
-internal object DashboardSql {
+object DashboardSql {
     const val ZONE = "America/Sao_Paulo"
 
     private const val CREATED = "b.created_at >= :start AND b.created_at < :end"

@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.security
 
 /** RFC 4648 Base32 without padding: the alphabet authenticator apps read a secret in. */
-internal object Base32 {
+object Base32 {
     private const val ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
     private const val BITS_PER_CHAR = 5
     private const val BITS_PER_BYTE = 8

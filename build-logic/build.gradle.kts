@@ -16,4 +16,5 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-noarg:2.0.21")
     implementation("org.jlleitschuh.gradle:ktlint-gradle:12.1.1")
     implementation("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:1.23.8")
+    implementation("io.spring.gradle:dependency-management-plugin:1.1.6")
 }

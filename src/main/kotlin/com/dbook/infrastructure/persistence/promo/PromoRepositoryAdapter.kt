@@ -131,7 +131,7 @@ class PromoRepositoryAdapter(
     private fun promoOf(rs: ResultSet) = rs.toPromo()
 }
 
-internal fun ResultSet.toPromo() =
+fun ResultSet.toPromo() =
     PromoCode(
         id = getLong("id"),
         code = getString("code"),
