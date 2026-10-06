@@ -2,17 +2,15 @@ package com.dbook.infrastructure.persistence.booking
 
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.Stay
-import com.dbook.infrastructure.persistence.accommodation.toDomain
+import com.dbook.domain.catalog.Bookable
 import com.dbook.infrastructure.persistence.catalog.BookableJpaEntity
-import com.dbook.infrastructure.persistence.catalog.toDomain
-import com.dbook.infrastructure.persistence.flight.toDomain
 import com.dbook.infrastructure.persistence.payment.PaymentJpaEntity
 import com.dbook.infrastructure.persistence.seating.SeatJpaEntity
 
-fun BookingJpaEntity.toDomain(availableCapacity: Int): Booking =
+fun BookingJpaEntity.toDomain(bookable: Bookable): Booking =
     Booking(
         id = id,
-        bookable = bookable.toDomain(availableCapacity),
+        bookable = bookable,
         seatId = seat?.let { it.id ?: error("A persisted Booking must reference a persisted Seat") },
         customerId = customerId,
         status = status,

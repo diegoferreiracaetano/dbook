@@ -2,8 +2,8 @@ package com.dbook.infrastructure.persistence.booking
 
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
-import com.dbook.domain.seating.SeatStatus
 import com.dbook.infrastructure.persistence.catalog.BookableJpaRepository
+import com.dbook.infrastructure.persistence.catalog.BookableMappers
 import com.dbook.infrastructure.persistence.payment.PaymentJpaRepository
 import com.dbook.infrastructure.persistence.seating.SeatJpaRepository
 import org.springframework.stereotype.Repository
@@ -16,27 +16,17 @@ class BookingRepositoryAdapter(
     private val seatJpaRepository: SeatJpaRepository,
     private val paymentJpaRepository: PaymentJpaRepository,
     private val statusHistoryWriter: BookingStatusHistoryWriter,
+    private val bookableMappers: BookableMappers,
 ) : BookingRepository {
     override fun findById(id: Long): Booking? =
-        bookingJpaRepository.findById(id).orElse(null)?.let { entity ->
-            entity.toDomain(availableCapacityOf(requireNotNull(entity.bookable.id)))
-        }
+        bookingJpaRepository.findById(id).orElse(null)?.let { it.toDomain(bookableMappers.toDomain(it.bookable)) }
 
     // one session for the whole list: a flight's airline and airports are loaded once however many bookings share them
     @Transactional(readOnly = true)
     override fun findByCustomerId(customerId: Long): List<Booking> {
         val entities = bookingJpaRepository.findByCustomerId(customerId)
-        val free =
-            if (entities.isEmpty()) {
-                emptyMap()
-            } else {
-                seatJpaRepository.countByBookableIds(
-                    entities.map { requireNotNull(it.bookable.id) },
-                    SeatStatus.AVAILABLE,
-                )
-                    .associate { (it[0] as Long) to (it[1] as Long).toInt() }
-            }
-        return entities.map { it.toDomain(free[it.bookable.id] ?: 0) }
+        val bookables = bookableMappers.toDomain(entities.map { it.bookable })
+        return entities.mapIndexed { i, entity -> entity.toDomain(bookables[i]) }
     }
 
     override fun save(booking: Booking): Booking {
@@ -67,7 +57,4 @@ class BookingRepositoryAdapter(
     }
 
     override fun countPending(): Long = bookingJpaRepository.countPending()
-
-    private fun availableCapacityOf(bookableId: Long): Int =
-        seatJpaRepository.countByBookable_IdAndStatus(bookableId, SeatStatus.AVAILABLE)
 }
