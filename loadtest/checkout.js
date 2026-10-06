@@ -11,6 +11,8 @@ const bookTime = new Trend('step_book', true);
 const payTime = new Trend('step_pay', true);
 
 export const options = {
+  // registering and signing in pay the BCrypt cost: a slow machine needs more than k6's default minute to prepare
+  setupTimeout: '5m',
   scenarios: {
     checkout: {
       executor: 'constant-arrival-rate',

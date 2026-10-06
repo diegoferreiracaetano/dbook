@@ -15,6 +15,8 @@ http.setResponseCallback(http.expectedStatuses(201, 409));
 const CUSTOMERS = Number(__ENV.CUSTOMERS || 50);
 
 export const options = {
+  // registering and signing in pay the BCrypt cost: a slow machine needs more than k6's default minute to prepare
+  setupTimeout: '5m',
   scenarios: {
     race: { executor: 'shared-iterations', vus: CUSTOMERS, iterations: CUSTOMERS, maxDuration: '2m' },
   },

@@ -1,6 +1,5 @@
 package com.dbook.domain.booking
 
-import com.dbook.domain.flight.Flight
 import com.dbook.domain.messaging.OutboxEvent
 import java.time.Instant
 
@@ -51,7 +50,7 @@ object BookingEvents {
             "customerId" to booking.customerId,
             "title" to booking.bookable.title,
             "price" to booking.price.toPlainString(),
-            "departureTime" to (booking.bookable as? Flight)?.departureTime?.toString(),
+            "departureTime" to booking.bookable.startsAt?.toString(),
         ),
         at,
     )

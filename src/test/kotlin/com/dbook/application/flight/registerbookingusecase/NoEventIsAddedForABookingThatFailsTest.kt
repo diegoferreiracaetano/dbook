@@ -1,4 +1,4 @@
-package com.dbook.application.booking.registerbookingusecase
+package com.dbook.application.flight.registerbookingusecase
 
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

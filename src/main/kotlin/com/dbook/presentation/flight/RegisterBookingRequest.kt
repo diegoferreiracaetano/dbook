@@ -1,4 +1,4 @@
-package com.dbook.presentation.booking
+package com.dbook.presentation.flight
 
 import io.swagger.v3.oas.annotations.media.Schema
 

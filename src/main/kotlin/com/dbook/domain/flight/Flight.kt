@@ -27,6 +27,8 @@ class Flight(
         require(origin.iataCode != destination.iataCode) { "origin and destination must be different airports" }
     }
 
+    override val startsAt: LocalDateTime get() = departureTime
+
     val status: FlightStatus get() = if (active) FlightStatus.SCHEDULED else FlightStatus.CANCELLED
 
     /** What a traveller with a booking must be told if it differs from [other]: the schedule, the route, the number. */

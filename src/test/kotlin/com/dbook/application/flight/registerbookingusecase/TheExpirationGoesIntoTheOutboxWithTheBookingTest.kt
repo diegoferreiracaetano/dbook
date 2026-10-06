@@ -1,4 +1,4 @@
-package com.dbook.application.booking.registerbookingusecase
+package com.dbook.application.flight.registerbookingusecase
 
 import com.dbook.domain.booking.BookingEvents
 import java.time.Duration

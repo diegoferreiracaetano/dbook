@@ -1,8 +1,8 @@
-package com.dbook.application.booking.registerbookingusecase
+package com.dbook.application.flight.registerbookingusecase
 
-import com.dbook.application.booking.RegisterBookingCommand
-import com.dbook.application.booking.RegisterBookingUseCase
 import com.dbook.application.common.RecordingOutboxWriter
+import com.dbook.application.flight.RegisterBookingCommand
+import com.dbook.application.flight.RegisterBookingUseCase
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository

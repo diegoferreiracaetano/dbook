@@ -1,3 +1,0 @@
-#
-#Mon Oct 05 23:16:03 BRT 2026
-classes\ should\ only\ depend\ on\ the\ modules\ their\ module\ may\ use\ (ADR\ 0001),\ because\ the\ modules\ of\ ADR\ 0001\ may\ only\ depend\ on\ the\ ones\ listed\ in\ ModuleGraph.mayUse=c21d3fe3-0bc5-4955-b934-39bd74c9d787

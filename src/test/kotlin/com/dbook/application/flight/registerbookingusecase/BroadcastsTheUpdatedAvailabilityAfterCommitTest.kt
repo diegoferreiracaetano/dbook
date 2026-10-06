@@ -1,4 +1,4 @@
-package com.dbook.application.booking.registerbookingusecase
+package com.dbook.application.flight.registerbookingusecase
 
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import kotlin.test.Test

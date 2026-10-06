@@ -2,6 +2,7 @@ package com.dbook.domain.catalog
 
 import com.dbook.domain.flight.Flight
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 /**
  * Anything that can be reserved through a [Booking]: [Flight] and `Accommodation` (hotels). Carries availability
@@ -20,6 +21,9 @@ abstract class Bookable(
     open val availableCapacity: Int,
     open val active: Boolean = true,
 ) {
+    /** When what is booked begins (a flight's departure), for whoever must say it; null for what has no such moment. */
+    open val startsAt: LocalDateTime? get() = null
+
     init {
         require(price >= BigDecimal.ZERO) { "price must not be negative" }
         require(totalCapacity >= 0) { "totalCapacity must not be negative" }

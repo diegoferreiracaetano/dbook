@@ -2,8 +2,6 @@ package com.dbook.infrastructure.persistence.booking
 
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.infrastructure.persistence.catalog.BookableJpaEntity
-import com.dbook.infrastructure.persistence.payment.PaymentJpaEntity
-import com.dbook.infrastructure.persistence.seating.SeatJpaEntity
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -26,15 +24,13 @@ class BookingJpaEntity(
     @ManyToOne
     @JoinColumn(name = "bookable_id")
     var bookable: BookableJpaEntity,
-    @ManyToOne
-    @JoinColumn(name = "seat_id")
-    var seat: SeatJpaEntity?,
+    // plain ids, not relations: the seat belongs to flight and the payment to payment; the foreign keys are in the
+    // database, and booking does not need their entities to be read or written
+    var seatId: Long?,
     var customerId: Long = 0,
     @Enumerated(EnumType.STRING)
     var status: BookingStatus = BookingStatus.PENDING,
-    @ManyToOne
-    @JoinColumn(name = "payment_id")
-    var payment: PaymentJpaEntity? = null,
+    var paymentId: Long? = null,
     @Version
     var version: Long = 0,
     var price: BigDecimal = BigDecimal.ZERO,

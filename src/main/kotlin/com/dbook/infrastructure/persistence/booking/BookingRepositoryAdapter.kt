@@ -4,8 +4,6 @@ import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.infrastructure.persistence.catalog.BookableJpaRepository
 import com.dbook.infrastructure.persistence.catalog.BookableMappers
-import com.dbook.infrastructure.persistence.payment.PaymentJpaRepository
-import com.dbook.infrastructure.persistence.seating.SeatJpaRepository
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 
@@ -13,8 +11,6 @@ import org.springframework.transaction.annotation.Transactional
 class BookingRepositoryAdapter(
     private val bookingJpaRepository: BookingJpaRepository,
     private val bookableJpaRepository: BookableJpaRepository,
-    private val seatJpaRepository: SeatJpaRepository,
-    private val paymentJpaRepository: PaymentJpaRepository,
     private val statusHistoryWriter: BookingStatusHistoryWriter,
     private val bookableMappers: BookableMappers,
 ) : BookingRepository {
@@ -32,11 +28,9 @@ class BookingRepositoryAdapter(
     override fun save(booking: Booking): Booking {
         val bookableId = requireNotNull(booking.bookable.id) { "Booking.bookable must be persisted" }
         val bookableRef = bookableJpaRepository.getReferenceById(bookableId)
-        val seatRef = booking.seatId?.let { seatJpaRepository.getReferenceById(it) }
-        val paymentRef = booking.paymentId?.let { paymentJpaRepository.getReferenceById(it) }
         // read before the merge below overwrites it: the managed entity is what tells us the status it had
         val previousStatus = booking.id?.let { bookingJpaRepository.findById(it).orElse(null)?.status }
-        val saved = bookingJpaRepository.save(booking.toJpaEntity(bookableRef, seatRef, paymentRef))
+        val saved = bookingJpaRepository.save(booking.toJpaEntity(bookableRef))
         if (previousStatus != saved.status) {
             statusHistoryWriter.record(requireNotNull(saved.id), previousStatus, saved.status)
         }
@@ -49,7 +43,7 @@ class BookingRepositoryAdapter(
             stay = booking.stay,
             customerId = saved.customerId,
             status = saved.status,
-            paymentId = saved.payment?.id,
+            paymentId = saved.paymentId,
             version = saved.version,
             price = saved.price,
             discount = saved.discount,

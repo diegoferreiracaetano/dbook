@@ -1,4 +1,4 @@
-package com.dbook.application.booking
+package com.dbook.application.flight
 
 import com.dbook.application.common.afterCommit
 import com.dbook.domain.booking.AvailabilityBroadcaster

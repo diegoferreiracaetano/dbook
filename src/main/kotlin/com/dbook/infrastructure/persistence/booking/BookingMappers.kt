@@ -4,17 +4,15 @@ import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.Stay
 import com.dbook.domain.catalog.Bookable
 import com.dbook.infrastructure.persistence.catalog.BookableJpaEntity
-import com.dbook.infrastructure.persistence.payment.PaymentJpaEntity
-import com.dbook.infrastructure.persistence.seating.SeatJpaEntity
 
 fun BookingJpaEntity.toDomain(bookable: Bookable): Booking =
     Booking(
         id = id,
         bookable = bookable,
-        seatId = seat?.let { it.id ?: error("A persisted Booking must reference a persisted Seat") },
+        seatId = seatId,
         customerId = customerId,
         status = status,
-        paymentId = payment?.id,
+        paymentId = paymentId,
         version = version,
         price = price,
         discount = discount,
@@ -32,18 +30,14 @@ private fun BookingJpaEntity.stay(): Stay? =
         )
     }
 
-fun Booking.toJpaEntity(
-    bookable: BookableJpaEntity,
-    seat: SeatJpaEntity?,
-    payment: PaymentJpaEntity?,
-): BookingJpaEntity =
+fun Booking.toJpaEntity(bookable: BookableJpaEntity): BookingJpaEntity =
     BookingJpaEntity(
         id = id,
         bookable = bookable,
-        seat = seat,
+        seatId = seatId,
         customerId = customerId,
         status = status,
-        payment = payment,
+        paymentId = paymentId,
         version = version,
         price = price,
         discount = discount,

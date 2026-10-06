@@ -1,6 +1,6 @@
 package com.dbook.application.booking.bookingconcurrency
 
-import com.dbook.application.booking.RegisterBookingCommand
+import com.dbook.application.flight.RegisterBookingCommand
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

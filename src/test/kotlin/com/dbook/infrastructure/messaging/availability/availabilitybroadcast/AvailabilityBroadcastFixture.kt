@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.messaging.availability.availabilitybroadcast
 
 import com.dbook.AbstractIntegrationTest
-import com.dbook.application.booking.RegisterBookingUseCase
+import com.dbook.application.flight.RegisterBookingUseCase
 import com.dbook.application.flight.RegisterFlightUseCase
 import com.dbook.application.identity.LoginUseCase
 import com.dbook.application.identity.RegisterUserUseCase

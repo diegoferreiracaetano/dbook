@@ -2,8 +2,8 @@ package com.dbook.application.booking.bookingconcurrency
 
 import com.dbook.AbstractIntegrationTest
 import com.dbook.application.booking.CancelBookingUseCase
-import com.dbook.application.booking.RegisterBookingCommand
-import com.dbook.application.booking.RegisterBookingUseCase
+import com.dbook.application.flight.RegisterBookingCommand
+import com.dbook.application.flight.RegisterBookingUseCase
 import com.dbook.application.flight.RegisterFlightCommand
 import com.dbook.application.flight.RegisterFlightUseCase
 import com.dbook.application.identity.RegisterUserCommand

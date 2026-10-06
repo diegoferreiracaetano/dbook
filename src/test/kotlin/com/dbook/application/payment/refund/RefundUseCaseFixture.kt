@@ -1,9 +1,11 @@
 package com.dbook.application.payment.refund
 
 import com.dbook.application.accommodation.RecordingRoomInventory
+import com.dbook.application.accommodation.StayInventoryReleaser
 import com.dbook.application.audit.FakeAuditLog
 import com.dbook.application.booking.BookingInventoryReleaser
 import com.dbook.application.common.RecordingOutboxWriter
+import com.dbook.application.flight.SeatInventoryReleaser
 import com.dbook.application.payment.RefundBookingUseCase
 import com.dbook.application.payment.RefundCommand
 import com.dbook.application.payment.RefundProcessor
@@ -60,7 +62,7 @@ abstract class RefundUseCaseFixture {
         RefundSettler(
             refunds,
             bookings,
-            BookingInventoryReleaser(seats, rooms, broadcaster),
+            BookingInventoryReleaser(listOf(SeatInventoryReleaser(seats, broadcaster), StayInventoryReleaser(rooms))),
             audit,
             outbox,
             meters,

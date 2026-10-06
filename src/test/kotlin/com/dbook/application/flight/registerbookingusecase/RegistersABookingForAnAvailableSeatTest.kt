@@ -1,4 +1,4 @@
-package com.dbook.application.booking.registerbookingusecase
+package com.dbook.application.flight.registerbookingusecase
 
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.seating.SeatStatus

@@ -1,10 +1,12 @@
 package com.dbook.application.booking.cancelbookingusecase
 
 import com.dbook.application.accommodation.RecordingRoomInventory
+import com.dbook.application.accommodation.StayInventoryReleaser
 import com.dbook.application.audit.FakeAuditLog
 import com.dbook.application.booking.BookingInventoryReleaser
 import com.dbook.application.booking.CancelBookingUseCase
 import com.dbook.application.common.RecordingOutboxWriter
+import com.dbook.application.flight.SeatInventoryReleaser
 import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
@@ -140,7 +142,12 @@ abstract class CancelBookingUseCaseFixture {
     protected val useCase =
         CancelBookingUseCase(
             bookingRepository,
-            BookingInventoryReleaser(seatRepository, roomInventory, availabilityBroadcaster),
+            BookingInventoryReleaser(
+                listOf(
+                    SeatInventoryReleaser(seatRepository, availabilityBroadcaster),
+                    StayInventoryReleaser(roomInventory),
+                ),
+            ),
             auditLog,
             outbox,
             Clock.fixed(now, ZoneOffset.UTC),

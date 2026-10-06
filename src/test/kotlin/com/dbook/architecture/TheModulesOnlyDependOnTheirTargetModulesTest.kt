@@ -5,12 +5,11 @@ import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
 import com.tngtech.archunit.lang.SimpleConditionEvent
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
-import com.tngtech.archunit.library.freeze.FreezingArchRule
 import kotlin.test.Test
 
 // The graph of ADR 0001, in every layer (domain, application, presentation and persistence), not only in the domain.
-// What breaks it today is frozen in src/test/resources/archunit_store: the test fails for a NEW violation, and every
-// cycle undone (steps 48.5 to 48.12) removes lines from the store, which is the work list of the milestone.
+// It was born with a list of frozen violations (the work list of the milestone, steps 48.1 to 48.12); the list is
+// empty now, so the rule is plain: no class may depend on a module its module does not declare.
 class TheModulesOnlyDependOnTheirTargetModulesTest : ArchitectureFixture() {
     private val onlyUseTheirTargetModules =
         object : ArchCondition<JavaClass>("only depend on the modules their module may use (ADR 0001)") {
@@ -31,9 +30,8 @@ class TheModulesOnlyDependOnTheirTargetModulesTest : ArchitectureFixture() {
 
     @Test
     fun `given the production classes when their modules are compared then none depends on a module it may not use`() {
-        FreezingArchRule.freeze(
-            classes().should(onlyUseTheirTargetModules)
-                .because("the modules of ADR 0001 may only depend on the ones listed in ModuleGraph.mayUse"),
-        ).check(productionClasses)
+        classes().should(onlyUseTheirTargetModules)
+            .because("the modules of ADR 0001 may only depend on the ones listed in ModuleGraph.mayUse")
+            .check(productionClasses)
     }
 }
