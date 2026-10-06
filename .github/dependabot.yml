@@ -7,6 +7,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+  # the plugins the convention plugin applies (build-logic/ is a Gradle build of its own)
+  - package-ecosystem: gradle
+    directory: /build-logic
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /
     schedule:

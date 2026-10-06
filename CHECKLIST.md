@@ -1211,7 +1211,7 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 
 **Fase A — Ensaiar (nada muda de lugar)**
 - [x] 48.1 A regra do grafo alvo em **todas** as camadas, com as violações de hoje congeladas (`FreezingArchRule`, em `src/test/resources/archunit_store`): **318** pares na primeira rodada, **70** em 17 arestas depois de o vocabulário de segurança e de auditoria contar como `core`. O ensaio achou o ciclo 12 (o `ApiExceptionHandler` do `core` conhece as exceções de todos) e três dependências legítimas que o ADR não tinha (`favorite`/`pricing` → `catalog`; `admin` → `identity`, `audit`, `favorite`)
-- [ ] 48.2 `build-logic` (convention plugin) com Kotlin, Spring, ktlint, detekt, JaCoCo e a configuração dos testes, ainda com um módulo só
+- [x] 48.2 `build-logic` (convention plugin `dbook.kotlin-conventions`, um `includeBuild`) com Kotlin, Spring/JPA, ktlint, detekt, JaCoCo e a configuração dos testes; o `build.gradle.kts` raiz ficou só com o Spring Boot, as dependências e a cobertura. **Mesmas tarefas e os mesmos 1012 testes verdes**; a primeira resolução das dependências do `build-logic` leva minutos, as seguintes não
 
 **Fase B — Separar os pacotes (um módulo Gradle ainda)**
 - [ ] 48.3 `flight` nasce como conceito (sai de `catalog`; `seating` continua, marcado como do módulo `flight`)
