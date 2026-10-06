@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.security.jwtkeyrotation
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 import com.dbook.infrastructure.security.JwtKeyProperties
 import com.dbook.infrastructure.security.JwtTokenService

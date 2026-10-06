@@ -1,6 +1,6 @@
 package com.dbook.application.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 
 enum class SessionAudience {
     CLIENT,

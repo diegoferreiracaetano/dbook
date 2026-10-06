@@ -2,10 +2,10 @@ package com.dbook.presentation.crm
 
 import com.dbook.application.crm.ExportCustomersCommand
 import com.dbook.domain.common.SortDirection
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.crm.CustomerFilter
 import com.dbook.domain.crm.CustomerSort
 import com.dbook.domain.crm.CustomerSortField
-import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.UserStatus
 import java.time.Instant
 

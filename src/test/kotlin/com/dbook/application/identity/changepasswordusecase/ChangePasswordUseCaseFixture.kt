@@ -9,7 +9,7 @@ import com.dbook.application.identity.loginusecase.FakeLoginAttemptLimiter
 import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
 import com.dbook.application.identity.staff.InMemoryUserRepository
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 
 // Shared "given": a SUPER_ADMIN (id 1) and a customer (id 2), both with the current password "current-password-1";

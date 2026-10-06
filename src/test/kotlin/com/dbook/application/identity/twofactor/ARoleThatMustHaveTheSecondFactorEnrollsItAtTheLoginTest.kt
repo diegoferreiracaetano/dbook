@@ -1,9 +1,9 @@
 package com.dbook.application.identity.twofactor
 
 import com.dbook.application.identity.StaffLoginOutcome
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.InvalidTwoFactorCodeException
-import com.dbook.domain.identity.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

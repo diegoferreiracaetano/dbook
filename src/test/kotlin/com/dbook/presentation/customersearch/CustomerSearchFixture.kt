@@ -16,7 +16,11 @@ abstract class CustomerSearchFixture : SecurityIntegrationFixture() {
         return email
     }
 
-    protected fun supportToken(): String = registerStaffAndLogin(uniqueEmail(), com.dbook.domain.identity.Role.SUPPORT)
+    protected fun supportToken(): String =
+        registerStaffAndLogin(
+            uniqueEmail(),
+            com.dbook.domain.common.access.Role.SUPPORT,
+        )
 
     protected fun search(
         token: String,

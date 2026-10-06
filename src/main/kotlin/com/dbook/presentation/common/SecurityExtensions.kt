@@ -1,7 +1,7 @@
 package com.dbook.presentation.common
 
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import org.springframework.security.core.Authentication
 
 /** The authenticated user's id — `JwtAuthenticationFilter` sets the principal name to it. */

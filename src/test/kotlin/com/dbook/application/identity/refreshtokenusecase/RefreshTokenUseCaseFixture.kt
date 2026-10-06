@@ -6,8 +6,8 @@ import com.dbook.application.identity.SessionAudience
 import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FakeTokenService
 import com.dbook.application.identity.loginusecase.SingleUserRepository
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.RefreshToken
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import java.time.Clock

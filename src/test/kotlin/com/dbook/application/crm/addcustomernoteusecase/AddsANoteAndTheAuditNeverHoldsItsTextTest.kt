@@ -2,7 +2,7 @@ package com.dbook.application.crm.addcustomernoteusecase
 
 import com.dbook.application.crm.AddCustomerNoteCommand
 import com.dbook.application.crm.CrmUseCaseFixture
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -1,6 +1,6 @@
 package com.dbook.presentation.staffmanagement
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import kotlin.test.Test

@@ -50,7 +50,7 @@ Quando `detekt` reclama de tamanho (`TooManyFunctions`, `LongMethod`): **extraia
 - **Efeito externo só após commit** (`afterCommit`), nunca dentro da transação.
 - **`SeatLayout` é a única fonte** do mapeamento aeronave → colunas por fileira; cliente recebe `seatLayout` pronto. Regra de negócio do cliente vem do backend, não é duplicada no app.
 - **Segurança por padrão-fechado** (`anyRequest().authenticated()`); identidade sempre do JWT.
-- **Erro = exceção de domínio + `ApiExceptionHandler`** com corpo `{"error": ...}`.
+- **Erro = exceção de domínio + o `XxxExceptionHandler` do módulo** com corpo `{"error": ...}`.
 
 ## Exemplos reais de "onde foi parar"
 

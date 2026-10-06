@@ -9,13 +9,13 @@ import com.dbook.application.pricing.FlightPriceRecorder
 import com.dbook.application.pricing.InMemoryPriceHistory
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.AirportRepository
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.flight.Airline
 import com.dbook.domain.flight.AirlineRepository
 import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.FlightRepository
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.SeatStatus

@@ -2,9 +2,9 @@ package com.dbook.presentation.audit
 
 import com.dbook.application.audit.SearchAuditLogQuery
 import com.dbook.application.audit.SearchAuditLogUseCase
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditFilter
-import com.dbook.domain.audit.AuditOutcome
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditOutcome
 import java.time.Instant
 
 /** The query string of `GET /admin/audit`: every filter is optional. */

@@ -11,6 +11,6 @@ class CompletingTwiceReleasesTheSeatOnlyOnceTest : RefundUseCaseFixture() {
         committed { settler.complete(requireNotNull(refund.id), support) }
 
         assertEquals(listOf(1000L), seats.released)
-        assertEquals(1, audit.events.count { it.action == com.dbook.domain.audit.AuditAction.REFUND_COMPLETED })
+        assertEquals(1, audit.events.count { it.action == com.dbook.domain.common.audit.AuditAction.REFUND_COMPLETED })
     }
 }

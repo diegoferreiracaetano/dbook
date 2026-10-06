@@ -1,7 +1,7 @@
 package com.dbook.application.booking.bookingconcurrency
 
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.seating.SeatStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,9 +1,9 @@
 package com.dbook.presentation.dashboard
 
 import com.dbook.application.flight.RegisterFlightCommand
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.presentation.securityintegration.SecurityIntegrationFixture
 import com.fasterxml.jackson.databind.JsonNode
 import io.micrometer.core.instrument.MeterRegistry

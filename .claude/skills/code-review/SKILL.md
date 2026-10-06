@@ -27,7 +27,7 @@ description: Revisão de código do backend Kotlin/Spring do DBook, focada em pr
 - Abstração nova sem 2º uso; camada/pacote por feature (o projeto é plano por camada).
 
 **3. Correção e tratamento de erros**
-- Exceção de "não encontrado" nova **não registrada** em `ApiExceptionHandler` (vira 500) — checar de verdade: `grep` a classe no handler.
+- Exceção de "não encontrado" nova **não registrada** no handler do seu módulo (vira 500) — checar de verdade: `grep` a classe nos `*ExceptionHandler`.
 - `require`/`check` no lugar certo (400 vs 409); `!!` em produção; `catch` genérico/engolido (`TooGenericExceptionCaught`, `SwallowedException`).
 - Validação parcial: o use case processa N itens e falha no meio? Toda validação deve vir **antes** de mutar (ver `RegisterPaymentUseCase`: valida todos os donos antes de salvar).
 

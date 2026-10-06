@@ -67,8 +67,8 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 ## Tratamento de erros
 
 - Invariante de domínio quebrada → `require` (→ `IllegalArgumentException` → **400**) ou `check` (→ `IllegalStateException` → **409**). Não crie exceção nova pra isso.
-- Recurso ausente → `XxxNotFoundException : RuntimeException` em `domain/`, **e registre-a** em `ApiExceptionHandler.handleNotFound` (senão vira 500).
-- Mapeamento atual (`ApiExceptionHandler`): NotFound→404 · `IllegalArgumentException`→400 · `IllegalStateException`/`OptimisticLockingFailureException`/`UserAlreadyExists`→409 · `InvalidCredentials`/`InvalidToken`→401 · `NotBookingOwner`→403 · `AiResponseParsing`→502 · `AiServiceUnavailable`→503. Corpo sempre `{"error": "<mensagem>"}`.
+- Recurso ausente → `XxxNotFoundException : RuntimeException` em `domain/`, **e registre-a** no `XxxExceptionHandler` do seu módulo (senão vira 500).
+- Mapeamento atual (cada módulo tem o seu `XxxExceptionHandler` em `presentation/<conceito>/`; o `ApiExceptionHandler` de `presentation/common` só trata o genérico): NotFound→404 · `IllegalArgumentException`→400 · `IllegalStateException`/`OptimisticLockingFailureException`/`UserAlreadyExists`→409 · `InvalidCredentials`/`InvalidToken`→401 · `NotBookingOwner`→403 · `AiResponseParsing`→502 · `AiServiceUnavailable`→503. Corpo sempre `{"error": "<mensagem>"}`.
 - Regras do detekt que pegam erro de tratamento: `TooGenericExceptionCaught/Thrown`, `SwallowedException`, `ThrowsCount ≤ 2`, `ReturnCount ≤ 2`. Suppress só pontual e com motivo (precedentes: `JwtTokenService`, `SeatLayout`).
 - Ver a armadilha do Jackson com data class de **um único parâmetro** em `RefreshRequest`/`UpdateUserNameRequest` (`@JsonCreator`/`@JsonProperty`) — request de 1 campo precisa disso.
 
@@ -123,7 +123,7 @@ Antes de dizer "pronto", confirme cada item (ou diga qual não se aplica e por q
 
 - [ ] Segue a arquitetura acima e imita o irmão mais próximo (nenhuma camada importando o que não deve).
 - [ ] Nenhuma duplicação nova que um helper/porta existente resolveria; nenhuma abstração sem 2º uso real.
-- [ ] Invariantes no `domain`; erro novo mapeado no `ApiExceptionHandler` com o status certo.
+- [ ] Invariantes no `domain`; erro novo mapeado no handler do seu módulo com o status certo.
 - [ ] Endpoint novo: autenticação correta (`currentUserId()`, sem id no corpo), `@Tag`/`@Operation`/`@Schema`.
 - [ ] Migration nova (se mexeu no schema) sem editar as antigas; entidade/mapper/adapter alinhados.
 - [ ] Testes criados/atualizados no padrão um-cenário-por-classe (caminho feliz **e** as falhas: 400/403/404/409).

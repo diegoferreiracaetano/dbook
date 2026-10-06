@@ -1,7 +1,6 @@
 package com.dbook.application.payment
 
 import com.dbook.application.common.countOutcome
-import com.dbook.application.common.idempotently
 import com.dbook.domain.payment.Refund
 import com.dbook.domain.payment.RefundAlreadyRequestedException
 import com.dbook.domain.payment.RefundRepository

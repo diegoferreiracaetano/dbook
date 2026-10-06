@@ -1,10 +1,10 @@
 package com.dbook.application.crm
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.crm.CustomerErasure
-import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.AnonymizedEmailRepository
 import com.dbook.domain.identity.RefreshTokenRepository
 import com.dbook.domain.identity.User

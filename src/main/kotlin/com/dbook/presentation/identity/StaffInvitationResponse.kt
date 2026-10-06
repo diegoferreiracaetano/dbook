@@ -1,8 +1,8 @@
 package com.dbook.presentation.identity
 
 import com.dbook.application.identity.InvitationView
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.InvitationStatus
-import com.dbook.domain.identity.Role
 import java.time.Instant
 
 /** Never carries the token (it only exists in the e-mail) nor its hash. */

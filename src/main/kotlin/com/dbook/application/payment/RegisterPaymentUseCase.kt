@@ -2,8 +2,6 @@ package com.dbook.application.payment
 
 import com.dbook.application.common.afterCommit
 import com.dbook.application.common.countOutcome
-import com.dbook.application.common.fingerprintOf
-import com.dbook.application.common.idempotently
 import com.dbook.domain.booking.BookingEvents
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository

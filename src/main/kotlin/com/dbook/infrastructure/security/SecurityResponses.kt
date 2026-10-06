@@ -1,11 +1,11 @@
 package com.dbook.infrastructure.security
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
-import com.dbook.domain.audit.AuditOutcome
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
+import com.dbook.domain.common.audit.AuditOutcome
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

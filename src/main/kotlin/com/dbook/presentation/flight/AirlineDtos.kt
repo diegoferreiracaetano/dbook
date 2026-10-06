@@ -1,8 +1,8 @@
 package com.dbook.presentation.flight
 
 import com.dbook.application.flight.AirlineCommand
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.flight.Airline
-import com.dbook.domain.identity.Actor
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class AirlineRequest(

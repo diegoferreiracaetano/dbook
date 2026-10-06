@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.security.jwtuse
 
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.ChallengePurpose
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TwoFactorChallenge
 import com.dbook.domain.identity.User
 import com.dbook.infrastructure.security.JwtKeyProperties

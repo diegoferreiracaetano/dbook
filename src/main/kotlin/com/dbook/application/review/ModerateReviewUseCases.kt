@@ -1,11 +1,11 @@
 package com.dbook.application.review
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.common.PageQuery
 import com.dbook.domain.common.PageResult
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.review.AdminReviewReader
 import com.dbook.domain.review.AdminReviewStatus
 import com.dbook.domain.review.AdminReviewSummary

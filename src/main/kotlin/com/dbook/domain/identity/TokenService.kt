@@ -1,5 +1,6 @@
 package com.dbook.domain.identity
 
+import com.dbook.domain.common.access.Role
 import java.time.Instant
 
 /** Issues and parses JWT access/refresh tokens — the domain never handles JWT internals directly. */

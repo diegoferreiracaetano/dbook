@@ -2,7 +2,7 @@ package com.dbook.presentation.catalog
 
 import com.dbook.application.catalog.AirportCommand
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class AirportRequest(

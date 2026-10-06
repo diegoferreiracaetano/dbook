@@ -1,7 +1,7 @@
 package com.dbook.presentation.adminbookings
 
 import com.dbook.ControllablePaymentGateway
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.presentation.customerprofile.CustomerProfileFixture
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType

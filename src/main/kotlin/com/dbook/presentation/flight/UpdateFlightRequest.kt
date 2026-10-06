@@ -1,8 +1,8 @@
 package com.dbook.presentation.flight
 
 import com.dbook.application.flight.UpdateFlightCommand
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
 import io.swagger.v3.oas.annotations.media.Schema
 import java.math.BigDecimal
 import java.time.LocalDateTime

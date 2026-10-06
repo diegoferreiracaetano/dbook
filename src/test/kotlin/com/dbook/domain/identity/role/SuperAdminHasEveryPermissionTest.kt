@@ -1,7 +1,7 @@
 package com.dbook.domain.identity.role
 
-import com.dbook.domain.identity.Permission
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Permission
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

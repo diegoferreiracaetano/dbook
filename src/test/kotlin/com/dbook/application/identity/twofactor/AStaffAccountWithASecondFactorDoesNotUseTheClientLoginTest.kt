@@ -2,7 +2,7 @@ package com.dbook.application.identity.twofactor
 
 import com.dbook.application.identity.LoginCommand
 import com.dbook.application.identity.SessionAudience
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.TwoFactorRequiredException
 import kotlin.test.Test
 import kotlin.test.assertEquals

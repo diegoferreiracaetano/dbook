@@ -30,9 +30,9 @@ import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FakeTokenService
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
 import com.dbook.application.identity.staff.InMemoryUserRepository
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.RecoveryCodeGenerator
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TotpEnrollment
 import com.dbook.domain.identity.TwoFactorRepository
 import com.dbook.domain.identity.User

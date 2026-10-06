@@ -1,6 +1,6 @@
 package com.dbook.application.booking.cancelbookingusecase
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

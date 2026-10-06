@@ -3,7 +3,7 @@ package com.dbook.application.booking
 import com.dbook.application.common.countOutcome
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service

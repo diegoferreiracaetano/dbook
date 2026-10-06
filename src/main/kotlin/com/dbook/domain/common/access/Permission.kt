@@ -1,4 +1,4 @@
-package com.dbook.domain.identity
+package com.dbook.domain.common.access
 
 enum class Permission {
     ADMIN_PORTAL_ACCESS,

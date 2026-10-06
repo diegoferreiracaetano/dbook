@@ -1,6 +1,6 @@
 package com.dbook.application.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.TwoFactorRepository
 import com.dbook.domain.identity.User
 import org.springframework.stereotype.Service

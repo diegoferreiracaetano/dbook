@@ -1,7 +1,7 @@
 package com.dbook.application.payment.refund
 
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.booking.BookingStatus
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.payment.RefundStatus
 import java.math.BigDecimal
 import kotlin.test.Test

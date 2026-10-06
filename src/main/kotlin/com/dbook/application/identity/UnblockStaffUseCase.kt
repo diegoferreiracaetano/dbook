@@ -1,9 +1,9 @@
 package com.dbook.application.identity
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.toAuditSnapshot
 import io.micrometer.observation.annotation.Observed

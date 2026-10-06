@@ -1,9 +1,9 @@
 package com.dbook.domain.audit.auditevent
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

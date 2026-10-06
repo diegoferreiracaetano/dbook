@@ -1,14 +1,14 @@
 package com.dbook.application.flight
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.catalog.AirportNotFoundException
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.flight.AdminFlightReader
 import com.dbook.domain.flight.AirlineNotFoundException
 import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

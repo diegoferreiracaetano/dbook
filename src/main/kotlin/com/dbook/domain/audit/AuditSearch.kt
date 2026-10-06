@@ -1,5 +1,7 @@
 package com.dbook.domain.audit
 
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditOutcome
 import java.time.Instant
 
 data class AuditFilter(

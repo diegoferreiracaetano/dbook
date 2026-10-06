@@ -1,6 +1,6 @@
 # ADR 0001 — Dividir o backend em módulos Gradle por responsabilidade
 
-- **Status:** proposta, **revisão 4** (2026-10-05: o ensaio do 48.1 mediu o grafo de verdade e corrigiu a lista de ciclos; nada foi movido ainda)
+- **Status:** proposta, **revisão 5** (48.5 feito: o vocabulário de segurança e de auditoria e os handlers por módulo já estão onde o ADR diz). Antes: **revisão 4** (2026-10-05: o ensaio do 48.1 mediu o grafo de verdade e corrigiu a lista de ciclos; nada foi movido ainda)
 - **Marco:** M48 (`CHECKLIST.md`)
 - **Substitui:** a decisão de 2026-10-04 de *não* dividir "agora, reavaliar depois do M45" (o M45 fechou)
 

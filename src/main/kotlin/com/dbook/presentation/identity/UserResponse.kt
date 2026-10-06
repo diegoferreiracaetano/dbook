@@ -1,6 +1,6 @@
 package com.dbook.presentation.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 
 data class UserResponse(

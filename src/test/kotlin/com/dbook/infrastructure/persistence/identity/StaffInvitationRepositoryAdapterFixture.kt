@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.persistence.identity
 
 import com.dbook.AbstractIntegrationTest
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.StaffInvitation
 import com.dbook.domain.identity.StaffInvitationRepository
 import com.dbook.domain.identity.User

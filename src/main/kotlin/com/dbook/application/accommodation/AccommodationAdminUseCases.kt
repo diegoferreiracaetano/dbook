@@ -8,12 +8,12 @@ import com.dbook.domain.accommodation.AdminAccommodationReader
 import com.dbook.domain.accommodation.RoomInventory
 import com.dbook.domain.accommodation.RoomType
 import com.dbook.domain.accommodation.RoomTypeNotFoundException
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.common.PageQuery
 import com.dbook.domain.common.PageResult
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

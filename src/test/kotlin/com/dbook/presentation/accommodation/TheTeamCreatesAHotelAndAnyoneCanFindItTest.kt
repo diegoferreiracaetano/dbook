@@ -1,6 +1,6 @@
 package com.dbook.presentation.accommodation
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import org.springframework.test.web.servlet.get
 import kotlin.test.Test
 import kotlin.test.assertEquals

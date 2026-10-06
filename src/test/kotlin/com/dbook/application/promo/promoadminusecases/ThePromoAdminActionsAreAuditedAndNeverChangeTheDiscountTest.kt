@@ -7,9 +7,9 @@ import com.dbook.application.promo.InMemoryPromos
 import com.dbook.application.promo.SetPromoActiveUseCase
 import com.dbook.application.promo.UpdatePromoCommand
 import com.dbook.application.promo.UpdatePromoUseCase
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.promo.DuplicatePromoCodeException
 import com.dbook.domain.promo.PromoType
 import java.math.BigDecimal

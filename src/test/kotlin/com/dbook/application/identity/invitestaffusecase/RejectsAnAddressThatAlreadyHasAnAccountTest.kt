@@ -2,7 +2,7 @@ package com.dbook.application.identity.invitestaffusecase
 
 import com.dbook.application.identity.InviteStaffCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.UserAlreadyExistsException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

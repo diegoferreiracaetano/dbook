@@ -1,14 +1,14 @@
 package com.dbook.infrastructure.persistence.audit
 
 import com.dbook.AbstractIntegrationTest
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
 import com.dbook.domain.audit.AuditFilter
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.audit.AuditLogReader
-import com.dbook.domain.audit.AuditOutcome
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
+import com.dbook.domain.common.audit.AuditOutcome
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
 

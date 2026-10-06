@@ -1,7 +1,7 @@
 package com.dbook.domain.crm
 
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import java.time.Instant
 
 class CustomerNote(

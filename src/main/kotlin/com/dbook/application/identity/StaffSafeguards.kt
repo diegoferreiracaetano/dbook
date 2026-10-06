@@ -1,7 +1,7 @@
 package com.dbook.application.identity
 
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.identity.UserRepository

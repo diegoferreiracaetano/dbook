@@ -1,6 +1,6 @@
 package com.dbook.domain.identity.user
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 import java.time.Instant
 import kotlin.test.Test

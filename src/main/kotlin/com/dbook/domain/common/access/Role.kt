@@ -1,18 +1,18 @@
-package com.dbook.domain.identity
+package com.dbook.domain.common.access
 
-import com.dbook.domain.identity.Permission.ADMIN_PORTAL_ACCESS
-import com.dbook.domain.identity.Permission.BOOKING_CANCEL_ANY
-import com.dbook.domain.identity.Permission.BOOKING_READ_ANY
-import com.dbook.domain.identity.Permission.CATALOG_WRITE
-import com.dbook.domain.identity.Permission.CUSTOMER_BLOCK
-import com.dbook.domain.identity.Permission.CUSTOMER_NOTE
-import com.dbook.domain.identity.Permission.CUSTOMER_READ
-import com.dbook.domain.identity.Permission.DASHBOARD_READ
-import com.dbook.domain.identity.Permission.FLIGHT_READ
-import com.dbook.domain.identity.Permission.FLIGHT_WRITE
-import com.dbook.domain.identity.Permission.PAYMENT_REFUND
-import com.dbook.domain.identity.Permission.PROMO_WRITE
-import com.dbook.domain.identity.Permission.REVIEW_MODERATE
+import com.dbook.domain.common.access.Permission.ADMIN_PORTAL_ACCESS
+import com.dbook.domain.common.access.Permission.BOOKING_CANCEL_ANY
+import com.dbook.domain.common.access.Permission.BOOKING_READ_ANY
+import com.dbook.domain.common.access.Permission.CATALOG_WRITE
+import com.dbook.domain.common.access.Permission.CUSTOMER_BLOCK
+import com.dbook.domain.common.access.Permission.CUSTOMER_NOTE
+import com.dbook.domain.common.access.Permission.CUSTOMER_READ
+import com.dbook.domain.common.access.Permission.DASHBOARD_READ
+import com.dbook.domain.common.access.Permission.FLIGHT_READ
+import com.dbook.domain.common.access.Permission.FLIGHT_WRITE
+import com.dbook.domain.common.access.Permission.PAYMENT_REFUND
+import com.dbook.domain.common.access.Permission.PROMO_WRITE
+import com.dbook.domain.common.access.Permission.REVIEW_MODERATE
 
 // The permissions of each role live here and are resolved on every request; the token only carries the role name.
 enum class Role(val permissions: Set<Permission>) {

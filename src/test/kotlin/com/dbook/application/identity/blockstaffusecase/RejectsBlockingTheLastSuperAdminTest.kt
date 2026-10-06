@@ -2,8 +2,8 @@ package com.dbook.application.identity.blockstaffusecase
 
 import com.dbook.application.identity.BlockStaffCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

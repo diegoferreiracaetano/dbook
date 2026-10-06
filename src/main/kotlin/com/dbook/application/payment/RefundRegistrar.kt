@@ -1,15 +1,15 @@
 package com.dbook.application.payment
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.flight.Flight
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.domain.payment.Refund
 import com.dbook.domain.payment.RefundNotFoundException
 import com.dbook.domain.payment.RefundOverrideNotAllowedException

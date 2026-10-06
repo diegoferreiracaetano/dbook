@@ -3,8 +3,8 @@ package com.dbook.application.payment
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.NotBookingOwnerException
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.payment.Refund
 import com.dbook.domain.payment.RefundReason
 import io.micrometer.observation.annotation.Observed

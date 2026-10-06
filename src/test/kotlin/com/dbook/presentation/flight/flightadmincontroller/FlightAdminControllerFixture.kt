@@ -7,10 +7,10 @@ import com.dbook.application.flight.RegisterFlightUseCase
 import com.dbook.application.flight.SearchAdminFlightsUseCase
 import com.dbook.application.flight.UpdateFlightUseCase
 import com.dbook.domain.catalog.Airport
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.flight.Airline
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
 import com.dbook.infrastructure.web.FixedWindowCounter

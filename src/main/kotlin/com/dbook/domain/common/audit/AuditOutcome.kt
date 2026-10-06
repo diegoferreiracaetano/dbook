@@ -1,4 +1,4 @@
-package com.dbook.domain.audit
+package com.dbook.domain.common.audit
 
 enum class AuditOutcome {
     SUCCESS,

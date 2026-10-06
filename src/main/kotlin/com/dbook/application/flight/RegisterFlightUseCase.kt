@@ -1,14 +1,14 @@
 package com.dbook.application.flight
 
 import com.dbook.application.pricing.FlightPriceRecorder
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.FlightRepository
 import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.flight.toAuditSnapshot
-import com.dbook.domain.identity.Actor
 import com.dbook.domain.seating.SeatRepository
 import com.dbook.domain.seating.generateSeats
 import io.micrometer.observation.annotation.Observed

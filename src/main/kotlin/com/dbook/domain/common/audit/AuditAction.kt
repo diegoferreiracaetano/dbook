@@ -1,4 +1,4 @@
-package com.dbook.domain.audit
+package com.dbook.domain.common.audit
 
 enum class AuditAction(val target: String) {
     FLIGHT_CREATED("FLIGHT"),

@@ -1,9 +1,9 @@
 package com.dbook.application.identity.staff
 
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.AnonymizedEmailRepository
 import com.dbook.domain.identity.EmailSender
 import com.dbook.domain.identity.InvitationTokenGenerator
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.StaffInvitation
 import com.dbook.domain.identity.StaffInvitationRepository
 import com.dbook.domain.identity.User

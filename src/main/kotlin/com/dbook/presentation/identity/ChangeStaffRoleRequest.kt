@@ -1,6 +1,6 @@
 package com.dbook.presentation.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema

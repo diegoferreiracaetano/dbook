@@ -1,8 +1,8 @@
 package com.dbook.infrastructure.persistence.audit
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditOutcome
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditOutcome
 import jakarta.persistence.Embedded
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

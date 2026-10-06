@@ -17,8 +17,8 @@ import com.dbook.application.identity.UnblockUserUseCase
 import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FakeTokenService
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.StaffInvitation
 import com.dbook.domain.identity.User
 import org.springframework.transaction.support.TransactionSynchronizationManager

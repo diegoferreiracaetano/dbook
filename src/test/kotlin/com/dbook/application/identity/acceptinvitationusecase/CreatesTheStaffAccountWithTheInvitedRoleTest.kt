@@ -2,8 +2,8 @@ package com.dbook.application.identity.acceptinvitationusecase
 
 import com.dbook.application.identity.AcceptInvitationCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.InvitationStatus
-import com.dbook.domain.identity.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

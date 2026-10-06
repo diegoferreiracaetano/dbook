@@ -1,5 +1,6 @@
 package com.dbook.domain.identity
 
+import com.dbook.domain.common.access.Role
 import java.time.Instant
 
 class User(

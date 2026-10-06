@@ -11,8 +11,8 @@ import com.dbook.application.identity.loginusecase.FakeTokenService
 import com.dbook.application.identity.staff.InMemoryAnonymizedEmails
 import com.dbook.application.identity.staff.RecordingEmailSender
 import com.dbook.application.identity.staff.SequentialInvitationTokens
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.PasswordHasher
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
 import org.springframework.transaction.support.TransactionSynchronizationManager

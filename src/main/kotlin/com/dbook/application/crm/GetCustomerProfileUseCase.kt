@@ -1,13 +1,13 @@
 package com.dbook.application.crm
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
 import com.dbook.domain.audit.AuditFilter
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.audit.AuditLogReader
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.crm.CustomerProfile
 import com.dbook.domain.crm.CustomerProfileReader
-import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.UserNotFoundException
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service

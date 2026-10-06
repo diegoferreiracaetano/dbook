@@ -1,6 +1,6 @@
 package com.dbook.application.crm.exportmydatausecase
 
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

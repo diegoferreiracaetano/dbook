@@ -4,7 +4,7 @@ import com.dbook.application.identity.BootstrapSuperAdminCommand
 import com.dbook.application.identity.BootstrapSuperAdminUseCase
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
 import com.dbook.application.identity.staff.InMemoryUserRepository
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 
 abstract class BootstrapSuperAdminUseCaseFixture {

@@ -1,8 +1,8 @@
 package com.dbook.application.identity.listinvitationsusecase
 
 import com.dbook.application.identity.staff.StaffUseCaseFixture
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.InvitationStatus
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.StaffInvitation
 import java.time.Duration
 import kotlin.test.Test

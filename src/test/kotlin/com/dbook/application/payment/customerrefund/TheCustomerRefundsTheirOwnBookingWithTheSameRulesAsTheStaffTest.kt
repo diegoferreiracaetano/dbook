@@ -1,9 +1,9 @@
 package com.dbook.application.payment.customerrefund
 
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.booking.NotBookingOwnerException
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.payment.RefundReason
 import com.dbook.domain.payment.RefundStatus
 import com.dbook.domain.payment.RefundWindowClosedException

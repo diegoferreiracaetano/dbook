@@ -12,7 +12,7 @@ class TheTimelineShowsEveryStatusAndWhoDidItTest : AdminBookingsFixture() {
         val (booking) = bookSeats(customer, 1)
         pay(customer, booking)
         val staffEmail = uniqueEmail()
-        val support = registerStaffAndLogin(staffEmail, com.dbook.domain.identity.Role.SUPPORT)
+        val support = registerStaffAndLogin(staffEmail, com.dbook.domain.common.access.Role.SUPPORT)
         refund(support, booking)
 
         val timeline = bodyOf(adminBooking(support, booking))["timeline"]

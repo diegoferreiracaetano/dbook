@@ -1,6 +1,6 @@
 package com.dbook.presentation.customernotes
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.presentation.customerprofile.CustomerProfileFixture
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MvcResult

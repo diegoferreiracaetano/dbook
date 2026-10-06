@@ -28,7 +28,7 @@ class ACommitCreatesTheFlightsAndSendingItAgainCreatesNothingTest : FlightImport
             )["items"]
                 .first { it["flightNumber"].asText() == "NEW1" }["id"].asLong()
         assertEquals(9, seatLabels(newId).size)
-        val admin = registerStaffAndLogin(uniqueEmail(), com.dbook.domain.identity.Role.SUPER_ADMIN)
+        val admin = registerStaffAndLogin(uniqueEmail(), com.dbook.domain.common.access.Role.SUPER_ADMIN)
         assertEquals(true, auditEntries(admin, "action=FLIGHTS_IMPORTED&targetId=import").size() >= 1)
     }
 }

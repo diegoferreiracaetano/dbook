@@ -1,6 +1,6 @@
 package com.dbook.presentation.review
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

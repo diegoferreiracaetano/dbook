@@ -1,10 +1,10 @@
 package com.dbook.application.identity.twofactor
 
 import com.dbook.application.identity.DisableTwoFactorCommand
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.InvalidTwoFactorCodeException
-import com.dbook.domain.identity.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

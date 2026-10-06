@@ -1,6 +1,6 @@
 package com.dbook.presentation.twofactor
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.SecretCipher
 import com.dbook.domain.identity.TotpService
 import com.dbook.domain.identity.TwoFactorRepository

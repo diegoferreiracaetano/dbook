@@ -1,9 +1,9 @@
 package com.dbook.presentation.audit
 
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditEntry
-import com.dbook.domain.audit.AuditOutcome
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditOutcome
 import java.time.Instant
 
 data class AuditEntryResponse(

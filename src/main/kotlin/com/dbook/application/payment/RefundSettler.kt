@@ -3,12 +3,12 @@ package com.dbook.application.payment
 import com.dbook.application.booking.BookingInventoryReleaser
 import com.dbook.application.common.afterCommit
 import com.dbook.application.common.countOutcome
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.messaging.OutboxWriter
 import com.dbook.domain.payment.Refund
 import com.dbook.domain.payment.RefundEvents

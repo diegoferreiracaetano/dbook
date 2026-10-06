@@ -1,11 +1,11 @@
 package com.dbook.infrastructure.persistence.audit
 
 import com.dbook.domain.audit.AuditCursor
-import com.dbook.domain.audit.AuditEvent
 import com.dbook.domain.audit.AuditFilter
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.audit.AuditLogReader
 import com.dbook.domain.audit.AuditPage
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.infrastructure.web.RequestAuditContext
 import io.micrometer.core.instrument.MeterRegistry
 import net.logstash.logback.argument.StructuredArguments.kv

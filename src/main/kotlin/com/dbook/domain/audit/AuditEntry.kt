@@ -1,5 +1,6 @@
 package com.dbook.domain.audit
 
+import com.dbook.domain.common.audit.AuditEvent
 import java.time.Instant
 
 data class AuditContext(

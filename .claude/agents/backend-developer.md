@@ -17,7 +17,7 @@ Você implementa mudanças no backend do DBook (Kotlin 2.0.21, Spring Boot 3.3.4
 
 - Ordem: invariante no `domain` → porta → use case (`XxxCommand` no mesmo arquivo) → entidade JPA/adapter/migration → controller + DTOs → docs.
 - Camadas: `domain` sem Spring/JPA; `application` sem `infrastructure`/`presentation`; `presentation` sem `infrastructure`; `infrastructure` sem `application`. Se a solução pede quebrar isso, pare e reavalie.
-- Erros: `require`/`check` no domínio; exceção nova só para "não encontrado" e **sempre** registrada no `ApiExceptionHandler`.
+- Erros: `require`/`check` no domínio; exceção nova só para "não encontrado" e **sempre** registrada no `XxxExceptionHandler` do módulo (o `ApiExceptionHandler` só trata o genérico).
 - Escrita no banco → `@Transactional`; notificar fora (WebSocket/Redis) → `afterCommit { }`.
 - Segurança: o id do usuário vem de `authentication.currentUserId()`, nunca do corpo. Endpoint novo é autenticado por padrão.
 - Não use corrotinas, MockK, mapper-lib ou qualquer dependência nova — não fazem parte do projeto. Dependência nova só com pedido explícito.

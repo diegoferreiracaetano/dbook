@@ -1,8 +1,8 @@
 package com.dbook.application.booking.cancelbookingusecase
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

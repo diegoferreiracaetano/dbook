@@ -22,9 +22,9 @@ import com.dbook.application.identity.staff.InMemoryAnonymizedEmails
 import com.dbook.application.identity.staff.InMemoryUserRepository
 import com.dbook.application.identity.staff.RecordingEmailSender
 import com.dbook.application.identity.staff.SequentialInvitationTokens
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.AccountToken
 import com.dbook.domain.identity.AccountTokenRepository
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.transaction.support.TransactionSynchronizationManager

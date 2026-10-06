@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.persistence.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated

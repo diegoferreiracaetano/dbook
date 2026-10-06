@@ -1,6 +1,6 @@
 package com.dbook.presentation.promo
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.Test

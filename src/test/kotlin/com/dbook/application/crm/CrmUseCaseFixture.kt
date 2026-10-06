@@ -11,8 +11,8 @@ import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.FixedPasswordHasher
 import com.dbook.application.identity.staff.InMemoryAnonymizedEmails
 import com.dbook.application.identity.staff.InMemoryUserRepository
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 import java.time.Clock
 import java.time.Instant

@@ -3,7 +3,7 @@ package com.dbook.application.identity.unblockstaffusecase
 import com.dbook.application.identity.BlockStaffCommand
 import com.dbook.application.identity.UnblockStaffCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

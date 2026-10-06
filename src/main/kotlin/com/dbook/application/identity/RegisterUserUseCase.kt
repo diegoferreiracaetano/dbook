@@ -1,11 +1,11 @@
 package com.dbook.application.identity
 
 import com.dbook.application.common.afterCommit
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.AccountTokenPurpose
 import com.dbook.domain.identity.AnonymizedEmailRepository
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.PasswordPolicy
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserAlreadyExistsException
 import com.dbook.domain.identity.UserRepository

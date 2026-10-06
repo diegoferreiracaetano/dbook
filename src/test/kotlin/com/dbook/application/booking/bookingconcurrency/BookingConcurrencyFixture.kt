@@ -11,9 +11,9 @@ import com.dbook.application.identity.RegisterUserUseCase
 import com.dbook.application.payment.RegisterPaymentCommand
 import com.dbook.application.payment.RegisterPaymentUseCase
 import com.dbook.domain.booking.BookingRepository
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.UserRepository
 import com.dbook.domain.seating.SeatRepository
 import org.springframework.beans.factory.annotation.Autowired

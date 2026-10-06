@@ -1,7 +1,7 @@
 package com.dbook.application.identity.registeruserusecase
 
 import com.dbook.application.identity.RegisterUserCommand
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

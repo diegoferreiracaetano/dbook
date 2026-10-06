@@ -1,6 +1,6 @@
 package com.dbook.application.flight.registerflightusecase
 
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

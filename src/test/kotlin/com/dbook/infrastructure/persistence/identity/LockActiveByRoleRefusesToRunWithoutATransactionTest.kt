@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.persistence.identity
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import org.springframework.transaction.IllegalTransactionStateException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

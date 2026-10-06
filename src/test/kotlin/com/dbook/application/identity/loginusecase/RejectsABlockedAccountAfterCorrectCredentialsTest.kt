@@ -1,7 +1,7 @@
 package com.dbook.application.identity.loginusecase
 
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.AccountBlockedException
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import kotlin.test.Test
 import kotlin.test.assertEquals

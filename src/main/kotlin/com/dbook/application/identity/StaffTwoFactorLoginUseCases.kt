@@ -1,8 +1,8 @@
 package com.dbook.application.identity
 
 import com.dbook.application.common.countOutcome
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.identity.AccountBlockedException
-import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.ChallengePurpose
 import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.InvalidTwoFactorCodeException

@@ -1,4 +1,4 @@
-package com.dbook.application.common
+package com.dbook.application.payment
 
 import com.dbook.domain.payment.IdempotencyKeyReusedException
 import java.security.MessageDigest

@@ -1,9 +1,9 @@
 package com.dbook.application.identity.twofactor
 
 import com.dbook.application.identity.ResetTwoFactorCommand
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.identity.UserNotFoundException
 import kotlin.test.Test
 import kotlin.test.assertEquals

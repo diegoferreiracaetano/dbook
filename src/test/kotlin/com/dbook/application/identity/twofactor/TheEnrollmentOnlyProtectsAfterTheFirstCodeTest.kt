@@ -1,6 +1,6 @@
 package com.dbook.application.identity.twofactor
 
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.identity.InvalidTwoFactorCodeException
 import kotlin.test.Test
 import kotlin.test.assertEquals

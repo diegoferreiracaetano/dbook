@@ -1,6 +1,6 @@
 package com.dbook.presentation.promo
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.presentation.adminbookings.AdminBookingsFixture
 import com.fasterxml.jackson.databind.JsonNode
 import org.springframework.http.MediaType

@@ -1,7 +1,7 @@
 package com.dbook.presentation.identity
 
-import com.dbook.domain.identity.Permission
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Permission
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.User
 
 data class AdminProfileResponse(

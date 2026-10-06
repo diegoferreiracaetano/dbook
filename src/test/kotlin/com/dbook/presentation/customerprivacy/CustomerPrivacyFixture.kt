@@ -9,7 +9,7 @@ import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch
 
 abstract class CustomerPrivacyFixture : CustomerNotesFixture() {
-    protected fun superAdminToken() = staffToken(com.dbook.domain.identity.Role.SUPER_ADMIN)
+    protected fun superAdminToken() = staffToken(com.dbook.domain.common.access.Role.SUPER_ADMIN)
 
     /** GET /v1/admin/customers/export; the body is streamed, so the response is read after the async dispatch. */
     protected fun exportCsv(

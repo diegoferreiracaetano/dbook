@@ -2,7 +2,7 @@ package com.dbook.application.identity.acceptinvitationusecase
 
 import com.dbook.application.identity.AcceptInvitationCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

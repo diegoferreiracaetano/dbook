@@ -1,8 +1,8 @@
 package com.dbook.infrastructure.persistence.audit
 
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditFilter
-import com.dbook.domain.audit.AuditOutcome
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditOutcome
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.Test

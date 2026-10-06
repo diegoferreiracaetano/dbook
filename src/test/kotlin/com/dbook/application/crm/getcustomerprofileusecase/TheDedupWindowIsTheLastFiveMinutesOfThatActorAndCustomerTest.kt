@@ -2,7 +2,7 @@ package com.dbook.application.crm.getcustomerprofileusecase
 
 import com.dbook.application.crm.CrmUseCaseFixture
 import com.dbook.application.crm.GetCustomerProfileUseCase
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

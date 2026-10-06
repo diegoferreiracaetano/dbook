@@ -1,6 +1,6 @@
 package com.dbook.application.payment
 
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.payment.Refund
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service

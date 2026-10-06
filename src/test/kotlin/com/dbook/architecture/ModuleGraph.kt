@@ -55,16 +55,6 @@ object ModuleGraph {
             "app" to conceptsOf.keys - "app",
         )
 
-    /**
-     * The shared vocabulary that lives inside `identity` and `audit` today but belongs to `core` in the target: who is
-     * acting and what they may do (`Actor`, `Role`, `Permission`) and what is written to the trail (`AuditAction`,
-     * `AuditEvent`, `AuditLog`). Every module uses it, so none of them may need `identity` or `audit` to get it.
-     * Step 48.5 makes it true on disk; until then the rule already counts these classes as `core`.
-     */
-    private val sharedVocabulary: Set<String> =
-        setOf("identity.Actor", "identity.Role", "identity.Permission").map { "com.dbook.domain.$it" }.toSet() +
-            setOf("AuditAction", "AuditEvent", "AuditOutcome", "AuditLog").map { "com.dbook.domain.audit.$it" }.toSet()
-
     private val moduleOfConcept: Map<String, String> =
         conceptsOf.flatMap { (module, concepts) -> concepts.map { it to module } }.toMap()
 
@@ -75,7 +65,6 @@ object ModuleGraph {
     fun moduleOf(javaClass: JavaClass): String? {
         // an array of a class belongs where its elements do
         val type = if (javaClass.isArray) javaClass.baseComponentType else javaClass
-        if (type.name.substringBefore('$') in sharedVocabulary) return "core"
         val parts = type.packageName.split('.')
         val concept =
             when {

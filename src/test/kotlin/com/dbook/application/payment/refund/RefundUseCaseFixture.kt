@@ -12,8 +12,8 @@ import com.dbook.application.payment.RefundSettler
 import com.dbook.application.payment.RetryRefundUseCase
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.payment.RefundReason
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.transaction.support.TransactionSynchronizationManager

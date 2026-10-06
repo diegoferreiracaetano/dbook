@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.security
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.UserRepository
 import jakarta.servlet.FilterChain

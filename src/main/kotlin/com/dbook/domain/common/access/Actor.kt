@@ -1,4 +1,4 @@
-package com.dbook.domain.identity
+package com.dbook.domain.common.access
 
 data class Actor(
     val id: Long,

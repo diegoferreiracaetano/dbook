@@ -9,12 +9,12 @@ import com.dbook.application.identity.SessionAudience
 import com.dbook.application.identity.TwoFactorGate
 import com.dbook.application.identity.TwoFactorPolicy
 import com.dbook.application.identity.twofactor.FakeTwoFactorRepository
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.ChallengePurpose
 import com.dbook.domain.identity.LoginAttemptLimiter
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.RefreshToken
 import com.dbook.domain.identity.RefreshTokenRepository
-import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.TokenService
 import com.dbook.domain.identity.TwoFactorChallenge
 import com.dbook.domain.identity.User

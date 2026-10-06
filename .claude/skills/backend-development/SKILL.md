@@ -68,7 +68,7 @@ Objetivo: qualquer mudança nova parecer escrita pela mesma pessoa que escreveu 
 ## Erros — como o projeto faz
 
 - Regra de domínio: `require` → 400, `check` → 409. Não crie exceção só pra isso.
-- Não encontrado: `class BookingNotFoundException(id: Long) : RuntimeException("Booking not found: $id")` em `domain/`, `?: throw` no use case (`bookingRepository.findById(id) ?: throw BookingNotFoundException(id)`), e **adicione a classe na lista de `ApiExceptionHandler.handleNotFound`**. Esquecer isso vira HTTP 500.
+- Não encontrado: `class BookingNotFoundException(id: Long) : RuntimeException("Booking not found: $id")` em `domain/`, `?: throw` no use case (`bookingRepository.findById(id) ?: throw BookingNotFoundException(id)`), e **adicione a classe no `handleNotFound` do `XxxExceptionHandler` do seu módulo** (`presentation/<conceito>/`). Esquecer isso vira HTTP 500.
 - Dono do recurso: `if (booking.customerId != requestingUserId) throw NotBookingOwnerException(id)` (→ 403). `CancelBookingUseCase` deixa passar quem tem `BOOKING_CANCEL_ANY`; `RegisterPaymentUseCase` não.
 - Resposta de erro é sempre `{"error": "..."}` (`Map<String, String>`).
 

@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.security
 
 import com.dbook.config.CorsProperties
-import com.dbook.domain.identity.Permission.ADMIN_PORTAL_ACCESS
+import com.dbook.domain.common.access.Permission.ADMIN_PORTAL_ACCESS
 import jakarta.servlet.DispatcherType
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest
 import org.springframework.context.annotation.Bean

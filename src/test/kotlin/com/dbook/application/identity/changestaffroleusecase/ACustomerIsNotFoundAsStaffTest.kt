@@ -2,7 +2,7 @@ package com.dbook.application.identity.changestaffroleusecase
 
 import com.dbook.application.identity.ChangeStaffRoleCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.UserNotFoundException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

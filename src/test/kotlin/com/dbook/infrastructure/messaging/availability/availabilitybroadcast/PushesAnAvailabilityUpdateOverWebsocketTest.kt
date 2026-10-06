@@ -4,9 +4,9 @@ import com.dbook.application.booking.RegisterBookingCommand
 import com.dbook.application.flight.RegisterFlightCommand
 import com.dbook.application.identity.LoginCommand
 import com.dbook.application.identity.RegisterUserCommand
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.flight.SeatClass
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import com.dbook.infrastructure.messaging.availability.AvailabilityUpdate
 import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.StompHeaders

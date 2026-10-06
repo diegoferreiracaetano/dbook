@@ -1,6 +1,6 @@
 package com.dbook.domain.identity.staffinvitation
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.StaffInvitation
 import java.time.Instant
 

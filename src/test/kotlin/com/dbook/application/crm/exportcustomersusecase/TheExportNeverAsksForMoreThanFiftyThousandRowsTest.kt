@@ -2,10 +2,10 @@ package com.dbook.application.crm.exportcustomersusecase
 
 import com.dbook.application.crm.CustomerExport
 import com.dbook.application.crm.ExportCustomersCommand
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.access.Role
 import com.dbook.domain.crm.CustomerFilter
 import com.dbook.domain.crm.CustomerSort
-import com.dbook.domain.identity.Actor
-import com.dbook.domain.identity.Role
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

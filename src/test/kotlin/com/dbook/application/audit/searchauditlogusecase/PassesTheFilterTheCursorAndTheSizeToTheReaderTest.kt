@@ -1,9 +1,9 @@
 package com.dbook.application.audit.searchauditlogusecase
 
 import com.dbook.application.audit.SearchAuditLogQuery
-import com.dbook.domain.audit.AuditAction
 import com.dbook.domain.audit.AuditCursor
 import com.dbook.domain.audit.AuditFilter
+import com.dbook.domain.common.audit.AuditAction
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals

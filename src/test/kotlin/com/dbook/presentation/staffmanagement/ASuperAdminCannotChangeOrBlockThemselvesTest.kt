@@ -1,6 +1,6 @@
 package com.dbook.presentation.staffmanagement
 
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import kotlin.test.Test
 
 class ASuperAdminCannotChangeOrBlockThemselvesTest : StaffManagementFixture() {

@@ -2,7 +2,7 @@ package com.dbook.application.identity.resendinvitationusecase
 
 import com.dbook.application.identity.ResendInvitationCommand
 import com.dbook.application.identity.staff.StaffUseCaseFixture
-import com.dbook.domain.audit.AuditAction
+import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.identity.InvitationStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals

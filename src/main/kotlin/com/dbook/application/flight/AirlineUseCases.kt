@@ -1,13 +1,13 @@
 package com.dbook.application.flight
 
-import com.dbook.domain.audit.AuditAction
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.audit.AuditLog
 import com.dbook.domain.catalog.CatalogEntryInUseException
 import com.dbook.domain.catalog.CatalogEntryNotFoundException
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditAction
+import com.dbook.domain.common.audit.AuditEvent
+import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.flight.Airline
 import com.dbook.domain.flight.AirlineRepository
-import com.dbook.domain.identity.Actor
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

@@ -4,7 +4,7 @@ import com.dbook.application.identity.BlockUserUseCase
 import com.dbook.application.identity.UnblockUserUseCase
 import com.dbook.application.identity.loginusecase.FakeRefreshTokenRepository
 import com.dbook.application.identity.loginusecase.SingleUserRepository
-import com.dbook.domain.identity.Role.CLIENT
+import com.dbook.domain.common.access.Role.CLIENT
 import com.dbook.domain.identity.User
 import java.time.Clock
 import java.time.Instant

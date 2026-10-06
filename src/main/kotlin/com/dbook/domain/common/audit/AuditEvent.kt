@@ -1,6 +1,6 @@
-package com.dbook.domain.audit
+package com.dbook.domain.common.audit
 
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
 
 data class AuditEvent(
     val actor: Actor,

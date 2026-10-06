@@ -1,7 +1,7 @@
 package com.dbook.application.crm
 
 import com.dbook.application.identity.PasswordConfirmation
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
 import com.dbook.domain.identity.UserNotFoundException
 import com.dbook.domain.identity.UserRepository
 import io.micrometer.observation.annotation.Observed

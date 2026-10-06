@@ -6,7 +6,7 @@ import com.dbook.domain.accommodation.RoomType
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.Stay
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.identity.Role
+import com.dbook.domain.common.access.Role
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.Test

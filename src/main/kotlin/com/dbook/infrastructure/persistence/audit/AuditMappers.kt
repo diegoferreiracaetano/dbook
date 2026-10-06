@@ -2,8 +2,8 @@ package com.dbook.infrastructure.persistence.audit
 
 import com.dbook.domain.audit.AuditContext
 import com.dbook.domain.audit.AuditEntry
-import com.dbook.domain.audit.AuditEvent
-import com.dbook.domain.identity.Actor
+import com.dbook.domain.common.access.Actor
+import com.dbook.domain.common.audit.AuditEvent
 import java.time.Instant
 
 fun AuditEvent.toJpaEntity(
