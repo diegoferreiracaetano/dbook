@@ -25,6 +25,10 @@ repositories {
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
+        // parameter names in the bytecode: Jackson (request bodies without the Kotlin module) and Spring MVC
+        // (@RequestParam, @PathVariable) read them. The Spring Boot plugin turns this on for the application, and the
+        // library modules do not apply that plugin, so the convention does it for all of them.
+        javaParameters = true
     }
 }
 

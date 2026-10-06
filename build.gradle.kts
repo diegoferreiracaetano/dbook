@@ -9,6 +9,20 @@ plugins {
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
+    implementation(project(":admin"))
+    implementation(project(":notification"))
+    implementation(project(":trips"))
+    implementation(project(":review"))
+    implementation(project(":payment"))
+    implementation(project(":ai"))
+    implementation(project(":favorite"))
+    implementation(project(":pricing"))
+    implementation(project(":accommodation"))
+    implementation(project(":flight"))
+    implementation(project(":booking"))
+    implementation(project(":catalog"))
+    implementation(project(":identity"))
+    implementation(project(":audit"))
     implementation(project(":core"))
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")

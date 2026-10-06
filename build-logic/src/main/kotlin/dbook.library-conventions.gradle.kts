@@ -21,6 +21,7 @@ dependencies {
     "implementation"("org.springframework.boot:spring-boot-starter-data-redis")
     "implementation"("org.springframework.boot:spring-boot-starter-actuator")
     "implementation"("io.micrometer:micrometer-tracing")
+    "implementation"("net.logstash.logback:logstash-logback-encoder:8.0")
     "implementation"("software.amazon.awssdk:sqs:2.28.29")
     "implementation"("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
     "implementation"("org.jetbrains.kotlin:kotlin-reflect")

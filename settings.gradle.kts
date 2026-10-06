@@ -5,3 +5,17 @@ pluginManagement {
 
 rootProject.name = "dbook"
 include("core")
+include("audit")
+include("identity")
+include("catalog")
+include("booking")
+include("flight")
+include("accommodation")
+include("pricing")
+include("favorite")
+include("ai")
+include("payment")
+include("review")
+include("trips")
+include("notification")
+include("admin")
