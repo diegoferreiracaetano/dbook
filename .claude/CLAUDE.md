@@ -33,6 +33,8 @@ Idioma: docs (`README.md`, `docs/*.md`, `CHECKLIST.md`, este arquivo) e commits 
 ## Arquitetura (camadas em `com.dbook`, com subpacotes por conceito)
 
 ```
+O código está dividido em **módulos Gradle por responsabilidade** (`core`, `audit`, `identity`, `catalog`, `booking`, `flight`, `accommodation`, `pricing`, `favorite`, `ai`, `payment`, `review`, `trips`, `notification`, `admin`; o projeto raiz é o `:app`). A lista, o que cada um tem e de quem depende está em `docs/adr/0001-modulos-gradle-por-responsabilidade.md`. O grafo é verificado em dois lugares: pelo **Gradle** (um módulo só enxerga os que declara) e pelo **ArchUnit** (`ModuleGraph` em `src/test/kotlin/.../architecture/`: nenhuma classe pode depender de um módulo que o seu não declara). Os pacotes não mudam por causa dos módulos: `com.dbook.domain.booking` é o mesmo em qualquer lugar. Para criar código novo, ache o módulo dono do conceito e ponha lá.
+
 presentation  → application → domain ← infrastructure
    (HTTP)        (use cases)   (regras + portas)   (adapters)
 ```
@@ -45,7 +47,6 @@ Regras de dependência, **verificadas a cada build por testes ArchUnit** (`src/t
 - Consumidor de fila (`BookingExpirationConsumer`, `NotificationConsumer`) é adapter de **entrada**, como um controller: mora em `presentation/` e chama use case, com o *polling*, o *trace* e o "apaga só depois de tratar" em `SqsMessageLoop`; `infrastructure/` só tem o lado que *publica* (o relé do outbox e o `SqsOutboxPublisher`).
 - `config/` = configuração transversal (hoje só `OpenApiConfig`).
 - **Cada camada se divide em subpacotes por conceito** (decisão de 2026-10-03, quando `domain/` chegou a 47 arquivos soltos): `domain/<conceito>/`, `application/<conceito>/`, `presentation/<conceito>/`, `infrastructure/persistence/<conceito>/`. Os 16 conceitos: `catalog` (Flight, Airport, Airline, Bookable — onde entraria Hotel), `seating` (Seat, SeatLayout), `booking` (Booking, expiração, disponibilidade em tempo real), `payment`, `review`, `identity` (User, token, refresh, hash de senha, papéis e permissões), `audit` (a trilha imutável das ações administrativas), `crm` (consulta de clientes para o portal: só leitura, *read models* por SQL, sem entidades), `dashboard` (números de negócio por SQL, também só leitura), `messaging` (o outbox: `OutboxEvent` e `OutboxWriter`), `notification` (o que se diz ao cliente, por quais canais, e as preferências dele), `favorite` (destinos e voos salvos por cliente), `promo` (códigos promocionais), `pricing` (histórico e alertas de preço), `accommodation` (hotéis: o segundo `Bookable`, com tipos de quarto e estoque por noite) e `ai`. Há também `domain/common` (paginação e ordenação compartilhadas, sem regra de negócio). O que atravessa conceitos (`ApiExceptionHandler`, `HealthController`, `SecurityExtensions`, `TransactionSupport`) vai em `common/`. A camada continua sendo o 1º nível — **não** crie `<conceito>/domain`, `<conceito>/application`... (opção avaliada e descartada: os conceitos compartilham o mesmo banco e têm relações JPA entre si, então módulos completos ainda não se pagam; **reavaliada em 2026-10-05: vão ser módulos Gradle por responsabilidade** (M48 no `CHECKLIST.md`, desenho em `docs/adr/0001-modulos-gradle-por-responsabilidade.md`, ainda proposta, nada movido); se um dia um conceito for extraído, esta divisão já o deixa separado). Conceito novo = pasta nova nas camadas em que ele tiver arquivos; arquivo novo vai na pasta do conceito dono.
-- Dependências entre conceitos (hoje, no `domain/`): só `booking → catalog` (e `messaging`), `ai → catalog`, `audit → identity`, `crm → identity`, `catalog`/`payment → messaging` (os eventos que escrevem no outbox) e `notification → booking`/`catalog`/`payment` (os tipos de aviso levam o nome desses eventos); `seating`, `review` e `identity` não dependem de nenhum outro, e os demais só dos listados; entre conceitos o resto se referencia por id (`bookableId`, `bookingId`). Mantenha **sem ciclos** (teste `DomainConceptsAreFreeOfCyclesTest`). Na persistência **não há exceção**: o `availableCapacity` do voo vem da porta `SeatAvailability` (de `seating`), e `PersistenceConceptsAreFreeOfCyclesTest` reprova qualquer ciclo.
 
 ## Convenções de nome
 
@@ -102,7 +103,7 @@ docker compose up -d                 # Postgres + Redis (+ LocalStack) p/ rodar 
 ./gradlew ktlintFormat               # corrige formatação
 ./gradlew test                       # todos os testes
 ./gradlew test --tests 'com.dbook.application.booking.cancelbookingusecase.*'   # um pacote
-./gradlew check                      # o que o CI roda: test + ktlint + detekt(Main/Test) + JaCoCo ≥ 75%
+./gradlew check                      # o que o CI roda: test + ktlint + detekt (em todos os módulos) + JaCoCo ≥ 75% (somado)
 ./gradlew jacocoTestReport           # build/reports/jacoco/test/html/index.html
 ```
 

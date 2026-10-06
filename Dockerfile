@@ -2,14 +2,26 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
-# Copy only what's needed to resolve dependencies first, so Docker can cache this layer
-# and skip re-downloading everything when only application source changes.
 COPY gradlew build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
-RUN ./gradlew dependencies --no-daemon || true
-
-COPY src ./src
+COPY build-logic ./build-logic
 COPY config ./config
+COPY src ./src
+COPY core ./core
+COPY audit ./audit
+COPY identity ./identity
+COPY catalog ./catalog
+COPY booking ./booking
+COPY flight ./flight
+COPY accommodation ./accommodation
+COPY pricing ./pricing
+COPY favorite ./favorite
+COPY ai ./ai
+COPY payment ./payment
+COPY review ./review
+COPY trips ./trips
+COPY notification ./notification
+COPY admin ./admin
 RUN ./gradlew bootJar --no-daemon -x test -x ktlintCheck -x detekt
 
 # --- runtime stage: just the JRE + the jar, nothing else from the build ---

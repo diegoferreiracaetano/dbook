@@ -1,6 +1,6 @@
 # ADR 0001 — Dividir o backend em módulos Gradle por responsabilidade
 
-- **Status:** proposta, **revisão 5** (48.5 feito: o vocabulário de segurança e de auditoria e os handlers por módulo já estão onde o ADR diz). Antes: **revisão 4** (2026-10-05: o ensaio do 48.1 mediu o grafo de verdade e corrigiu a lista de ciclos; nada foi movido ainda)
+- **Status:** **aceita** (2026-10-06): os 15 módulos existem como projetos Gradle e o grafo é verificado pelo ArchUnit e pelo Gradle
 - **Marco:** M48 (`CHECKLIST.md`)
 - **Substitui:** a decisão de 2026-10-04 de *não* dividir "agora, reavaliar depois do M45" (o M45 fechou)
 
@@ -65,8 +65,7 @@ Do mais baixo para o mais alto, **sem ciclos** (cada módulo só enxerga os que 
 | `:trips` | "minhas viagens": junta reserva, assento ou estadia, pagamento e avaliação | `booking`, `flight`, `accommodation`, `review`, `catalog` |
 | `:notification` | avisos (in-app, e-mail, push) e preferências | `booking`, `flight`, `payment`, `pricing`, `identity` |
 | `:admin` | CRM e dashboard (leitura por SQL) | `identity`, `audit`, `favorite`, `core` |
-| **`:app`** | **só a montagem**: `main`, configuração, `SecurityConfig`, migrations do Flyway, Dockerfile; **sem regra de negócio** (decisão do dono) | todos |
-
+| **`:app`** | **é o projeto raiz** (não há pasta `app/`: mover o `src/` quebraria o Dockerfile, o CI e os caminhos). Tem o `main`, a configuração, o `SecurityConfig`, as migrations do Flyway, os adaptadores que não são de um módulo (e-mail, push, observabilidade, segurança, web), **e todos os testes** | todos |
 `appconfig` fica em `:app` (decisão do dono).
 
 ## Os ciclos a desfazer (11 arestas, nenhuma é regra de negócio)
@@ -112,13 +111,13 @@ A regra `TheModulesOnlyDependOnTheirTargetModulesTest` confere o grafo alvo no *
 
 **Ganhos:** quebrar uma fronteira vira erro de compilação; `:favorite` e `:ai` ficam do tamanho que merecem; **um terceiro tipo de reserva é um módulo novo** (implementa o `InventoryReleaser` e registra o seu mapeador), sem mexer em `booking`, `flight` nem `accommodation`; testar só o módulo que mudou; `:admin` pode virar um segundo deploy.
 
-**Custos e riscos:** as fixtures de teste compartilhadas precisam de `java-test-fixtures`, e os testes de integração ficam em `:app`, que enxerga tudo; o Spring precisa achar beans e entidades JPA de todos os módulos; **os ciclos 1, 3, 4 e 5 mudam código de verdade** (a reserva de assento muda de módulo, duas relações JPA viram colunas, o mapeamento polimórfico): são os de maior risco, e por isso vêm primeiro e sozinhos.
+**O que a execução mostrou:** (1) os módulos compartilham **uma base de bibliotecas de terceiros** (o `dbook.library-conventions`), em vez de cada um declarar as suas: o que é estrito entre os módulos é o grafo dos **nossos** módulos, não as bibliotecas. (2) Os **testes ficam todos no `:app`**: separá-los por módulo pede `testFixtures` (os `Fake*` e as `Fixture` são compartilhados) e fica como uma etapa à parte. (3) Declarações `internal` que atravessam módulos passaram a ser públicas. (4) O plugin de convenção precisa ligar `javaParameters`, que o plugin do Spring Boot só liga no `:app`.
 
 ## Decisões do dono
 
 | | Decisão |
 |---|---|
-| `:app` | só montagem e configuração, sem negócio (**decidido**) |
+| `:app` | é o projeto raiz, sem regra de negócio: só montagem, configuração e adaptadores (**decidido**) |
 | `appconfig` | fica em `:app` (**decidido**) |
 | assentos | **não** vão para o catálogo: ficam em `:flight` (**decidido**) |
 | `:promo` | **dentro de `:payment`**, como pacote (revisão 3): um código promocional só existe para abater um pagamento (é resgatado no `RegisterPaymentUseCase`, não tem outro cliente), e `payment → promo → booking` virava uma cadeia de três módulos para uma coisa só. O pacote `promo` continua separado por dentro e o ArchUnit o mantém sem se enredar: se um dia a campanha ganhar vida própria (cupom por e-mail, outro canal), sai com a pasta |

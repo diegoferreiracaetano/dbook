@@ -1230,15 +1230,15 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 
 **Fase D — Os módulos Gradle (de baixo para cima, um commit por módulo)**
 - [x] 48.14 `:core` é o primeiro módulo Gradle de verdade (`core/`): `common` e `messaging` das camadas de domínio, aplicação e apresentação, a persistência comum e as propriedades de CORS. Veio junto o `dbook.library-conventions` (o plugin de convenção dos módulos: as convenções do Kotlin, o BOM do Spring Boot e **uma base de bibliotecas de terceiros compartilhada**; o que é estrito entre os módulos é o grafo dos **nossos** módulos). O projeto raiz continua sendo o `:app` (decisão: não mover `src/` para `app/`, o que quebraria Dockerfile, CI e caminhos). Descobertas: os `internal` que atravessam módulos precisam ser públicos (o `queryPage`, e os que os testes usam); os **testes ficam todos no `:app`** por ora (separá-los pede `testFixtures` e é uma etapa à parte)
-- [ ] 48.15 `:audit`, `:identity`
-- [ ] 48.16 `:catalog`, `:booking`
-- [ ] 48.17 `:flight`, `:accommodation`
-- [ ] 48.18 `:pricing`, `:favorite`, `:ai`
-- [ ] 48.19 `:payment` (com `promo`), `:review`, `:trips`
-- [ ] 48.20 `:notification`, `:admin`
-- [ ] 48.21 `:app` (main, configuração, migrations, Dockerfile, testes de integração, regras do ArchUnit)
-- [ ] 48.22 Cobertura agregada (mínimo 75 %), cache de build, CI
-- [ ] 48.23 Fechamento: `CLAUDE.md`, `README`, ADR "aceita", k6, memória
+- [x] 48.15 `:audit`, `:identity`
+- [x] 48.16 `:catalog`, `:booking`
+- [x] 48.17 `:flight`, `:accommodation`
+- [x] 48.18 `:pricing`, `:favorite`, `:ai`
+- [x] 48.19 `:payment` (com `promo`), `:review`, `:trips`
+- [x] 48.20 `:notification`, `:admin`
+- [x] 48.21 `:app` é o projeto raiz (main, configuração, migrations, Dockerfile, adaptadores sem módulo, testes de integração e as regras do ArchUnit); não há pasta `app/`
+- [x] 48.22 Cobertura agregada (mínimo 75 %), cache de build, CI
+- [x] 48.23 Fechamento: `CLAUDE.md`, `README`, ADR "aceita", k6, memória
 
 **Checklist de fechamento do M48:**
 - [ ] Itens revisados; ADR 0001 em "aceita"

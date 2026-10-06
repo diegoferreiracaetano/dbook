@@ -78,10 +78,12 @@ val coverageExclusions =
         "**/presentation/*Response*",
     )
 
+val moduleClassDirs = files(subprojects.map { it.layout.buildDirectory.dir("classes/kotlin/main") })
+
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    dependsOn(tasks.test, subprojects.map { "${it.path}:classes" })
     classDirectories.setFrom(
-        classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } },
+        (classDirectories.files + moduleClassDirs.files).map { fileTree(it) { exclude(coverageExclusions) } },
     )
     reports {
         xml.required.set(true)
@@ -92,7 +94,7 @@ tasks.jacocoTestReport {
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     classDirectories.setFrom(
-        classDirectories.files.map { fileTree(it) { exclude(coverageExclusions) } },
+        (classDirectories.files + moduleClassDirs.files).map { fileTree(it) { exclude(coverageExclusions) } },
     )
     violationRules {
         rule {
