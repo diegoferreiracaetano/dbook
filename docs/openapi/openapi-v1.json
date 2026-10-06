@@ -1451,7 +1451,7 @@
       "ErrorResponse" : {
         "properties" : {
           "code" : {
-            "enum" : [ "VALIDATION_FAILED", "MALFORMED_REQUEST", "MISSING_HEADER", "NOT_FOUND", "CONFLICT", "STALE_VERSION", "IDEMPOTENCY_KEY_REUSED", "UNAUTHORIZED", "INVALID_CREDENTIALS", "INVALID_TOKEN", "INVALID_INVITATION", "ACCOUNT_BLOCKED", "TWO_FACTOR_REQUIRED", "INVALID_TWO_FACTOR_CODE", "FORBIDDEN", "REFUND_WINDOW_CLOSED", "FAVORITES_LIMIT", "PROMO_REJECTED", "PRICE_ALERTS_LIMIT", "ROOM_UNAVAILABLE", "PAYLOAD_TOO_LARGE", "TOO_MANY_ATTEMPTS", "RATE_LIMITED", "AI_RESPONSE_INVALID", "AI_UNAVAILABLE" ],
+            "enum" : [ "VALIDATION_FAILED", "MALFORMED_REQUEST", "MISSING_HEADER", "NOT_FOUND", "CONFLICT", "STALE_VERSION", "IDEMPOTENCY_KEY_REUSED", "UNAUTHORIZED", "INVALID_CREDENTIALS", "INVALID_TOKEN", "INVALID_INVITATION", "ACCOUNT_BLOCKED", "TWO_FACTOR_REQUIRED", "EMAIL_NOT_VERIFIED", "INVALID_ACCOUNT_TOKEN", "INVALID_TWO_FACTOR_CODE", "FORBIDDEN", "REFUND_WINDOW_CLOSED", "FAVORITES_LIMIT", "PROMO_REJECTED", "PRICE_ALERTS_LIMIT", "ROOM_UNAVAILABLE", "PAYLOAD_TOO_LARGE", "TOO_MANY_ATTEMPTS", "RATE_LIMITED", "AI_RESPONSE_INVALID", "AI_UNAVAILABLE" ],
             "type" : "string"
           },
           "error" : {
@@ -1625,6 +1625,15 @@
               "type" : "integer"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ForgotPasswordRequest" : {
+        "properties" : {
+          "email" : {
+            "example" : "diego@example.com",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -2830,6 +2839,19 @@
         },
         "type" : "object"
       },
+      "ResetPasswordRequest" : {
+        "properties" : {
+          "newPassword" : {
+            "example" : "a-new-s3cret-password",
+            "type" : "string"
+          },
+          "token" : {
+            "description" : "The token in the link that was mailed",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ResetTwoFactorRequest" : {
         "properties" : {
           "reason" : {
@@ -3380,6 +3402,9 @@
           "email" : {
             "type" : "string"
           },
+          "emailVerified" : {
+            "type" : "boolean"
+          },
           "id" : {
             "format" : "int64",
             "type" : "integer"
@@ -3409,6 +3434,15 @@
           "code" : {
             "description" : "the code, in any case",
             "example" : "WELCOME10",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyEmailRequest" : {
+        "properties" : {
+          "token" : {
+            "description" : "The token in the link that was mailed",
             "type" : "string"
           }
         },
@@ -13005,6 +13039,109 @@
         "tags" : [ "App config (public)" ]
       }
     },
+    "/v1/auth/forgot-password" : {
+      "post" : {
+        "description" : "Always 202, whether or not the address has an account: the answer reveals nothing about it",
+        "operationId" : "forgotPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "description" : "Accepted"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "summary" : "Mails a link to choose a new password",
+        "tags" : [ "Auth" ]
+      }
+    },
     "/v1/auth/login" : {
       "post" : {
         "operationId" : "login",
@@ -13329,6 +13466,305 @@
           }
         },
         "summary" : "Registers a new user as CLIENT",
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/v1/auth/resend-verification" : {
+      "post" : {
+        "operationId" : "resendVerification",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Mails a new confirmation link to the signed-in customer (the old one stops working)",
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/v1/auth/reset-password" : {
+      "post" : {
+        "operationId" : "resetPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "summary" : "Chooses the new password with the mailed link (single use, 1 hour) and ends every session",
+        "tags" : [ "Auth" ]
+      }
+    },
+    "/v1/auth/verify-email" : {
+      "post" : {
+        "operationId" : "verifyEmail",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyEmailRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "summary" : "Confirms the e-mail address with the link that was mailed (single use, 48 hours)",
         "tags" : [ "Auth" ]
       }
     },

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
@@ -51,25 +52,7 @@ class SecurityConfig(
         http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
-            .headers { headers ->
-                headers.httpStrictTransportSecurity { it.includeSubDomains(true).maxAgeInSeconds(HSTS_SECONDS) }
-                headers.referrerPolicy { it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER) }
-                headers.addHeaderWriter(
-                    StaticHeadersWriter("Permissions-Policy", "geolocation=(), camera=(), microphone=()"),
-                )
-                // an API serves data, never a page: nothing may be loaded or framed (Swagger UI is a page: left out)
-                headers.addHeaderWriter(
-                    DelegatingRequestMatcherHeaderWriter(
-                        NegatedRequestMatcher(
-                            OrRequestMatcher(
-                                AntPathRequestMatcher("/swagger-ui/**"),
-                                AntPathRequestMatcher("/v3/api-docs/**"),
-                            ),
-                        ),
-                        ContentSecurityPolicyHeaderWriter("default-src 'none'; frame-ancestors 'none'"),
-                    ),
-                )
-            }
+            .headers { securityHeaders(it) }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
@@ -97,6 +80,9 @@ class SecurityConfig(
                         "/v1/auth/register",
                         "/v1/auth/login",
                         "/v1/auth/refresh",
+                        "/v1/auth/verify-email",
+                        "/v1/auth/forgot-password",
+                        "/v1/auth/reset-password",
                         "/v1/admin/auth/login",
                         "/v1/admin/auth/refresh",
                         "/v1/admin/auth/logout",
@@ -120,6 +106,22 @@ class SecurityConfig(
                 it.accessDeniedHandler(accessDeniedHandler)
             }.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
+
+    // what every response carries: HTTPS only, no referrer, no sensor, and nothing loaded or framed
+    private fun securityHeaders(headers: HeadersConfigurer<HttpSecurity>) {
+        headers.httpStrictTransportSecurity { it.includeSubDomains(true).maxAgeInSeconds(HSTS_SECONDS) }
+        headers.referrerPolicy { it.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER) }
+        headers.addHeaderWriter(StaticHeadersWriter("Permissions-Policy", "geolocation=(), camera=(), microphone=()"))
+        // an API serves data, never a page: nothing may be loaded or framed (Swagger UI is a page: left out)
+        headers.addHeaderWriter(
+            DelegatingRequestMatcherHeaderWriter(
+                NegatedRequestMatcher(
+                    OrRequestMatcher(AntPathRequestMatcher("/swagger-ui/**"), AntPathRequestMatcher("/v3/api-docs/**")),
+                ),
+                ContentSecurityPolicyHeaderWriter("default-src 'none'; frame-ancestors 'none'"),
+            ),
+        )
+    }
 
     private companion object {
         const val HSTS_SECONDS = 31_536_000L

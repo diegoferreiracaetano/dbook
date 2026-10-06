@@ -13,6 +13,7 @@ class User(
     val blockedAt: Instant? = null,
     val lastLoginAt: Instant? = null,
     val anonymizedAt: Instant? = null,
+    val emailVerifiedAt: Instant? = null,
     val version: Long = 0,
 ) {
     init {
@@ -32,6 +33,8 @@ class User(
     val isBlocked: Boolean get() = status == UserStatus.BLOCKED
 
     val isAnonymized: Boolean get() = anonymizedAt != null
+
+    val isEmailVerified: Boolean get() = emailVerifiedAt != null
 
     fun block(
         reason: String,
@@ -54,6 +57,9 @@ class User(
 
     fun withPasswordHash(newHash: String): User = withProfile(passwordHash = newHash)
 
+    /** The address answered: confirming it again changes nothing (the first moment is the one that counts). */
+    fun verifyEmail(at: Instant): User = if (isEmailVerified) this else withProfile(emailVerifiedAt = at)
+
     // Irreversible. The account is left blocked with a password hash nothing can match, and the address becomes one
     // that cannot receive mail (".invalid" is reserved), so what remains identifies nobody.
     fun anonymize(now: Instant): User {
@@ -71,6 +77,7 @@ class User(
             blockedAt = now,
             lastLoginAt = null,
             anonymizedAt = now,
+            emailVerifiedAt = null,
             version = version,
         )
     }
@@ -80,13 +87,19 @@ class User(
         name: String = this.name,
         role: Role = this.role,
         passwordHash: String = this.passwordHash,
-    ) = User(id, email, passwordHash, name, role, status, blockedReason, blockedAt, lastLoginAt, anonymizedAt, version)
+        emailVerifiedAt: Instant? = this.emailVerifiedAt,
+    ) = User(
+        id, email, passwordHash, name, role, status, blockedReason, blockedAt, lastLoginAt, anonymizedAt,
+        emailVerifiedAt, version,
+    )
 
     private fun withBlockState(
         status: UserStatus,
         reason: String?,
         at: Instant?,
-    ) = User(id, email, passwordHash, name, role, status, reason, at, lastLoginAt, anonymizedAt, version)
+    ) = User(
+        id, email, passwordHash, name, role, status, reason, at, lastLoginAt, anonymizedAt, emailVerifiedAt, version,
+    )
 
     companion object {
         const val ANONYMIZED_NAME = "Anonymous customer"

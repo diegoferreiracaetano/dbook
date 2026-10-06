@@ -10,6 +10,8 @@ data class AdminPortalLinks(
     val baseUrl: String,
 ) {
     fun acceptInvitation(token: String) = "$baseUrl/accept-invite?token=$token"
+
+    fun resetPassword(token: String) = "$baseUrl/reset-password?token=$token"
 }
 
 @Service

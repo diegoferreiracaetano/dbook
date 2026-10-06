@@ -84,6 +84,14 @@ app-config:
     latest-version: ${APP_LATEST_VERSION_IOS:0.0.0}
     store-url: ${APP_STORE_URL_IOS:}
 
+# The links of the mails sent to customers (confirm the address, choose a new password); the app must serve
+# /verify-email and /reset-password there.
+customer-app:
+  base-url: ${CUSTOMER_APP_BASE_URL:http://localhost:3000}
+account:
+  # booking and paying ask for a confirmed e-mail address. Off in local development (no mail leaves the machine: the
+  # link is only in the log); production sets ACCOUNT_REQUIRE_VERIFIED_EMAIL=true
+  require-verified-email: ${ACCOUNT_REQUIRE_VERIFIED_EMAIL:false}
 admin-portal:
   # where the invitation link points; the portal must serve /accept-invite there
   base-url: ${ADMIN_PORTAL_BASE_URL:http://localhost:3000}

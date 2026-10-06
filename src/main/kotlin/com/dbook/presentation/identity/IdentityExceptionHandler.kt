@@ -1,6 +1,8 @@
 package com.dbook.presentation.identity
 
 import com.dbook.domain.identity.AccountBlockedException
+import com.dbook.domain.identity.EmailNotVerifiedException
+import com.dbook.domain.identity.InvalidAccountTokenException
 import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.InvalidInvitationException
 import com.dbook.domain.identity.InvalidTokenException
@@ -43,6 +45,16 @@ class IdentityExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleInvalidTwoFactorCode(ex: InvalidTwoFactorCodeException): ErrorResponse =
         ErrorResponse(ex.message ?: "Invalid code", ErrorCode.INVALID_TWO_FACTOR_CODE)
+
+    @ExceptionHandler(InvalidAccountTokenException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidAccountToken(ex: InvalidAccountTokenException): ErrorResponse =
+        ErrorResponse(ex.message ?: "Invalid link", ErrorCode.INVALID_ACCOUNT_TOKEN)
+
+    @ExceptionHandler(EmailNotVerifiedException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun handleEmailNotVerified(ex: EmailNotVerifiedException): ErrorResponse =
+        ErrorResponse(ex.message ?: "E-mail not confirmed", ErrorCode.EMAIL_NOT_VERIFIED)
 
     @ExceptionHandler(TwoFactorRequiredException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)

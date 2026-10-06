@@ -11,7 +11,7 @@ class RejectsTheAddressOfAnAnonymizedAccountTest : RegisterUserUseCaseFixture() 
         anonymizedEmails.remember("maria@example.com")
 
         assertFailsWith<UserAlreadyExistsException> {
-            useCase.execute(RegisterUserCommand("Maria@Example.com", "s3cret-password", "Maria"))
+            register(RegisterUserCommand("Maria@Example.com", "s3cret-password", "Maria"))
         }
     }
 }

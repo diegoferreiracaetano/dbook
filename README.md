@@ -163,5 +163,6 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M46 — Endurecimento de segurança** (varreduras no CI, rotação da chave do JWT, detecção de reuso do refresh token, limites de corpo e de taxa, cabeçalhos, BCrypt 12 e o teste de logs sem dado pessoal — ver [docs/seguranca.md](docs/seguranca.md))
 - ✅ **M47 — Desempenho e resiliência** (k6 com a corrida do assento, pool do Hikari, N+1 como teste, cache da busca de voos, disjuntor e anteparo do Bedrock, pool próprio dos jobs agendados — ver [docs/desempenho.md](docs/desempenho.md))
 - ✅ **M29 — Segundo fator (TOTP) para a equipe** (RFC 6238, segredo cifrado, códigos de recuperação, obrigatório por papel, reset auditado; fechou também o login do cliente como porta em volta e o token de renovação como acesso — ver [docs/autenticacao.md](docs/autenticacao.md))
+- ✅ **M49 — Recuperação de conta** (e-mail confirmado no cadastro e "esqueci minha senha", por link de uso único; reservar e pagar esperam o e-mail confirmado — ver [docs/autenticacao.md](docs/autenticacao.md))
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

@@ -1182,6 +1182,29 @@ Fecha o item "Não feito" do M24.
 - [x] Mutação (cache, disjuntor/anteparo, pool de jobs) e carga real
 - [x] Docs atualizados (`docs/desempenho.md`, runbooks, observabilidade)
 
+## M49 — Recuperação de conta: e-mail confirmado e senha esquecida ✅
+
+Fechou as duas lacunas funcionais do backend para o app do cliente.
+
+- [x] 49.1 Migration `V48__create_account_recovery.sql`: `app_user.email_verified_at` (**as contas existentes são marcadas como confirmadas**, para não trancar ninguém fora) e `account_token` (`purpose`, `token_hash` único, `expires_at`, `used_at`)
+- [x] 49.2 Domínio `AccountToken` e a porta `AccountTokenRepository` (gastar o link é um `UPDATE` condicional, pedir um novo fecha os anteriores); `User.emailVerifiedAt`; as exceções `InvalidAccountTokenException` (400) e `EmailNotVerifiedException` (403)
+- [x] 49.3 Confirmar o e-mail: o cadastro manda o link depois do *commit* (48 h); `POST /v1/auth/verify-email` e `/resend-verification` (limitado); a equipe que aceita um convite e o primeiro `SUPER_ADMIN` já nascem confirmados
+- [x] 49.4 Senha esquecida: `POST /v1/auth/forgot-password` (**sempre `202`**, o e-mail em outra *thread*, limite por e-mail digitado e por IP) e `POST /v1/auth/reset-password` (1 h, senha fraca não gasta o link, **encerra todas as sessões**, zera as falhas de login, confirma o e-mail); cliente e equipe, cada um com o seu link
+- [x] 49.5 A política: `account.require-verified-email` faz reservar (voo e hotel) e pagar responderem `403 EMAIL_NOT_VERIFIED` até confirmar (o banco é consultado a cada POST, então confirmar vale na hora); **desligada** no desenvolvimento, **ligada** na Terraform (`CUSTOMER_APP_BASE_URL` e `ACCOUNT_REQUIRE_VERIFIED_EMAIL`)
+- [x] 49.6 Testes (24 de unidade, 17 de integração com Testcontainers, a corrida de 20 *threads* no `UPDATE`; mutações: sessões que não terminam, conta inexistente que se denuncia, política que não barra) e docs
+
+**O que a execução ensinou:**
+- O `applicationTaskExecutor` do Spring Boot **não existe** aqui: ele se retira quando há outro `Executor` no contexto, e o agendador dos jobs (M47) é um. O envio assíncrono ganhou um executor próprio (`mailExecutor`).
+- O `@Async` num método de um *bean* que também tem métodos síncronos funciona porque a classe é aberta pelo plugin do Spring; os testes de unidade, que constroem o objeto sem *proxy*, enviam de forma síncrona, e os de integração esperam o e-mail chegar (como o cliente espera a caixa de entrada).
+
+**Fora do escopo (de propósito):** o adaptador real do SES (os e-mails ainda só vão para o log); limpar os links vencidos (a tabela cresce devagar); trocar o e-mail da conta (confirmar o novo endereço); tela e *deep link* do app; recuperar conta com 2FA perdido (é o reset por outro `SUPER_ADMIN`, M29).
+
+**Checklist de fechamento do M49:**
+- [x] Itens 49.1–49.6 revisados
+- [x] `./gradlew check` com **exit 0** (1008 testes)
+- [x] Mutações verificadas
+- [x] Docs atualizados
+
 ## M48 — Modularização do backend por responsabilidade 📋
 
 Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilidade.md) (revisão 3, módulos: `core`, `audit`, `identity`, `catalog`, `booking`, `flight`, `accommodation`, `pricing`, `favorite`, `ai`, `payment`, `review`, `trips`, `notification`, `admin` e `app`). **Passo a passo, riscos e provas em [docs/plano-modularizacao.md](docs/plano-modularizacao.md).** Sem mudança de comportamento em nenhum passo; cada passo termina com `./gradlew check` verde.

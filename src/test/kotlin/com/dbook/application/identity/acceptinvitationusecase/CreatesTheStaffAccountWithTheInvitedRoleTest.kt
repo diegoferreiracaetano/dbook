@@ -20,4 +20,13 @@ class CreatesTheStaffAccountWithTheInvitedRoleTest : StaffUseCaseFixture() {
         assertEquals("hashed:a-long-passphrase-1", user.passwordHash)
         assertEquals(InvitationStatus.ACCEPTED, invitations.findById(requireNotNull(seeded.id))?.statusAt(now))
     }
+
+    @Test
+    fun `given an invitation that was mailed when accepted then the address counts as confirmed`() {
+        seedInvitation(email = "new@example.com", token = "abc", role = Role.SUPPORT)
+
+        val user = accept.execute(AcceptInvitationCommand("abc", "Maria", "a-long-passphrase-1"))
+
+        assertEquals(true, user.isEmailVerified)
+    }
 }

@@ -15,6 +15,7 @@ fun UserJpaEntity.toDomain(): User =
         blockedAt = blockedAt,
         lastLoginAt = lastLoginAt,
         anonymizedAt = anonymizedAt,
+        emailVerifiedAt = emailVerifiedAt,
         version = version,
     )
 
@@ -30,6 +31,7 @@ fun User.toJpaEntity(): UserJpaEntity =
         blockedAt = blockedAt,
         lastLoginAt = lastLoginAt,
         anonymizedAt = anonymizedAt,
+        emailVerifiedAt = emailVerifiedAt,
         version = version,
     )
 
