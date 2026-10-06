@@ -1,6 +1,5 @@
 package com.dbook.presentation.booking
 
-import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.booking.Stay
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -17,18 +16,5 @@ data class StayResponse(
     companion object {
         fun from(stay: Stay) =
             StayResponse(stay.roomTypeId, stay.checkIn, stay.checkOut, stay.nights, stay.guests, stay.nightlyRate)
-    }
-}
-
-/** The hotel a stay is at. */
-data class AccommodationRefResponse(
-    val id: Long?,
-    val name: String,
-    val city: String,
-    val destinationIataCode: String,
-) {
-    companion object {
-        fun from(hotel: Accommodation) =
-            AccommodationRefResponse(hotel.id, hotel.name, hotel.destination.city, hotel.destination.iataCode)
     }
 }

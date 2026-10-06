@@ -1215,7 +1215,7 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 
 **Fase B — Separar os pacotes (um módulo Gradle ainda)**
 - [x] 48.3 `flight` nasce como conceito (sai de `catalog`; `seating` continua, marcado como do módulo `flight`): **92 arquivos** movidos nas quatro camadas (principal e testes) por uma ferramenta de refatoração (pacote, imports e nomes completos), a lista congelada passou a **61 pares em 16 arestas** (`ai → catalog` e quase todo `payment → catalog` sumiram). Achou 3 ciclos que o ADR não tinha (13, 14 e 15) e tirou a regra antiga de dependências só do domínio (a regra do grafo a substitui). **Uma exceção temporária** no teste de ciclos da persistência (o mapeador de `Bookable`), que o 48.9 remove
-- [ ] 48.4 `trips` nasce como conceito ("minhas viagens" sai de `booking`; a rota não muda)
+- [x] 48.4 `trips` nasce como conceito ("minhas viagens" sai de `booking`; a rota não muda): `ListMyBookingsUseCase`, `MyBookingResponse` e a referência do hotel foram para `trips`; o `GET /v1/bookings` virou o `TripsController` (o contrato do OpenAPI **ficou idêntico**, até os `operationId`). As violações `booking → review` e a maior parte de `booking → flight` saíram da lista congelada; `trips` também usa `catalog` (o aeroporto do hotel), que entrou na tabela do ADR
 
 **Fase C — Desfazer os ciclos (um por commit)**
 - [ ] 48.5 `Actor`, `Role`, `Permission` e o vocabulário e a porta da auditoria para o `core` (ciclo 10); o `ApiExceptionHandler` dividido por módulo (ciclo 12)

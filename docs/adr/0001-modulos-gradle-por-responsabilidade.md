@@ -62,7 +62,7 @@ Do mais baixo para o mais alto, **sem ciclos** (cada módulo só enxerga os que 
 | `:ai` | sugestões por IA (Bedrock, disjuntor) | `flight` |
 | `:payment` | pagamento, reembolso, política de cancelamento **e códigos promocionais** (pacote `promo` dentro) | `booking`, `flight`, `catalog` |
 | `:review` | avaliações e moderação (e as avaliações do hotel) | `booking`, `accommodation`, `flight` |
-| `:trips` | "minhas viagens": junta reserva, assento ou estadia, pagamento e avaliação | `booking`, `flight`, `accommodation`, `review` |
+| `:trips` | "minhas viagens": junta reserva, assento ou estadia, pagamento e avaliação | `booking`, `flight`, `accommodation`, `review`, `catalog` |
 | `:notification` | avisos (in-app, e-mail, push) e preferências | `booking`, `flight`, `payment`, `pricing`, `identity` |
 | `:admin` | CRM e dashboard (leitura por SQL) | `identity`, `audit`, `favorite`, `core` |
 | **`:app`** | **só a montagem**: `main`, configuração, `SecurityConfig`, migrations do Flyway, Dockerfile; **sem regra de negócio** (decisão do dono) | todos |

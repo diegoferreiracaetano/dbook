@@ -13,6 +13,7 @@ abstract class ArchitectureFixture {
         listOf(
             "catalog", "seating", "booking", "payment", "review", "identity", "ai", "audit", "crm", "dashboard",
             "messaging", "notification", "favorite", "promo", "pricing", "accommodation", "appconfig", "flight",
+            "trips",
         )
 
     private companion object {

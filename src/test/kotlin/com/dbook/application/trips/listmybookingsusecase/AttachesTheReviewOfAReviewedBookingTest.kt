@@ -1,4 +1,4 @@
-package com.dbook.application.booking.listmybookingsusecase
+package com.dbook.application.trips.listmybookingsusecase
 
 import com.dbook.domain.review.Review
 import kotlin.test.Test

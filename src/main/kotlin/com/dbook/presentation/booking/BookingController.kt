@@ -1,7 +1,6 @@
 package com.dbook.presentation.booking
 
 import com.dbook.application.booking.CancelBookingUseCase
-import com.dbook.application.booking.ListMyBookingsUseCase
 import com.dbook.application.booking.RegisterBookingCommand
 import com.dbook.application.booking.RegisterBookingUseCase
 import com.dbook.presentation.common.ApiPaths
@@ -13,15 +12,13 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** `POST /bookings`, `GET /bookings`, `/bookings/{id}/cancel`
- * — authenticated; cancel requires owner or BOOKING_CANCEL_ANY. */
+/** `POST /bookings` and `/bookings/{id}/cancel` — authenticated; cancel requires owner or BOOKING_CANCEL_ANY. */
 @RestController
 @RequestMapping("${ApiPaths.V1}/bookings")
 @Tag(name = "Bookings", description = "Booking and cancellation of bookable items (flights, and hotels in the future)")
@@ -29,13 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 class BookingController(
     private val registerBookingUseCase: RegisterBookingUseCase,
     private val cancelBookingUseCase: CancelBookingUseCase,
-    private val listMyBookingsUseCase: ListMyBookingsUseCase,
 ) {
-    @Operation(summary = "Lists every booking made by the authenticated user (\"my trips\")")
-    @GetMapping
-    fun list(authentication: Authentication): List<MyBookingResponse> =
-        listMyBookingsUseCase.execute(authentication.currentUserId()).map { MyBookingResponse.from(it) }
-
     @Operation(summary = "Creates a booking (PENDING) for a Bookable, decrementing its availability")
     @PostMapping
     fun register(

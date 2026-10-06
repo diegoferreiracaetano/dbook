@@ -1,9 +1,10 @@
-package com.dbook.presentation.booking
+package com.dbook.presentation.trips
 
-import com.dbook.application.booking.BookingWithDetails
+import com.dbook.application.trips.BookingWithDetails
 import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.flight.Flight
+import com.dbook.presentation.booking.StayResponse
 import com.dbook.presentation.flight.FlightResponse
 import com.dbook.presentation.review.ReviewResponse
 import com.dbook.presentation.seating.SeatResponse

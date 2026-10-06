@@ -1,7 +1,7 @@
-package com.dbook.application.booking.listmybookingsusecase
+package com.dbook.application.trips.listmybookingsusecase
 
-import com.dbook.application.booking.ListMyBookingsUseCase
 import com.dbook.application.review.createreviewusecase.FakeReviewRepository
+import com.dbook.application.trips.ListMyBookingsUseCase
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus

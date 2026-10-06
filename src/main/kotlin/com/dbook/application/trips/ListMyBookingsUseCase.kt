@@ -1,4 +1,4 @@
-package com.dbook.application.booking
+package com.dbook.application.trips
 
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
