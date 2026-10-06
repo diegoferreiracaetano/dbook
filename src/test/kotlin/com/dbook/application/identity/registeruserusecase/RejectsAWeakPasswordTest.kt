@@ -9,7 +9,7 @@ class RejectsAWeakPasswordTest : RegisterUserUseCaseFixture() {
     @Test
     fun `given a password that breaks the policy when registering then it throws and nothing is saved`() {
         assertFailsWith<IllegalArgumentException> {
-            useCase.execute(RegisterUserCommand(email = "diego@example.com", password = "short", name = "Diego"))
+            register(RegisterUserCommand(email = "diego@example.com", password = "short", name = "Diego"))
         }
 
         assertTrue(userRepository.users.isEmpty())

@@ -8,8 +8,16 @@ data class UserResponse(
     val email: String,
     val name: String,
     val role: Role,
+    val emailVerified: Boolean,
 ) {
     companion object {
-        fun from(user: User) = UserResponse(id = user.id, email = user.email, name = user.name, role = user.role)
+        fun from(user: User) =
+            UserResponse(
+                id = user.id,
+                email = user.email,
+                name = user.name,
+                role = user.role,
+                emailVerified = user.isEmailVerified,
+            )
     }
 }

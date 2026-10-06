@@ -153,6 +153,10 @@ module "ecs" {
     DBOOK_BOOTSTRAP_ADMIN_EMAIL = var.bootstrap_admin_email
     # the roles that cannot sign in to the portal without an authenticator (see docs/autenticacao.md)
     ADMIN_2FA_REQUIRED_ROLES = "SUPER_ADMIN"
+    # where the links of the confirmation and password reset mails point, and the policy that booking and paying wait
+    # for a confirmed address (see docs/autenticacao.md)
+    CUSTOMER_APP_BASE_URL          = var.customer_app_base_url
+    ACCOUNT_REQUIRE_VERIFIED_EMAIL = "true"
   }
 
   secrets_extra = merge(

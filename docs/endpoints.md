@@ -21,6 +21,8 @@ Todo erro tem o corpo `{"error": "<mensagem para humanos>", "code": "<CODIGO>"}`
 | `INVALID_CREDENTIALS` | 401 | e-mail/senha errados (também para um cliente no portal) |
 | `INVALID_TOKEN` | 401 | refresh token inexistente, vencido, usado ou de outra porta de entrada |
 | `INVALID_INVITATION` | 400 | convite de equipe desconhecido, vencido, já usado ou revogado (o mesmo erro para todos, de propósito) |
+| `EMAIL_NOT_VERIFIED` | 403 | reservar ou pagar antes de confirmar o e-mail (com `account.require-verified-email` ligada) |
+| `INVALID_ACCOUNT_TOKEN` | 400 | link de confirmação ou de nova senha inválido, vencido ou já usado |
 | `TWO_FACTOR_REQUIRED` | 403 | conta da equipe com segundo fator (ou de papel que o exige) usou o login do cliente |
 | `INVALID_TWO_FACTOR_CODE` | 400 | código do autenticador ou de recuperação errado, ou já usado |
 | `FORBIDDEN` | 403 | sem permissão, não é o dono, ou `Origin` não permitido |
@@ -43,6 +45,15 @@ curl "localhost:8080/v1/admin/audit?action=FLIGHT_CREATED&size=20" \
 ```
 
 Filtros opcionais: `actorId`, `action` (`FLIGHT_CREATED`, `BOOKING_CANCELLED_BY_STAFF`, `ACCESS_DENIED`), `targetType`, `targetId`, `outcome` (`SUCCESS`/`DENIED`), `from`/`to` (ISO-8601), `cursor` e `size` (1–100, padrão 50). Retorna `200` com `{"items": [...], "nextCursor": "..."}` (`nextCursor` é `null` na última página; cada item traz ator, ação, alvo, `before`/`after` e o `requestId`/`traceId`/`ip` da requisição), `401` sem token, `403` sem `AUDIT_READ` e `400` (`VALIDATION_FAILED`) para filtro, cursor ou tamanho inválidos.
+
+## Recuperação de conta (`/v1/auth/*`)
+Detalhes em [Autenticação](autenticacao.md#recuperação-de-conta-e-mail-confirmado-e-senha-esquecida).
+
+- `POST /v1/auth/verify-email` (aberta): `{token}` → `204`; `400 INVALID_ACCOUNT_TOKEN`.
+- `POST /v1/auth/resend-verification` (cliente logado): `204` com um link novo; `409` se já confirmou; `429`.
+- `POST /v1/auth/forgot-password` (aberta): `{email}` → **sempre `202`** (exista a conta ou não); `429` se o mesmo endereço ou IP pedir demais.
+- `POST /v1/auth/reset-password` (aberta): `{token, newPassword}` → `204` e todas as sessões da conta terminam; `400 INVALID_ACCOUNT_TOKEN` ou `400 VALIDATION_FAILED` (senha fraca: o link continua valendo).
+- `POST /v1/auth/register` e `GET /v1/users/me` passam a trazer `emailVerified`.
 
 ## Portal administrativo: sessão (`/v1/admin/auth/*`)
 Detalhes e exemplos em [Autenticação](autenticacao.md#portal-administrativo-sessão).

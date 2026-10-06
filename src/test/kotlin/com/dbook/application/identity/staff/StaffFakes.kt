@@ -22,7 +22,10 @@ class InMemoryUserRepository(vararg initial: User) : UserRepository {
     override fun save(user: User): User {
         val stored =
             if (user.id == null) {
-                User(++lastId, user.email, user.passwordHash, user.name, user.role)
+                User(
+                    ++lastId, user.email, user.passwordHash, user.name, user.role, user.status, user.blockedReason,
+                    user.blockedAt, user.lastLoginAt, user.anonymizedAt, user.emailVerifiedAt, user.version,
+                )
             } else {
                 user
             }

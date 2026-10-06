@@ -29,6 +29,7 @@ class UserJpaEntity(
     var blockedAt: Instant? = null,
     var lastLoginAt: Instant? = null,
     var anonymizedAt: Instant? = null,
+    var emailVerifiedAt: Instant? = null,
     @Version
     var version: Long = 0,
 )

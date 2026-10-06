@@ -121,6 +121,24 @@ Configuração: `admin.two-factor.required-roles` (`ADMIN_2FA_REQUIRED_ROLES`, v
 
 `security.bcrypt-strength` (padrão **12**; os testes usam 4 para ficarem rápidos). O custo vai dentro do próprio *hash*: subir o valor não invalida nenhuma senha existente, as novas é que usam o custo novo.
 
+## Recuperação de conta: e-mail confirmado e senha esquecida
+
+Dois fluxos que usam o mesmo mecanismo: um **link de uso único** mandado por e-mail. O token é aleatório (256 bits, o mesmo gerador do convite), e o banco guarda **só o hash**: uma cópia do banco não contém nenhum link utilizável. A tabela é `account_token` (`purpose`, `expires_at`, `used_at`); gastar um link é um `UPDATE ... WHERE used_at IS NULL AND expires_at > agora`, então dois pedidos com o mesmo link só deixam um passar. Pedir um link novo **fecha os anteriores** do mesmo tipo.
+
+**Confirmar o e-mail** (validade de **48 horas**)
+- O cadastro cria a conta como não confirmada (`emailVerified: false` em `POST /v1/auth/register` e `GET /v1/users/me`) e manda o link depois do *commit* (uma transação desfeita não manda nada).
+- `POST /v1/auth/verify-email {token}` → `204`; `400 INVALID_ACCOUNT_TOKEN` para link desconhecido, vencido, já usado ou de outro tipo (o mesmo erro para todos: quem chama não aprende nada sobre o estado do link).
+- `POST /v1/auth/resend-verification` (cliente logado) → `204` com um link novo; `409` se já confirmou; limitado a poucas vezes por janela (`429`).
+- **A política:** com `account.require-verified-email` ligada (`ACCOUNT_REQUIRE_VERIFIED_EMAIL`; **desligada** no desenvolvimento local, **ligada** na Terraform), `POST /v1/bookings`, `POST /v1/accommodations/*/bookings` e `POST /v1/payments` respondem `403 EMAIL_NOT_VERIFIED` até confirmar. Olhar, buscar, favoritar e o perfil continuam abertos. A checagem lê o banco a cada um desses POSTs, então confirmar vale **na hora, com a mesma sessão**.
+- **Quem já nasce confirmado:** a equipe que aceita um convite (o link do convite foi para esse endereço), o primeiro `SUPER_ADMIN` do bootstrap, e **as contas que já existiam** quando a V48 rodou (pedir a todo cliente atual que confirme um endereço que funciona o trancaria fora; a migration marca todos como confirmados).
+
+**Senha esquecida** (validade de **1 hora**)
+- `POST /v1/auth/forgot-password {email}` → **sempre `202`**, com o mesmo corpo exista a conta ou não. O e-mail sai **em outra *thread*** (`mailExecutor`), para que a demora da resposta também não diga quem tem conta. Conta bloqueada ou anonimizada não recebe nada. Cliente recebe o link do app, equipe o do portal.
+- O pedido conta contra um limite próprio (por e-mail digitado, exista ou não, e por IP, o mesmo limitador do login: `429`).
+- `POST /v1/auth/reset-password {token, newPassword}` → `204`. A senha segue a política (8 para cliente, 12 para equipe); **uma senha fraca não gasta o link** (`400 VALIDATION_FAILED` e o link continua valendo). Ao escolher a nova senha: **todas as sessões da conta terminam** (quem tinha a senha antiga ou uma sessão roubada sai), o contador de falhas de login é zerado (quem se trancou fora entra de novo) e o e-mail passa a contar como confirmado (o link provou a caixa de entrada). O segundo fator da equipe **continua exigido** no próximo login.
+
+Os links apontam para `customer-app.base-url` (`CUSTOMER_APP_BASE_URL`; o app precisa servir `/verify-email` e `/reset-password`) e `admin-portal.base-url` (o portal serve `/reset-password`). Em produção os e-mails só chegam de verdade quando o adaptador do SES existir; até lá o `LoggingEmailSender` escreve o e-mail (e o link) no log.
+
 ## Política de senha
 
 Mínimo de **8** caracteres para cliente (**12** para a equipe), no máximo 72 **bytes** (o BCrypt ignora o que passa disso), diferente do e-mail e fora de uma lista de senhas comuns. Sem regra de composição (NIST 800-63B). Viola: `400` com `code=VALIDATION_FAILED`.

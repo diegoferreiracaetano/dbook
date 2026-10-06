@@ -1,12 +1,24 @@
 package com.dbook.application.identity.registeruserusecase
 
+import com.dbook.application.identity.AccountLinkIssuer
+import com.dbook.application.identity.AccountMailer
+import com.dbook.application.identity.AdminPortalLinks
+import com.dbook.application.identity.CustomerAppLinks
+import com.dbook.application.identity.RegisterUserCommand
 import com.dbook.application.identity.RegisterUserUseCase
+import com.dbook.application.identity.accountrecovery.InMemoryAccountTokens
+import com.dbook.application.identity.loginusecase.FakeTokenService
 import com.dbook.application.identity.staff.InMemoryAnonymizedEmails
+import com.dbook.application.identity.staff.RecordingEmailSender
+import com.dbook.application.identity.staff.SequentialInvitationTokens
 import com.dbook.domain.identity.PasswordHasher
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserRepository
+import org.springframework.transaction.support.TransactionSynchronizationManager
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 
 class FakeUserRepository : UserRepository {
     val users = mutableListOf<User>()
@@ -52,5 +64,31 @@ class FakePasswordHasher : PasswordHasher {
 abstract class RegisterUserUseCaseFixture {
     protected val userRepository = FakeUserRepository()
     protected val anonymizedEmails = InMemoryAnonymizedEmails()
-    protected val useCase = RegisterUserUseCase(userRepository, FakePasswordHasher(), anonymizedEmails)
+    private val tokens = InMemoryAccountTokens { Instant.parse("2026-10-05T12:00:00Z") }
+    protected val mailbox = RecordingEmailSender()
+    private val useCase =
+        RegisterUserUseCase(
+            userRepository,
+            FakePasswordHasher(),
+            anonymizedEmails,
+            AccountLinkIssuer(
+                tokens,
+                SequentialInvitationTokens(),
+                FakeTokenService(),
+                Clock.fixed(Instant.parse("2026-10-05T12:00:00Z"), ZoneOffset.UTC),
+            ),
+            AccountMailer(mailbox, CustomerAppLinks("https://app.test"), AdminPortalLinks("https://portal.test")),
+        )
+
+    // the use case runs inside a transaction in production: the mail is sent after it commits
+    protected fun register(command: RegisterUserCommand): User {
+        TransactionSynchronizationManager.initSynchronization()
+        try {
+            val saved = useCase.execute(command)
+            TransactionSynchronizationManager.getSynchronizations().forEach { it.afterCommit() }
+            return saved
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization()
+        }
+    }
 }

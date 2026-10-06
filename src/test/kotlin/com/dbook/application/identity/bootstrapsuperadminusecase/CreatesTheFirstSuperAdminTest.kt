@@ -13,4 +13,11 @@ class CreatesTheFirstSuperAdminTest : BootstrapSuperAdminUseCaseFixture() {
         assertEquals("root@example.com", superAdmin()?.email)
         assertEquals(Role.SUPER_ADMIN, superAdmin()?.role)
     }
+
+    @Test
+    fun `given the first SUPER_ADMIN when created then its address needs no confirmation by mail`() {
+        bootstrap()
+
+        assertTrue(superAdmin()?.isEmailVerified == true)
+    }
 }

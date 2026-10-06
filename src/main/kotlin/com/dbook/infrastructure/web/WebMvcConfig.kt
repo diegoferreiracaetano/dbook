@@ -10,9 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 class WebMvcConfig(
     private val aiRateLimitInterceptor: AiRateLimitInterceptor,
     private val userRateLimitInterceptor: UserRateLimitInterceptor,
+    private val verifiedEmailInterceptor: VerifiedEmailInterceptor,
 ) : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(userRateLimitInterceptor).addPathPatterns("/v1/**")
         registry.addInterceptor(aiRateLimitInterceptor).addPathPatterns("/v1/ai/**")
+        registry.addInterceptor(verifiedEmailInterceptor)
+            .addPathPatterns("/v1/bookings", "/v1/accommodations/*/bookings", "/v1/payments")
     }
 }

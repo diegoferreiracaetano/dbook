@@ -57,6 +57,8 @@ class AcceptInvitationUseCase(
                     passwordHash = passwordHasher.hash(command.password),
                     name = command.name.trim(),
                     role = invitation.role,
+                    // the invitation link went to this address and was used: the mailbox is proven
+                    emailVerifiedAt = now,
                 ),
             )
         auditLog.record(

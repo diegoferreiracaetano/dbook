@@ -75,3 +75,9 @@ variable "api_origin" {
   type        = string
   default     = ""
 }
+
+variable "customer_app_base_url" {
+  description = "Where the customer app is served: the links mailed to customers (confirm the address, choose a new password) point here. The default is a reserved .invalid address, so a deploy that forgot to set it sends links that obviously go nowhere."
+  type        = string
+  default     = "https://app.dbook.invalid"
+}
