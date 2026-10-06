@@ -1,8 +1,8 @@
 package com.dbook.application.flight
 
-import com.dbook.application.review.GetAverageRatingForDestinationUseCase
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.AirportRepository
+import com.dbook.domain.flight.DestinationRatings
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -24,14 +24,14 @@ data class FeaturedDestination(
 class GetFeaturedDestinationsUseCase(
     private val airportRepository: AirportRepository,
     private val getLowestPriceForDestinationUseCase: GetLowestPriceForDestinationUseCase,
-    private val getAverageRatingForDestinationUseCase: GetAverageRatingForDestinationUseCase,
+    private val destinationRatings: DestinationRatings,
 ) {
     fun execute(): List<FeaturedDestination> =
         airportRepository.findAll().map { airport ->
             FeaturedDestination(
                 airport = airport,
                 lowestPrice = getLowestPriceForDestinationUseCase.execute(airport.iataCode),
-                averageRating = getAverageRatingForDestinationUseCase.execute(airport.iataCode),
+                averageRating = destinationRatings.averageRating(airport.iataCode),
             )
         }
 }

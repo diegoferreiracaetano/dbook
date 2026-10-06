@@ -1,6 +1,6 @@
 package com.dbook.application.accommodation
 
-import com.dbook.application.flight.CatalogLookup
+import com.dbook.application.catalog.AirportLookup
 import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.accommodation.AccommodationNotFoundException
 import com.dbook.domain.accommodation.AccommodationRepository
@@ -70,7 +70,7 @@ private fun Accommodation.audit(
 @Service
 class CreateAccommodationUseCase(
     private val accommodations: AccommodationRepository,
-    private val catalogLookup: CatalogLookup,
+    private val airportLookup: AirportLookup,
     private val auditLog: AuditLog,
 ) {
     @Transactional
@@ -83,7 +83,7 @@ class CreateAccommodationUseCase(
             accommodations.save(
                 Accommodation(
                     name = details.name.trim(),
-                    destination = catalogLookup.airport(details.destinationIataCode),
+                    destination = airportLookup.airport(details.destinationIataCode),
                     address = details.address.trim(),
                     stars = details.stars,
                     description = details.description?.trim()?.takeIf { it.isNotEmpty() },
@@ -111,7 +111,7 @@ class CreateAccommodationUseCase(
 @Service
 class UpdateAccommodationUseCase(
     private val accommodations: AccommodationRepository,
-    private val catalogLookup: CatalogLookup,
+    private val airportLookup: AirportLookup,
     private val auditLog: AuditLog,
 ) {
     @Transactional
@@ -126,7 +126,7 @@ class UpdateAccommodationUseCase(
                 before.withDetails(
                     Accommodation.Details(
                         details.name.trim(),
-                        catalogLookup.airport(details.destinationIataCode),
+                        airportLookup.airport(details.destinationIataCode),
                         details.address.trim(),
                         details.stars,
                         details.description?.trim()?.takeIf { it.isNotEmpty() },

@@ -1,5 +1,6 @@
 package com.dbook.application.flight
 
+import com.dbook.application.catalog.AirportLookup
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.common.access.Actor
 import com.dbook.domain.common.audit.AuditAction
@@ -51,7 +52,8 @@ data class FlightImportResult(
 @Observed(name = "dbook.usecase")
 @Service
 class ImportFlightsUseCase(
-    private val catalogLookup: CatalogLookup,
+    private val airlineLookup: AirlineLookup,
+    private val airportLookup: AirportLookup,
     private val adminFlightReader: AdminFlightReader,
     private val registerFlightUseCase: RegisterFlightUseCase,
     private val auditLog: AuditLog,
@@ -147,9 +149,9 @@ class ImportFlightsUseCase(
     }
 
     private fun validate(command: RegisterFlightCommand) {
-        val airline = catalogLookup.airline(command.airlineIataCode)
-        val origin = catalogLookup.airport(command.originIataCode)
-        val destination = catalogLookup.airport(command.destinationIataCode)
+        val airline = airlineLookup.airline(command.airlineIataCode)
+        val origin = airportLookup.airport(command.originIataCode)
+        val destination = airportLookup.airport(command.destinationIataCode)
         Flight(
             title = command.flightNumber,
             price = command.price,

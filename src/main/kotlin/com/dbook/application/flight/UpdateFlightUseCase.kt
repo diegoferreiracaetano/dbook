@@ -1,5 +1,6 @@
 package com.dbook.application.flight
 
+import com.dbook.application.catalog.AirportLookup
 import com.dbook.domain.booking.BookingOccupancy
 import com.dbook.domain.common.access.Actor
 import com.dbook.domain.common.audit.AuditAction
@@ -54,7 +55,8 @@ class UpdateFlightUseCase(
     private val flightRepository: FlightRepository,
     private val seatRepository: SeatRepository,
     private val bookingOccupancy: BookingOccupancy,
-    private val catalogLookup: CatalogLookup,
+    private val airlineLookup: AirlineLookup,
+    private val airportLookup: AirportLookup,
     private val adminFlightReader: AdminFlightReader,
     private val auditLog: AuditLog,
     private val outboxWriter: OutboxWriter,
@@ -67,9 +69,9 @@ class UpdateFlightUseCase(
         val edit =
             FlightEdit(
                 flightNumber = command.flightNumber,
-                airline = catalogLookup.airline(command.airlineIataCode),
-                origin = catalogLookup.airport(command.originIataCode),
-                destination = catalogLookup.airport(command.destinationIataCode),
+                airline = airlineLookup.airline(command.airlineIataCode),
+                origin = airportLookup.airport(command.originIataCode),
+                destination = airportLookup.airport(command.destinationIataCode),
                 departureTime = command.departureTime,
                 arrivalTime = command.arrivalTime,
                 seatClass = command.seatClass,

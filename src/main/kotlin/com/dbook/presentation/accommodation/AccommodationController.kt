@@ -4,16 +4,13 @@ import com.dbook.application.accommodation.ListAccommodationsUseCase
 import com.dbook.application.accommodation.RegisterStayBookingCommand
 import com.dbook.application.accommodation.RegisterStayBookingUseCase
 import com.dbook.application.accommodation.SearchAccommodationsUseCase
-import com.dbook.application.review.ListAccommodationReviewsUseCase
 import com.dbook.domain.accommodation.AccommodationNotFoundException
 import com.dbook.domain.accommodation.AccommodationSearch
-import com.dbook.domain.review.ReviewSort
 import com.dbook.presentation.booking.BookingResponse
 import com.dbook.presentation.common.ApiPaths
 import com.dbook.presentation.common.PageParams
 import com.dbook.presentation.common.PageResponse
 import com.dbook.presentation.common.currentUserId
-import com.dbook.presentation.review.DestinationReviewsResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -37,7 +34,6 @@ import java.time.LocalDate
 class AccommodationController(
     private val searchAccommodationsUseCase: SearchAccommodationsUseCase,
     private val listAccommodationsUseCase: ListAccommodationsUseCase,
-    private val listAccommodationReviewsUseCase: ListAccommodationReviewsUseCase,
     private val registerStayBookingUseCase: RegisterStayBookingUseCase,
 ) {
     @Operation(
@@ -69,15 +65,6 @@ class AccommodationController(
         if (!hotel.active) throw AccommodationNotFoundException(id)
         return AccommodationResponse.from(hotel, onlyActiveRooms = true)
     }
-
-    @Operation(summary = "How a hotel is rated and what its guests wrote (public)")
-    @GetMapping("/{id}/reviews")
-    fun reviews(
-        @PathVariable id: Long,
-        @RequestParam(defaultValue = "RECENT") sort: ReviewSort,
-        params: PageParams,
-    ): DestinationReviewsResponse =
-        DestinationReviewsResponse.from(listAccommodationReviewsUseCase.execute(id, sort, params.toQuery()))
 
     @Operation(
         summary = "Books a room for some nights (PENDING for 15 minutes, like a seat); pay it with POST /payments",

@@ -1,5 +1,6 @@
 package com.dbook.application.flight
 
+import com.dbook.application.catalog.AirportLookup
 import com.dbook.domain.common.access.Actor
 import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.common.audit.AuditEvent
@@ -41,16 +42,17 @@ data class RegisterFlightCommand(
 @Service
 class RegisterFlightUseCase(
     private val flightRepository: FlightRepository,
-    private val catalogLookup: CatalogLookup,
+    private val airlineLookup: AirlineLookup,
+    private val airportLookup: AirportLookup,
     private val seatRepository: SeatRepository,
     private val auditLog: AuditLog,
     private val priceRecorder: FlightPriceObserver,
 ) {
     @Transactional
     fun execute(command: RegisterFlightCommand): Flight {
-        val airline = catalogLookup.airline(command.airlineIataCode)
-        val origin = catalogLookup.airport(command.originIataCode)
-        val destination = catalogLookup.airport(command.destinationIataCode)
+        val airline = airlineLookup.airline(command.airlineIataCode)
+        val origin = airportLookup.airport(command.originIataCode)
+        val destination = airportLookup.airport(command.destinationIataCode)
 
         val flight =
             Flight(

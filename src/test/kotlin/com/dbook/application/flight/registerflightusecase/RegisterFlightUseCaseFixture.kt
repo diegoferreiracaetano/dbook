@@ -1,8 +1,9 @@
 package com.dbook.application.flight.registerflightusecase
 
 import com.dbook.application.audit.FakeAuditLog
+import com.dbook.application.catalog.AirportLookup
 import com.dbook.application.common.RecordingOutboxWriter
-import com.dbook.application.flight.CatalogLookup
+import com.dbook.application.flight.AirlineLookup
 import com.dbook.application.flight.RegisterFlightCommand
 import com.dbook.application.flight.RegisterFlightUseCase
 import com.dbook.application.pricing.FlightPriceRecorder
@@ -166,7 +167,8 @@ abstract class RegisterFlightUseCaseFixture {
     protected val useCase =
         RegisterFlightUseCase(
             flightRepository,
-            CatalogLookup(FakeAirlineRepository(listOf(latam)), FakeAirportRepository(listOf(gru, gig))),
+            AirlineLookup(FakeAirlineRepository(listOf(latam))),
+            AirportLookup(FakeAirportRepository(listOf(gru, gig))),
             seatRepository,
             auditLog,
             FlightPriceRecorder(
