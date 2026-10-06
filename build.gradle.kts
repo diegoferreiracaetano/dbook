@@ -36,7 +36,7 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
     // a span per SQL statement (the statement text, never the parameter values)
-    implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.5")
+    implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:2.3.0")
     implementation("software.amazon.awssdk:bedrockruntime:2.28.29")
     implementation("software.amazon.awssdk:sqs:2.28.29")
     implementation("com.bucket4j:bucket4j-core:8.10.1")
