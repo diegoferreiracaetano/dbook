@@ -2,7 +2,7 @@ plugins {
     // Kotlin, ktlint, detekt, JaCoCo and the way the tests run: build-logic/ (the same for every module)
     id("dbook.kotlin-conventions")
     id("org.springframework.boot") version "3.3.4"
-    id("io.spring.dependency-management") version "1.1.6"
+    id("io.spring.dependency-management") version "1.1.7"
     id("org.owasp.dependencycheck") version "10.0.4"
 }
 
