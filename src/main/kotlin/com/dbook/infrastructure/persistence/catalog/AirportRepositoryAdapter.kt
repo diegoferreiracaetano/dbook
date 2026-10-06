@@ -1,9 +1,9 @@
 package com.dbook.infrastructure.persistence.catalog
 
 import com.dbook.domain.catalog.Airport
+import com.dbook.domain.catalog.AirportChangeListener
 import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.DuplicateIataCodeException
-import com.dbook.domain.flight.FlightSearchCache
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Repository
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class AirportRepositoryAdapter(
     private val airportJpaRepository: AirportJpaRepository,
-    private val searchCache: FlightSearchCache,
+    private val listeners: List<AirportChangeListener>,
 ) : AirportRepository {
     override fun findByIataCode(iataCode: String): Airport? = airportJpaRepository.findByIataCode(iataCode)?.toDomain()
 
@@ -22,7 +22,7 @@ class AirportRepositoryAdapter(
     // flushed right away so that the unique index answers here, where it becomes a 409, and not at commit
     override fun save(airport: Airport): Airport =
         try {
-            searchCache.invalidateAll()
+            listeners.forEach { it.airportChanged() }
             airportJpaRepository.saveAndFlush(
                 AirportJpaEntity(
                     airport.id,

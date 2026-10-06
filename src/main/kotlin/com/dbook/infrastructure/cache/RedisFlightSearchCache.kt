@@ -1,5 +1,6 @@
 package com.dbook.infrastructure.cache
 
+import com.dbook.domain.catalog.AirportChangeListener
 import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.FlightSearchCache
 import com.fasterxml.jackson.core.JsonProcessingException
@@ -31,7 +32,7 @@ class RedisFlightSearchCache(
     private val meterRegistry: MeterRegistry,
     @Value("\${flight-search-cache.enabled:true}") private val enabled: Boolean,
     @Value("\${flight-search-cache.ttl-seconds:30}") ttlSeconds: Long,
-) : FlightSearchCache {
+) : FlightSearchCache, AirportChangeListener {
     private val ttl = Duration.ofSeconds(ttlSeconds)
     private val snapshot = FlightSnapshot(objectMapper)
 
@@ -55,6 +56,9 @@ class RedisFlightSearchCache(
     ) {
         guarded { redisTemplate.opsForValue().set(key, snapshot.write(flights), ttl) }
     }
+
+    // the results show each flight's airports: when one changes, the copies are stale
+    override fun airportChanged() = invalidateAll()
 
     override fun invalidateAll() {
         if (!enabled) return

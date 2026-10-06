@@ -1219,7 +1219,7 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 
 **Fase C — Desfazer os ciclos (um por commit)**
 - [x] 48.5 `Actor`, `Role`, `Permission` (`domain.common.access`) e `AuditAction`, `AuditEvent`, `AuditOutcome` e a porta `AuditLog` (`domain.common.audit`) foram para o `core`: 7 arquivos movidos e **250 reescritos**, e a exceção do mapa que já os contava como `core` caiu. O `ApiExceptionHandler` foi **dividido por módulo** (`Identity`, `Payment`, `Booking`, `Catalog` e `Flight`; o do `core` ficou só com os erros genéricos) e o auxiliar de idempotência, que só pagamento e reembolso usam, saiu do `core` para `payment`. A lista congelada: **42 → 29 pares em 9 arestas**; as arestas `core → *`, `audit ↔ identity` e `* → identity/audit` acabaram
-- [ ] 48.6 `flight` publica o fato do preço e `pricing` o ouve (ciclo 7); `catalog` avisa por uma porta que um aeroporto mudou (ciclo 13)
+- [x] 48.6 `flight` declara a porta `FlightPriceObserver` (`pricing` a implementa com o `FlightPriceRecorder`, dentro da mesma transação: histórico, evento do outbox e alertas continuam como eram) (ciclo 7); `catalog` declara a porta `AirportChangeListener` (o cache da busca de voos a implementa) (ciclo 13). Teste novo: renomear um aeroporto invalida a busca em cache. Lista congelada: 29 → 26 pares
 - [ ] 48.7 `DestinationRatings` e a rota de avaliações do hotel para `review` (ciclos 8 e 9); o `CatalogLookup` dividido: o aeroporto no `catalog`, a companhia em `flight` (ciclo 15)
 - [ ] 48.8 `booking` sem `review` (ciclo 6, resolvido pelo 48.4: aqui só se confirma)
 - [ ] 48.9 O registro de mapeadores de `Bookable`, com cada tipo informando a sua capacidade (ciclos 5 e 14); a exceção temporária do teste de ciclos da persistência cai aqui

@@ -2,6 +2,7 @@ package com.dbook.application.pricing
 
 import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.FlightEvents
+import com.dbook.domain.flight.FlightPriceObserver
 import com.dbook.domain.messaging.OutboxWriter
 import com.dbook.domain.pricing.PriceHistory
 import org.springframework.stereotype.Service
@@ -18,9 +19,8 @@ class FlightPriceRecorder(
     private val priceHistory: PriceHistory,
     private val outboxWriter: OutboxWriter,
     private val clock: Clock,
-) {
-    /** [previous] is the price before, or null for a flight that was just created. */
-    fun record(
+) : FlightPriceObserver {
+    override fun record(
         flight: Flight,
         previous: BigDecimal?,
     ) {

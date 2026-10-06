@@ -1,11 +1,11 @@
 package com.dbook.application.flight
 
-import com.dbook.application.pricing.FlightPriceRecorder
 import com.dbook.domain.common.access.Actor
 import com.dbook.domain.common.audit.AuditAction
 import com.dbook.domain.common.audit.AuditEvent
 import com.dbook.domain.common.audit.AuditLog
 import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.FlightPriceObserver
 import com.dbook.domain.flight.FlightRepository
 import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.flight.toAuditSnapshot
@@ -44,7 +44,7 @@ class RegisterFlightUseCase(
     private val catalogLookup: CatalogLookup,
     private val seatRepository: SeatRepository,
     private val auditLog: AuditLog,
-    private val priceRecorder: FlightPriceRecorder,
+    private val priceRecorder: FlightPriceObserver,
 ) {
     @Transactional
     fun execute(command: RegisterFlightCommand): Flight {

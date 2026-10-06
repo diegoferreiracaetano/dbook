@@ -1,6 +1,5 @@
 package com.dbook.application.flight
 
-import com.dbook.application.pricing.FlightPriceRecorder
 import com.dbook.domain.booking.BookingOccupancy
 import com.dbook.domain.common.access.Actor
 import com.dbook.domain.common.audit.AuditAction
@@ -12,6 +11,7 @@ import com.dbook.domain.flight.Flight
 import com.dbook.domain.flight.FlightEdit
 import com.dbook.domain.flight.FlightEvents
 import com.dbook.domain.flight.FlightNotFoundException
+import com.dbook.domain.flight.FlightPriceObserver
 import com.dbook.domain.flight.FlightRepository
 import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.flight.toAuditSnapshot
@@ -58,7 +58,7 @@ class UpdateFlightUseCase(
     private val adminFlightReader: AdminFlightReader,
     private val auditLog: AuditLog,
     private val outboxWriter: OutboxWriter,
-    private val priceRecorder: FlightPriceRecorder,
+    private val priceRecorder: FlightPriceObserver,
     private val clock: Clock,
 ) {
     @Transactional
