@@ -1241,10 +1241,10 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 - [x] 48.23 Fechamento: `CLAUDE.md`, `README`, ADR "aceita", k6, memória
 
 **Checklist de fechamento do M48:**
-- [ ] Itens revisados; ADR 0001 em "aceita"
-- [ ] `./gradlew check` com **exit 0** em cada passo e no final
-- [ ] Nenhum teste mudou de comportamento (só de lugar), nenhuma migration nova, a baseline do OpenAPI igual
-- [ ] A regra do ArchUnit e a compilação dos módulos dizem o mesmo grafo
+- [x] Itens revisados; ADR 0001 em "aceita"
+- [x] `./gradlew check` com **exit 0** em cada passo e no final
+- [x] Nenhum teste mudou de comportamento (só de lugar), nenhuma migration nova, a baseline do OpenAPI igual
+- [x] A regra do ArchUnit e a compilação dos módulos dizem o mesmo grafo
 
 ---
 
