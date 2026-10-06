@@ -12,7 +12,7 @@ abstract class ArchitectureFixture {
     protected val concepts =
         listOf(
             "catalog", "seating", "booking", "payment", "review", "identity", "ai", "audit", "crm", "dashboard",
-            "messaging", "notification", "favorite", "promo", "pricing", "accommodation", "appconfig",
+            "messaging", "notification", "favorite", "promo", "pricing", "accommodation", "appconfig", "flight",
         )
 
     private companion object {

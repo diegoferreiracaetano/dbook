@@ -1,5 +1,6 @@
 package com.dbook.domain.catalog
 
+import com.dbook.domain.flight.Flight
 import java.math.BigDecimal
 
 /**

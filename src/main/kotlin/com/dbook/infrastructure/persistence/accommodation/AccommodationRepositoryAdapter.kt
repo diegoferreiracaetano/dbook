@@ -4,10 +4,9 @@ import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.accommodation.AccommodationNotFoundException
 import com.dbook.domain.accommodation.AccommodationRepository
 import com.dbook.domain.accommodation.RoomType
-import com.dbook.infrastructure.persistence.catalog.AccommodationJpaEntity
-import com.dbook.infrastructure.persistence.catalog.AccommodationJpaRepository
 import com.dbook.infrastructure.persistence.catalog.AirportJpaRepository
 import com.dbook.infrastructure.persistence.catalog.toDomain
+import com.dbook.infrastructure.persistence.flight.toDomain
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository

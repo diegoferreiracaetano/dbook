@@ -1,7 +1,7 @@
 package com.dbook.domain.catalog.airport
 
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
+import com.dbook.domain.flight.Airline
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

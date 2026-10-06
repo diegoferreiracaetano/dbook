@@ -3,7 +3,6 @@ package com.dbook.application.favorite
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.BookableNotFoundException
-import com.dbook.domain.catalog.FlightRepository
 import com.dbook.domain.common.PageQuery
 import com.dbook.domain.common.PageResult
 import com.dbook.domain.favorite.Favorite
@@ -13,6 +12,7 @@ import com.dbook.domain.favorite.FavoriteRepository
 import com.dbook.domain.favorite.FavoriteType
 import com.dbook.domain.favorite.FavoriteView
 import com.dbook.domain.favorite.FavoritesLimitReachedException
+import com.dbook.domain.flight.FlightRepository
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

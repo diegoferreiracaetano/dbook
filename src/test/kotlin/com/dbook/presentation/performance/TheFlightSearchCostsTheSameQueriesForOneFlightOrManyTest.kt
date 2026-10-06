@@ -1,7 +1,7 @@
 package com.dbook.presentation.performance
 
 import com.dbook.QueryCounter
-import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.flight.FlightRepository
 import com.dbook.presentation.catalogadmin.CatalogAdminFixture
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate

@@ -5,10 +5,10 @@ import com.dbook.application.review.createreviewusecase.FakeReviewRepository
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.review.Review
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository

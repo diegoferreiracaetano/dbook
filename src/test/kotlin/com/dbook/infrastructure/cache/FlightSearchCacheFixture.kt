@@ -1,8 +1,8 @@
 package com.dbook.infrastructure.cache
 
 import com.dbook.QueryCounter
-import com.dbook.application.catalog.SearchFlightsUseCase
-import com.dbook.domain.catalog.Flight
+import com.dbook.application.flight.SearchFlightsUseCase
+import com.dbook.domain.flight.Flight
 import com.dbook.presentation.catalogadmin.CatalogAdminFixture
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired

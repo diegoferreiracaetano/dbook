@@ -1,15 +1,15 @@
 package com.dbook.application.favorite
 
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.AirportRepository
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.FlightRepository
-import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.favorite.Favorite
 import com.dbook.domain.favorite.FavoriteAddResult
 import com.dbook.domain.favorite.FavoriteRepository
 import com.dbook.domain.favorite.FavoriteType
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.FlightRepository
+import com.dbook.domain.flight.SeatClass
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant

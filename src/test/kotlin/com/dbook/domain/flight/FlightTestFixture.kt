@@ -1,0 +1,50 @@
+package com.dbook.domain.flight
+
+import com.dbook.domain.catalog.Airport
+import java.math.BigDecimal
+import java.time.LocalDateTime
+
+abstract class FlightTestFixture {
+    private val airline = Airline(id = 1, iataCode = "LA", name = "LATAM Airlines")
+    private val origin =
+        Airport(
+            id = 1,
+            iataCode = "GRU",
+            name = "Guarulhos",
+            city = "São Paulo",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
+        )
+    private val destination =
+        Airport(
+            id = 2,
+            iataCode = "GIG",
+            name = "Galeão",
+            city = "Rio de Janeiro",
+            country = "Brasil",
+            photoUrl = "https://example.com/photo.jpg",
+            region = "América do Sul",
+            isPopular = false,
+        )
+
+    protected fun buildFlight(
+        price: BigDecimal = BigDecimal("500.00"),
+        totalCapacity: Int = 180,
+        availableCapacity: Int = 180,
+    ) = Flight(
+        title = "GRU-GIG",
+        price = price,
+        totalCapacity = totalCapacity,
+        availableCapacity = availableCapacity,
+        flightNumber = "DB1234",
+        airline = airline,
+        origin = origin,
+        destination = destination,
+        departureTime = LocalDateTime.of(2026, 10, 1, 8, 0),
+        arrivalTime = LocalDateTime.of(2026, 10, 1, 9, 10),
+        seatClass = SeatClass.ECONOMY,
+        aircraftType = "Airbus A320",
+    )
+}

@@ -1,7 +1,7 @@
 package com.dbook.presentation.notification.notificationconsumer
 
 import com.dbook.LocalStackSqs
-import com.dbook.domain.catalog.FlightEvents
+import com.dbook.domain.flight.FlightEvents
 import com.dbook.domain.pricing.PriceAlertEvents
 import java.time.LocalDate
 import java.util.UUID

@@ -12,7 +12,7 @@ class ARepeatedSearchIsAnsweredWithoutTheDatabaseTest : FlightSearchCacheFixture
         val first = searchOn(departure)
         val hitsBefore = hits()
 
-        var second = emptyList<com.dbook.domain.catalog.Flight>()
+        var second = emptyList<com.dbook.domain.flight.Flight>()
         val queries = queryCounter.queriesOf { second = searchOn(departure) }
 
         assertEquals(listOf(id), first.map { it.id })

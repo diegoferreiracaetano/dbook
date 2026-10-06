@@ -1,6 +1,6 @@
 package com.dbook.domain.ai
 
-import com.dbook.domain.catalog.Flight
+import com.dbook.domain.flight.Flight
 
 /**
  * Suggests flights matching a natural-language [query], grounded in a real [candidates]

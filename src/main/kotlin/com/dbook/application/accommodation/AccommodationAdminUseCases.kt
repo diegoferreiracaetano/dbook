@@ -1,6 +1,6 @@
 package com.dbook.application.accommodation
 
-import com.dbook.application.catalog.CatalogLookup
+import com.dbook.application.flight.CatalogLookup
 import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.accommodation.AccommodationNotFoundException
 import com.dbook.domain.accommodation.AccommodationRepository

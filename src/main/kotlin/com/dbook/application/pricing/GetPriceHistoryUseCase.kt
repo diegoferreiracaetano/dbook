@@ -1,7 +1,7 @@
 package com.dbook.application.pricing
 
-import com.dbook.domain.catalog.FlightNotFoundException
-import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.flight.FlightNotFoundException
+import com.dbook.domain.flight.FlightRepository
 import com.dbook.domain.pricing.PriceHistory
 import com.dbook.domain.pricing.PricePoint
 import io.micrometer.observation.annotation.Observed

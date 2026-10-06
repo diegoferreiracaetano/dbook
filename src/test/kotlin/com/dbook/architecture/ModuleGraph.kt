@@ -46,7 +46,7 @@ object ModuleGraph {
             "pricing" to setOf("flight", "catalog", "core"),
             "favorite" to setOf("flight", "catalog", "core"),
             "ai" to setOf("flight", "core"),
-            "payment" to setOf("booking", "flight", "core"),
+            "payment" to setOf("booking", "flight", "catalog", "core"),
             "review" to setOf("booking", "accommodation", "flight", "core"),
             "trips" to setOf("booking", "flight", "accommodation", "review", "core"),
             "notification" to setOf("booking", "flight", "payment", "pricing", "identity", "core"),

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 
 /**
  * A [Booking] paired with its [Seat] — [Booking.bookable] already carries the full
- * [com.dbook.domain.catalog.Flight].
+ * [com.dbook.domain.flight.Flight].
  */
 data class BookingWithDetails(val booking: Booking, val seat: Seat?, val review: Review?)
 

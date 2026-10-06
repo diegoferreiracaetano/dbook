@@ -1,11 +1,11 @@
 package com.dbook.presentation.securityintegration
 
 import com.dbook.AbstractIntegrationTest
-import com.dbook.application.catalog.RegisterFlightCommand
-import com.dbook.application.catalog.RegisterFlightUseCase
+import com.dbook.application.flight.RegisterFlightCommand
+import com.dbook.application.flight.RegisterFlightUseCase
 import com.dbook.application.identity.BlockUserCommand
 import com.dbook.application.identity.BlockUserUseCase
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.domain.identity.User

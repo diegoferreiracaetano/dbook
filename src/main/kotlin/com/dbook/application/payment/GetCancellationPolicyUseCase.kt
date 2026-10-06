@@ -5,7 +5,7 @@ import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
 import com.dbook.domain.booking.NotBookingOwnerException
-import com.dbook.domain.catalog.Flight
+import com.dbook.domain.flight.Flight
 import com.dbook.domain.payment.RefundPolicy
 import com.dbook.domain.payment.RefundRepository
 import io.micrometer.observation.annotation.Observed

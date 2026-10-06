@@ -3,8 +3,8 @@ package com.dbook.presentation.booking
 import com.dbook.application.booking.BookingWithDetails
 import com.dbook.domain.accommodation.Accommodation
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.catalog.Flight
-import com.dbook.presentation.catalog.FlightResponse
+import com.dbook.domain.flight.Flight
+import com.dbook.presentation.flight.FlightResponse
 import com.dbook.presentation.review.ReviewResponse
 import com.dbook.presentation.seating.SeatResponse
 import java.math.BigDecimal

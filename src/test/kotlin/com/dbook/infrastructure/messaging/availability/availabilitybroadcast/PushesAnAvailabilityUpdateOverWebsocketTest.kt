@@ -1,10 +1,10 @@
 package com.dbook.infrastructure.messaging.availability.availabilitybroadcast
 
 import com.dbook.application.booking.RegisterBookingCommand
-import com.dbook.application.catalog.RegisterFlightCommand
+import com.dbook.application.flight.RegisterFlightCommand
 import com.dbook.application.identity.LoginCommand
 import com.dbook.application.identity.RegisterUserCommand
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.infrastructure.messaging.availability.AvailabilityUpdate

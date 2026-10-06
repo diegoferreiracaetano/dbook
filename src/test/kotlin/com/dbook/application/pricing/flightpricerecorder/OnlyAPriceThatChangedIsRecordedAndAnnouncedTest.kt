@@ -1,7 +1,7 @@
 package com.dbook.application.pricing.flightpricerecorder
 
 import com.dbook.application.pricing.FlightPriceRecorderFixture
-import com.dbook.domain.catalog.FlightEvents
+import com.dbook.domain.flight.FlightEvents
 import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals

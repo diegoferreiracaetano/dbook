@@ -60,7 +60,7 @@ Do mais baixo para o mais alto, **sem ciclos** (cada módulo só enxerga os que 
 | `:pricing` | histórico de preço e alertas | `flight`, `catalog` |
 | `:favorite` | favoritos | `flight`, `catalog` |
 | `:ai` | sugestões por IA (Bedrock, disjuntor) | `flight` |
-| `:payment` | pagamento, reembolso, política de cancelamento **e códigos promocionais** (pacote `promo` dentro) | `booking`, `flight` |
+| `:payment` | pagamento, reembolso, política de cancelamento **e códigos promocionais** (pacote `promo` dentro) | `booking`, `flight`, `catalog` |
 | `:review` | avaliações e moderação (e as avaliações do hotel) | `booking`, `accommodation`, `flight` |
 | `:trips` | "minhas viagens": junta reserva, assento ou estadia, pagamento e avaliação | `booking`, `flight`, `accommodation`, `review` |
 | `:notification` | avisos (in-app, e-mail, push) e preferências | `booking`, `flight`, `payment`, `pricing`, `identity` |
@@ -96,6 +96,9 @@ A regra `TheModulesOnlyDependOnTheirTargetModulesTest` confere o grafo alvo no *
 
 | # | Aresta | O que é | Como se desfaz |
 |---|---|---|---|
+| 13 | `catalog → flight` (cache) | mudar um aeroporto invalida a busca de voos (`AirportRepositoryAdapter` usa `FlightSearchCache`) | porta `AirportChangeListener` no `catalog`, implementada por `flight` (que invalida o seu cache) |
+| 14 | `catalog → flight` (assentos) | `BookableRepositoryAdapter` calcula a capacidade livre pelos assentos (`SeatAvailability`) | cada tipo informa a sua própria capacidade no registro de mapeadores do ciclo 5 |
+| 15 | `accommodation → flight` | `CatalogLookup` (que mora em `flight` desde o 48.3, por também resolver a companhia) é usado pelo cadastro de hotéis | dividir: `catalog` resolve o aeroporto, `flight` a companhia |
 | 12 | `core → identity, payment, catalog, booking, flight` | o `ApiExceptionHandler` (em `presentation/common`) traduz as exceções de domínio de **todos** os módulos para HTTP | cada módulo ganha o seu handler (já é o padrão de `IdentityExceptionHandler`); o `core` fica só com os erros genéricos |
 
 ## Como chegar lá sem quebrar nada (o método do M45, em escala)

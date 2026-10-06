@@ -7,10 +7,10 @@ import com.dbook.application.promo.InMemoryPromos
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.payment.Payment
 import com.dbook.domain.payment.PaymentRepository
 import com.dbook.domain.promo.PromoCode

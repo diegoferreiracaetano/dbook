@@ -4,7 +4,7 @@ import com.dbook.domain.ai.AiSuggestionLog
 import com.dbook.domain.ai.AiSuggestionLogRepository
 import com.dbook.domain.ai.AiSuggestionResult
 import com.dbook.domain.ai.AiSuggestionService
-import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.flight.FlightRepository
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 

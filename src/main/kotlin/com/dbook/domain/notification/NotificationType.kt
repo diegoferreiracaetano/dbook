@@ -1,7 +1,7 @@
 package com.dbook.domain.notification
 
 import com.dbook.domain.booking.BookingEvents
-import com.dbook.domain.catalog.FlightEvents
+import com.dbook.domain.flight.FlightEvents
 import com.dbook.domain.payment.RefundEvents
 import com.dbook.domain.pricing.PriceAlertEvents
 

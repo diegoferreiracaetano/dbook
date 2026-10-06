@@ -1,7 +1,7 @@
 package com.dbook.infrastructure.cache
 
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.FlightSearchCache
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.FlightSearchCache
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.MeterRegistry

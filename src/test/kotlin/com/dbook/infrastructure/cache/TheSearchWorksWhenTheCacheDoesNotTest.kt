@@ -1,6 +1,6 @@
 package com.dbook.infrastructure.cache
 
-import com.dbook.domain.catalog.Flight
+import com.dbook.domain.flight.Flight
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.mockito.Mockito

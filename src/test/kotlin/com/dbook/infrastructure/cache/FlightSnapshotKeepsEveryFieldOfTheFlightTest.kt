@@ -1,9 +1,9 @@
 package com.dbook.infrastructure.cache
 
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.math.BigDecimal
 import java.time.LocalDateTime

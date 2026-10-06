@@ -3,7 +3,7 @@ package com.dbook.infrastructure.persistence.catalog
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.AirportRepository
 import com.dbook.domain.catalog.DuplicateIataCodeException
-import com.dbook.domain.catalog.FlightSearchCache
+import com.dbook.domain.flight.FlightSearchCache
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Repository

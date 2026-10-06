@@ -4,12 +4,12 @@ import com.dbook.domain.booking.AvailabilityBroadcaster
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
 import com.dbook.domain.common.PageQuery
 import com.dbook.domain.common.PageResult
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.payment.PaymentGateway
 import com.dbook.domain.payment.PaymentGatewayException
 import com.dbook.domain.payment.Refund

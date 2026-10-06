@@ -1,6 +1,6 @@
 package com.dbook.domain.ai
 
-/** One suggested [com.dbook.domain.catalog.Flight], with the model's stated reason for it. */
+/** One suggested [com.dbook.domain.flight.Flight], with the model's stated reason for it. */
 data class AiSuggestion(
     val flightId: Long,
     val reason: String,

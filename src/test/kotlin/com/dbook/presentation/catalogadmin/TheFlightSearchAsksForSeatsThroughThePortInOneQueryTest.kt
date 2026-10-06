@@ -1,7 +1,7 @@
 package com.dbook.presentation.catalogadmin
 
 import com.dbook.QueryCounter
-import com.dbook.domain.catalog.FlightRepository
+import com.dbook.domain.flight.FlightRepository
 import org.springframework.beans.factory.annotation.Autowired
 import kotlin.test.Test
 import kotlin.test.assertEquals

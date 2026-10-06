@@ -7,7 +7,7 @@ import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.BookingRepository
 import com.dbook.domain.booking.BookingStatus
-import com.dbook.domain.catalog.Flight
+import com.dbook.domain.flight.Flight
 import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.domain.payment.Refund

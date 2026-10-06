@@ -1,7 +1,7 @@
 package com.dbook.presentation.dashboard
 
-import com.dbook.application.catalog.RegisterFlightCommand
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.application.flight.RegisterFlightCommand
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.identity.Actor
 import com.dbook.domain.identity.Role
 import com.dbook.presentation.securityintegration.SecurityIntegrationFixture

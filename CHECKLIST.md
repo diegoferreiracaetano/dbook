@@ -1214,15 +1214,15 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 - [x] 48.2 `build-logic` (convention plugin `dbook.kotlin-conventions`, um `includeBuild`) com Kotlin, Spring/JPA, ktlint, detekt, JaCoCo e a configuração dos testes; o `build.gradle.kts` raiz ficou só com o Spring Boot, as dependências e a cobertura. **Mesmas tarefas e os mesmos 1012 testes verdes**; a primeira resolução das dependências do `build-logic` leva minutos, as seguintes não
 
 **Fase B — Separar os pacotes (um módulo Gradle ainda)**
-- [ ] 48.3 `flight` nasce como conceito (sai de `catalog`; `seating` continua, marcado como do módulo `flight`)
+- [x] 48.3 `flight` nasce como conceito (sai de `catalog`; `seating` continua, marcado como do módulo `flight`): **92 arquivos** movidos nas quatro camadas (principal e testes) por uma ferramenta de refatoração (pacote, imports e nomes completos), a lista congelada passou a **61 pares em 16 arestas** (`ai → catalog` e quase todo `payment → catalog` sumiram). Achou 3 ciclos que o ADR não tinha (13, 14 e 15) e tirou a regra antiga de dependências só do domínio (a regra do grafo a substitui). **Uma exceção temporária** no teste de ciclos da persistência (o mapeador de `Bookable`), que o 48.9 remove
 - [ ] 48.4 `trips` nasce como conceito ("minhas viagens" sai de `booking`; a rota não muda)
 
 **Fase C — Desfazer os ciclos (um por commit)**
 - [ ] 48.5 `Actor`, `Role`, `Permission` e o vocabulário e a porta da auditoria para o `core` (ciclo 10); o `ApiExceptionHandler` dividido por módulo (ciclo 12)
-- [ ] 48.6 `flight` publica o fato do preço e `pricing` o ouve (ciclo 7)
-- [ ] 48.7 `DestinationRatings` e a rota de avaliações do hotel para `review` (ciclos 8 e 9)
+- [ ] 48.6 `flight` publica o fato do preço e `pricing` o ouve (ciclo 7); `catalog` avisa por uma porta que um aeroporto mudou (ciclo 13)
+- [ ] 48.7 `DestinationRatings` e a rota de avaliações do hotel para `review` (ciclos 8 e 9); o `CatalogLookup` dividido: o aeroporto no `catalog`, a companhia em `flight` (ciclo 15)
 - [ ] 48.8 `booking` sem `review` (ciclo 6, resolvido pelo 48.4: aqui só se confirma)
-- [ ] 48.9 O registro de mapeadores de `Bookable` (ciclo 5)
+- [ ] 48.9 O registro de mapeadores de `Bookable`, com cada tipo informando a sua capacidade (ciclos 5 e 14); a exceção temporária do teste de ciclos da persistência cai aqui
 - [ ] 48.10 `seatId` e `paymentId` como colunas, sem `@ManyToOne` (ciclos 3 e 4)
 - [ ] 48.11 A porta `InventoryReleaser` com as implementações de `flight` e `accommodation` (ciclo 2)
 - [ ] 48.12 A reserva de assento passa para `flight`; os eventos sem `Flight` (ciclo 1)

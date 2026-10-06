@@ -1,9 +1,9 @@
 package com.dbook.infrastructure.ai.bedrockaisuggestionservice
 
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.dbook.infrastructure.ai.BedrockAiSuggestionService
 import com.dbook.infrastructure.ai.BedrockGuard
 import com.dbook.infrastructure.ai.BedrockGuardSettings

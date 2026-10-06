@@ -1,7 +1,7 @@
 package com.dbook.application.pricing
 
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.FlightEvents
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.FlightEvents
 import com.dbook.domain.messaging.OutboxWriter
 import com.dbook.domain.pricing.PriceHistory
 import org.springframework.stereotype.Service

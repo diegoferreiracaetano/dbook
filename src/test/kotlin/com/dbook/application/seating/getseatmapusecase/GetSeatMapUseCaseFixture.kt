@@ -1,12 +1,12 @@
 package com.dbook.application.seating.getseatmapusecase
 
 import com.dbook.application.seating.GetSeatMapUseCase
-import com.dbook.domain.catalog.Airline
 import com.dbook.domain.catalog.Airport
 import com.dbook.domain.catalog.Bookable
 import com.dbook.domain.catalog.BookableRepository
-import com.dbook.domain.catalog.Flight
-import com.dbook.domain.catalog.SeatClass
+import com.dbook.domain.flight.Airline
+import com.dbook.domain.flight.Flight
+import com.dbook.domain.flight.SeatClass
 import com.dbook.domain.seating.Seat
 import com.dbook.domain.seating.SeatRepository
 import java.math.BigDecimal

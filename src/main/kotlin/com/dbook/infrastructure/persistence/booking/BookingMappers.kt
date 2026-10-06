@@ -2,8 +2,10 @@ package com.dbook.infrastructure.persistence.booking
 
 import com.dbook.domain.booking.Booking
 import com.dbook.domain.booking.Stay
+import com.dbook.infrastructure.persistence.accommodation.toDomain
 import com.dbook.infrastructure.persistence.catalog.BookableJpaEntity
 import com.dbook.infrastructure.persistence.catalog.toDomain
+import com.dbook.infrastructure.persistence.flight.toDomain
 import com.dbook.infrastructure.persistence.payment.PaymentJpaEntity
 import com.dbook.infrastructure.persistence.seating.SeatJpaEntity
 

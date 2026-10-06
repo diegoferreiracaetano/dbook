@@ -2,10 +2,10 @@ package com.dbook.presentation.common
 
 import com.dbook.domain.booking.BookingNotFoundException
 import com.dbook.domain.booking.NotBookingOwnerException
-import com.dbook.domain.catalog.AirlineNotFoundException
 import com.dbook.domain.catalog.AirportNotFoundException
 import com.dbook.domain.catalog.BookableNotFoundException
 import com.dbook.domain.common.StaleVersionException
+import com.dbook.domain.flight.AirlineNotFoundException
 import com.dbook.domain.identity.DuplicateOpenInvitationException
 import com.dbook.domain.identity.InvitationNotFoundException
 import com.dbook.domain.identity.UserAlreadyExistsException

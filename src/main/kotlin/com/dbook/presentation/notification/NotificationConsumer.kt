@@ -3,7 +3,7 @@ package com.dbook.presentation.notification
 import com.dbook.application.notification.NotificationEvent
 import com.dbook.application.notification.ProcessNotificationEventUseCase
 import com.dbook.application.pricing.EvaluatePriceAlertsUseCase
-import com.dbook.domain.catalog.FlightEvents
+import com.dbook.domain.flight.FlightEvents
 import com.dbook.domain.notification.NotificationType
 import com.dbook.domain.pricing.PriceChange
 import com.dbook.presentation.common.SqsMessageLoop

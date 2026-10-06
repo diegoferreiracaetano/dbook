@@ -1,6 +1,6 @@
 package com.dbook.domain.booking
 
-import com.dbook.domain.catalog.Flight
+import com.dbook.domain.flight.Flight
 import com.dbook.domain.messaging.OutboxEvent
 import java.time.Instant
 
