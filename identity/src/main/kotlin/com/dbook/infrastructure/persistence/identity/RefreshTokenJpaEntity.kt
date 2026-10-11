@@ -27,4 +27,7 @@ class RefreshTokenJpaEntity(
     var revoked: Boolean = false,
     @Column(name = "family_id")
     var familyId: UUID = UUID.randomUUID(),
+    // never written from here: the column's default stamps it on insert
+    @Column(name = "created_at", insertable = false, updatable = false)
+    var createdAt: Instant? = null,
 )

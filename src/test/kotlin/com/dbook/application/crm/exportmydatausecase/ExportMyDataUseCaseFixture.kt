@@ -2,6 +2,7 @@ package com.dbook.application.crm.exportmydatausecase
 
 import com.dbook.application.audit.FakeAuditLog
 import com.dbook.application.crm.ExportMyDataUseCase
+import com.dbook.application.identity.FakeUserProfileRepository
 import com.dbook.application.identity.staff.InMemoryUserRepository
 import com.dbook.domain.common.PageQuery
 import com.dbook.domain.common.PageResult
@@ -55,9 +56,11 @@ private object NoFavorites : FavoriteReader {
 abstract class ExportMyDataUseCaseFixture {
     protected val audit = FakeAuditLog()
     protected val history = PagedHistory(bookingCount = 250)
+    protected val profiles = FakeUserProfileRepository()
     protected val useCase =
         ExportMyDataUseCase(
             InMemoryUserRepository(User(id = 3, email = "customer@example.com", passwordHash = "x", name = "Customer")),
+            profiles,
             history,
             NoFavorites,
             audit,

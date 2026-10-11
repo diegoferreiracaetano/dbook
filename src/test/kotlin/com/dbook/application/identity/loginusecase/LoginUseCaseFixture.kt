@@ -74,6 +74,11 @@ class FakeRefreshTokenRepository : RefreshTokenRepository {
         saved[index] = RefreshToken(token.id, token.userId, token.tokenHash, token.expiresAt, true, token.familyId)
     }
 
+    override fun findActiveByUser(
+        userId: Long,
+        now: Instant,
+    ): List<RefreshToken> = saved.filter { it.userId == userId && it.isValid(now) }.reversed()
+
     val familiesRevoked = mutableListOf<String>()
 
     override fun consume(id: Long): Boolean {

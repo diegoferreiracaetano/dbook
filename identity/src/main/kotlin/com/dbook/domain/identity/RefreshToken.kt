@@ -15,6 +15,8 @@ class RefreshToken(
     val revoked: Boolean = false,
     // the sign-in this token descends from: a spent token seen again revokes the whole family
     val familyId: String = UUID.randomUUID().toString(),
+    // set by the database when the token is issued; none yet on one built in memory
+    val createdAt: Instant? = null,
 ) {
     fun isValid(now: Instant): Boolean = !revoked && expiresAt.isAfter(now)
 }

@@ -16,6 +16,8 @@ class User(
     val anonymizedAt: Instant? = null,
     val emailVerifiedAt: Instant? = null,
     val version: Long = 0,
+    // when the account was opened; set by the database, so a User built in memory has none yet
+    val createdAt: Instant? = null,
 ) {
     init {
         require(email.isNotBlank() && email.contains("@")) { "email must be a valid address" }

@@ -14,12 +14,15 @@ import com.dbook.domain.favorite.FavoriteReader
 import com.dbook.domain.favorite.FavoriteView
 import com.dbook.domain.identity.User
 import com.dbook.domain.identity.UserNotFoundException
+import com.dbook.domain.identity.UserProfile
+import com.dbook.domain.identity.UserProfileRepository
 import com.dbook.domain.identity.UserRepository
 import io.micrometer.observation.annotation.Observed
 import org.springframework.stereotype.Service
 
 data class MyDataExport(
     val user: User,
+    val profile: UserProfile,
     val bookings: List<CustomerBooking>,
     val payments: List<CustomerPayment>,
     val reviews: List<CustomerReview>,
@@ -31,6 +34,7 @@ data class MyDataExport(
 @Service
 class ExportMyDataUseCase(
     private val userRepository: UserRepository,
+    private val userProfiles: UserProfileRepository,
     private val customerHistory: CustomerHistory,
     private val favoriteReader: FavoriteReader,
     private val auditLog: AuditLog,
@@ -40,6 +44,7 @@ class ExportMyDataUseCase(
         val export =
             MyDataExport(
                 user = user,
+                profile = userProfiles.find(userId) ?: UserProfile(userId),
                 bookings = allPages { customerHistory.bookings(userId, it) },
                 payments = allPages { customerHistory.payments(userId, it) },
                 reviews = allPages { customerHistory.reviews(userId, it) },

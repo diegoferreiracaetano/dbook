@@ -23,7 +23,9 @@ class AirlineRepositoryAdapter(
     override fun save(airline: Airline): Airline =
         try {
             searchCache.invalidateAll()
-            airlineJpaRepository.saveAndFlush(AirlineJpaEntity(airline.id, airline.iataCode, airline.name)).toDomain()
+            airlineJpaRepository
+                .saveAndFlush(AirlineJpaEntity(airline.id, airline.iataCode, airline.name, airline.logoUrl))
+                .toDomain()
         } catch (ex: DataIntegrityViolationException) {
             throw DuplicateIataCodeException(airline.iataCode).apply { initCause(ex) }
         }

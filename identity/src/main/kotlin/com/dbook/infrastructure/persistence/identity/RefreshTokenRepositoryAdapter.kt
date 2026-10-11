@@ -30,4 +30,9 @@ class RefreshTokenRepositoryAdapter(
 
     @Transactional
     override fun revokeAllForUser(userId: Long) = refreshTokenJpaRepository.revokeAllByUserId(userId)
+
+    override fun findActiveByUser(
+        userId: Long,
+        now: java.time.Instant,
+    ): List<RefreshToken> = refreshTokenJpaRepository.findActiveByUser(userId, now).map { it.toDomain() }
 }

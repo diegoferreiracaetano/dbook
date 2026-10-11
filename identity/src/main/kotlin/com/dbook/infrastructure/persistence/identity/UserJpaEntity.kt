@@ -2,6 +2,7 @@ package com.dbook.infrastructure.persistence.identity
 
 import com.dbook.domain.common.access.Role
 import com.dbook.domain.identity.UserStatus
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -32,4 +33,7 @@ class UserJpaEntity(
     var emailVerifiedAt: Instant? = null,
     @Version
     var version: Long = 0,
+    // never written from here: the column's default stamps it on insert
+    @Column(name = "created_at", insertable = false, updatable = false)
+    var createdAt: Instant? = null,
 )

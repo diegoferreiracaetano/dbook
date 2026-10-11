@@ -22,4 +22,10 @@ interface RefreshTokenRepository {
     fun revokeFamily(familyId: String)
 
     fun revokeAllForUser(userId: Long)
+
+    /** The live token of each session of the user (a session has one: the last it was rotated to), newest first. */
+    fun findActiveByUser(
+        userId: Long,
+        now: java.time.Instant,
+    ): List<RefreshToken>
 }

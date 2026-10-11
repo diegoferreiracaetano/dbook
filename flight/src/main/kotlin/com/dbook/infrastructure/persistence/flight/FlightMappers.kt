@@ -14,6 +14,7 @@ fun AirlineJpaEntity.toDomain(): Airline =
         id = id,
         iataCode = iataCode,
         name = name,
+        logoUrl = logoUrl,
     )
 
 // availableCapacity is no longer stored on the entity (V9) — derived from AVAILABLE seats,

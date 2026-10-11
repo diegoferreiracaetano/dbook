@@ -6,6 +6,7 @@ import com.dbook.domain.identity.InvalidCredentialsException
 import com.dbook.domain.identity.InvalidInvitationException
 import com.dbook.domain.identity.InvalidTokenException
 import com.dbook.domain.identity.InvitationNotFoundException
+import com.dbook.domain.identity.SessionNotFoundException
 import com.dbook.domain.identity.TooManyLoginAttemptsException
 import com.dbook.domain.identity.UserAlreadyExistsException
 import com.dbook.domain.identity.UserNotFoundException
@@ -20,7 +21,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class IdentityExceptionHandler {
-    @ExceptionHandler(InvitationNotFoundException::class, UserNotFoundException::class)
+    @ExceptionHandler(
+        InvitationNotFoundException::class,
+        UserNotFoundException::class,
+        SessionNotFoundException::class,
+    )
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNotFound(ex: RuntimeException): ErrorResponse =
         ErrorResponse(ex.message ?: "Not found", ErrorCode.NOT_FOUND)

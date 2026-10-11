@@ -553,6 +553,11 @@
             "example" : "LA",
             "type" : "string"
           },
+          "logoUrl" : {
+            "description" : "https URL of the logo; optional",
+            "example" : "https://cdn.example.com/logos/LA.png",
+            "type" : "string"
+          },
           "name" : {
             "example" : "LATAM Airlines",
             "type" : "string"
@@ -568,6 +573,9 @@
           "id" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "logoUrl" : {
+            "type" : "string"
           },
           "name" : {
             "type" : "string"
@@ -785,6 +793,16 @@
           "totalPrice" : {
             "description" : "what the whole stay costs in this room: nights x nightlyRate",
             "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "AvatarRequest" : {
+        "properties" : {
+          "avatarUrl" : {
+            "description" : "https URL of the picture",
+            "example" : "https://cdn.example.com/avatars/42.jpg",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -1584,6 +1602,9 @@
           "airlineIataCode" : {
             "type" : "string"
           },
+          "airlineLogoUrl" : {
+            "type" : "string"
+          },
           "airlineName" : {
             "type" : "string"
           },
@@ -1751,6 +1772,9 @@
               "$ref" : "#/components/schemas/CustomerPaymentResponse"
             },
             "type" : "array"
+          },
+          "preferences" : {
+            "$ref" : "#/components/schemas/Preferences"
           },
           "profile" : {
             "$ref" : "#/components/schemas/Profile"
@@ -2343,6 +2367,120 @@
         },
         "type" : "object"
       },
+      "Preferences" : {
+        "properties" : {
+          "cabinClass" : {
+            "type" : "string"
+          },
+          "country" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "dateFormat" : {
+            "type" : "string"
+          },
+          "distanceUnit" : {
+            "type" : "string"
+          },
+          "homeAirport" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "seatPreference" : {
+            "type" : "string"
+          },
+          "theme" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PreferencesRequest" : {
+        "properties" : {
+          "cabinClass" : {
+            "enum" : [ "ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST" ],
+            "type" : "string"
+          },
+          "country" : {
+            "description" : "ISO 3166 alpha-2",
+            "example" : "BR",
+            "type" : "string"
+          },
+          "currency" : {
+            "enum" : [ "BRL", "USD", "EUR" ],
+            "example" : "BRL",
+            "type" : "string"
+          },
+          "dateFormat" : {
+            "enum" : [ "DMY", "MDY", "YMD" ],
+            "type" : "string"
+          },
+          "distanceUnit" : {
+            "enum" : [ "KM", "MI" ],
+            "type" : "string"
+          },
+          "homeAirport" : {
+            "description" : "IATA code of the airport the customer usually leaves from",
+            "example" : "GRU",
+            "type" : "string"
+          },
+          "language" : {
+            "enum" : [ "pt-BR", "en", "es" ],
+            "example" : "pt-BR",
+            "type" : "string"
+          },
+          "seatPreference" : {
+            "enum" : [ "ANY", "WINDOW", "AISLE" ],
+            "type" : "string"
+          },
+          "theme" : {
+            "enum" : [ "SYSTEM", "LIGHT", "DARK" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PreferencesResponse" : {
+        "properties" : {
+          "cabinClass" : {
+            "enum" : [ "ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST" ],
+            "type" : "string"
+          },
+          "country" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "dateFormat" : {
+            "enum" : [ "DMY", "MDY", "YMD" ],
+            "type" : "string"
+          },
+          "distanceUnit" : {
+            "enum" : [ "KM", "MI" ],
+            "type" : "string"
+          },
+          "homeAirport" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "seatPreference" : {
+            "enum" : [ "ANY", "WINDOW", "AISLE" ],
+            "type" : "string"
+          },
+          "theme" : {
+            "enum" : [ "SYSTEM", "LIGHT", "DARK" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PriceAlertResponse" : {
         "properties" : {
           "active" : {
@@ -2414,6 +2552,13 @@
       },
       "Profile" : {
         "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
           "email" : {
             "type" : "string"
           },
@@ -2992,6 +3137,24 @@
         },
         "type" : "object"
       },
+      "SessionResponse" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "Identifies the session; send it to DELETE /users/me/sessions/{id}",
+            "type" : "string"
+          },
+          "lastActiveAt" : {
+            "description" : "When the session's token was last issued, i.e. the last time it was used",
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "StaffInvitationResponse" : {
         "properties" : {
           "createdAt" : {
@@ -3399,6 +3562,13 @@
       },
       "UserResponse" : {
         "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
           "email" : {
             "type" : "string"
           },
@@ -6641,7 +6811,7 @@
     },
     "/v1/admin/auth/change-password" : {
       "post" : {
-        "operationId" : "changePassword",
+        "operationId" : "changePassword_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -15686,7 +15856,7 @@
     },
     "/v1/notifications/preferences" : {
       "get" : {
-        "operationId" : "preferences",
+        "operationId" : "preferences_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -15789,7 +15959,7 @@
         "tags" : [ "Notifications" ]
       },
       "put" : {
-        "operationId" : "updatePreferences",
+        "operationId" : "updatePreferences_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17542,7 +17712,7 @@
         "security" : [ {
           "bearerAuth" : [ ]
         } ],
-        "summary" : "Returns the authenticated user's profile",
+        "summary" : "Returns the authenticated user's profile (with the picture and since when the account exists)",
         "tags" : [ "Users" ]
       },
       "patch" : {
@@ -17656,6 +17826,218 @@
         "tags" : [ "Users" ]
       }
     },
+    "/v1/users/me/avatar" : {
+      "delete" : {
+        "operationId" : "removeAvatar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Removes the profile picture",
+        "tags" : [ "Users" ]
+      },
+      "put" : {
+        "operationId" : "setAvatar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AvatarRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Sets the profile picture (an https URL)",
+        "tags" : [ "Users" ]
+      }
+    },
     "/v1/users/me/export" : {
       "get" : {
         "operationId" : "export",
@@ -17757,6 +18139,531 @@
         "summary" : "Everything the system holds about the caller: profile, bookings, payments and reviews",
         "tags" : [ "Users" ]
       }
+    },
+    "/v1/users/me/password" : {
+      "post" : {
+        "operationId" : "changePassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Changes the caller's own password and ends every session (log in again afterwards)",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/v1/users/me/preferences" : {
+      "get" : {
+        "operationId" : "preferences",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreferencesResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Returns the preferences (language, theme, home airport, currency, ...); null = no choice",
+        "tags" : [ "Users" ]
+      },
+      "put" : {
+        "operationId" : "updatePreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PreferencesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreferencesResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Replaces the preferences as a whole: a field left out clears that preference",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/v1/users/me/sessions" : {
+      "get" : {
+        "operationId" : "sessions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SessionResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Lists the devices signed in to the caller's account, most recently used first",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/v1/users/me/sessions/{id}" : {
+      "delete" : {
+        "operationId" : "endSession",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "422" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Unprocessable Entity"
+          },
+          "502" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Service Unavailable"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Ends one of the caller's sessions; another user's or an unknown id is a 404",
+        "tags" : [ "Users" ]
+      }
     }
   },
   "servers" : [ {
@@ -17766,6 +18673,9 @@
   "tags" : [ {
     "description" : "Creating, changing and switching off promotional codes",
     "name" : "Promo codes (admin)"
+  }, {
+    "description" : "The authenticated user's own profile, picture and preferences",
+    "name" : "Users"
   }, {
     "description" : "The authenticated user's own profile",
     "name" : "Users"

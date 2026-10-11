@@ -41,6 +41,7 @@ class FlightSnapshot(private val mapper: ObjectMapper) {
             put("id", airline.id)
             put("iataCode", airline.iataCode)
             put("name", airline.name)
+            put("logoUrl", airline.logoUrl)
         }
 
     private fun airportNode(airport: Airport): ObjectNode =
@@ -74,7 +75,12 @@ class FlightSnapshot(private val mapper: ObjectMapper) {
         )
 
     private fun airline(node: JsonNode) =
-        Airline(node["id"].asLongOrNull(), node["iataCode"].asText(), node["name"].asText())
+        Airline(
+            node["id"].asLongOrNull(),
+            node["iataCode"].asText(),
+            node["name"].asText(),
+            node["logoUrl"]?.takeUnless { it.isNull }?.asText(),
+        )
 
     private fun airport(node: JsonNode) =
         Airport(

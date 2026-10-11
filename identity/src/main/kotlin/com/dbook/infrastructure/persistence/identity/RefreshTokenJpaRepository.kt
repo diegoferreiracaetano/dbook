@@ -8,6 +8,15 @@ import org.springframework.data.repository.query.Param
 interface RefreshTokenJpaRepository : JpaRepository<RefreshTokenJpaEntity, Long> {
     fun findByTokenHash(tokenHash: String): RefreshTokenJpaEntity?
 
+    @Query(
+        "SELECT t FROM RefreshTokenJpaEntity t WHERE t.userId = :userId AND t.revoked = false " +
+            "AND t.expiresAt > :now ORDER BY t.id DESC",
+    )
+    fun findActiveByUser(
+        @Param("userId") userId: Long,
+        @Param("now") now: java.time.Instant,
+    ): List<RefreshTokenJpaEntity>
+
     @Modifying
     @Query("UPDATE RefreshTokenJpaEntity t SET t.revoked = true WHERE t.id = :id AND t.revoked = false")
     fun consumeById(

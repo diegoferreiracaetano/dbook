@@ -10,16 +10,19 @@ data class AirlineRequest(
     val iataCode: String,
     @get:Schema(example = "LATAM Airlines")
     val name: String,
+    @get:Schema(example = "https://cdn.example.com/logos/LA.png", description = "https URL of the logo; optional")
+    val logoUrl: String? = null,
 ) {
-    fun toCommand(actor: Actor) = AirlineCommand(actor, iataCode, name)
+    fun toCommand(actor: Actor) = AirlineCommand(actor, iataCode, name, logoUrl)
 }
 
 data class AirlineResponse(
     val id: Long?,
     val iataCode: String,
     val name: String,
+    val logoUrl: String?,
 ) {
     companion object {
-        fun from(airline: Airline) = AirlineResponse(airline.id, airline.iataCode, airline.name)
+        fun from(airline: Airline) = AirlineResponse(airline.id, airline.iataCode, airline.name, airline.logoUrl)
     }
 }

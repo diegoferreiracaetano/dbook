@@ -16,9 +16,10 @@ data class AirlineCommand(
     val actor: Actor,
     val iataCode: String,
     val name: String,
+    val logoUrl: String? = null,
 )
 
-private fun Airline.snapshot() = mapOf("id" to id, "iataCode" to iataCode, "name" to name)
+private fun Airline.snapshot() = mapOf("id" to id, "iataCode" to iataCode, "name" to name, "logoUrl" to logoUrl)
 
 @Observed(name = "dbook.usecase")
 @Service
@@ -38,7 +39,11 @@ class CreateAirlineUseCase(
     fun execute(command: AirlineCommand): Airline {
         val saved =
             airlineRepository.save(
-                Airline(iataCode = command.iataCode.trim().uppercase(), name = command.name.trim()),
+                Airline(
+                    iataCode = command.iataCode.trim().uppercase(),
+                    name = command.name.trim(),
+                    logoUrl = command.logoUrl?.trim()?.takeIf { it.isNotEmpty() },
+                ),
             )
         auditLog.record(
             AuditEvent(
@@ -65,7 +70,14 @@ class UpdateAirlineUseCase(
     ): Airline {
         val before = airlineRepository.findById(id) ?: throw CatalogEntryNotFoundException("Airline", id)
         val saved =
-            airlineRepository.save(Airline(id, command.iataCode.trim().uppercase(), command.name.trim()))
+            airlineRepository.save(
+                Airline(
+                    id,
+                    command.iataCode.trim().uppercase(),
+                    command.name.trim(),
+                    command.logoUrl?.trim()?.takeIf { it.isNotEmpty() },
+                ),
+            )
         auditLog.record(
             AuditEvent(
                 command.actor,

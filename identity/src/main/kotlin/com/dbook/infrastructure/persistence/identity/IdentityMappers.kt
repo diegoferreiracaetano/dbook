@@ -17,6 +17,7 @@ fun UserJpaEntity.toDomain(): User =
         anonymizedAt = anonymizedAt,
         emailVerifiedAt = emailVerifiedAt,
         version = version,
+        createdAt = createdAt,
     )
 
 fun User.toJpaEntity(): UserJpaEntity =
@@ -43,6 +44,7 @@ fun RefreshTokenJpaEntity.toDomain(): RefreshToken =
         expiresAt = expiresAt,
         revoked = revoked,
         familyId = familyId.toString(),
+        createdAt = createdAt,
     )
 
 fun RefreshToken.toJpaEntity(): RefreshTokenJpaEntity =

@@ -14,4 +14,5 @@ class AirlineJpaEntity(
     var id: Long? = null,
     var iataCode: String = "",
     var name: String = "",
+    var logoUrl: String? = null,
 )

@@ -1248,6 +1248,32 @@ Decisão e desenho em [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilida
 
 ---
 
+## M50 — Logo da companhia e hotéis administráveis ✅  *(pedido de 2026-10-10)*
+
+Origem: ao ver o app de clientes, o dono pediu o **logo da companhia aérea** nas telas de voo e lembrou que os dados não podem depender de seed: **o atendente cadastra novas rotas pelo portal e tudo muda, inclusive as fotos**. Hoje a foto do destino já é editável (`airport.photo_url`, `AirportDtos`), mas a companhia não tem logo e o hotel não tem cadastro nenhum (só o `seed-hotels.sh`, o que não serve para operar).
+
+- [x] 50.1 **Migration `V49`**: `airline.logo_url varchar(500) NULL` (expand-only; sem backfill obrigatório).
+- [x] 50.2 **Companhia com logo**: `Airline.logoUrl` (só `https`, até 500), JPA, mapper, `AirlineCommand`/`AirlineRequest` (opcional, vazio vira `null`), `AirlineResponse`, snapshot de auditoria, `FlightSnapshot` (cache) e `FlightResponse.airlineLogoUrl` (aditivo, nullable).
+- [x] 50.3 **Hotel administrável**: **já existia** (`/v1/admin/accommodations`, `CATALOG_WRITE`, com `photoUrl`, quartos, ativar/desativar); a lacuna era só a tela no portal (M47.3 do app).
+- [x] 50.4 **Importação**: logo é atributo da companhia, não do voo; a planilha de voos **não muda**.
+- [x] 50.5 Seeds (`seed-airline-logos.sh`, `seed-hotels.sh`): `seed-flights.sh` e `seed-hotels.sh` passam a preencher logo/foto (só para demonstração local).
+- [x] 50.6 Testes (`AnAirlineKeepsItsLogoAndAnInsecureOneIsRefusedTest`; o baseline OpenAPI foi regenerado), `endpoints.md`, Swagger. A auditoria da companhia já grava `logoUrl` no snapshot.
+
+**Regra de entrega (atualizada em 2026-10-10):** o dono autorizou o assistente a implementar o M50 direto e avisar quando concluir; commit só a pedido.
+
+## M51 — Perfil do cliente: foto, preferências e conta ✅  *(pedido de 2026-10-10; espelha o M48 do app)*
+
+Origem: o dono pediu um perfil mais completo no app (foto, preferências, configurações). O app só mostra o que o servidor tem; hoje `GET /v1/users/me` devolve só `id`, `email`, `name`, `role` e `emailVerified`. Estes itens são o que falta no servidor para o app deixar de ter placeholders.
+
+- [x] 51.1 **Foto de perfil** (versão por URL): `avatarUrl` em `/users/me`, `PUT /v1/users/me/avatar` e `DELETE` (só `https`, até 500). Envio de arquivo para armazenamento de objetos fica **fora** (decisão pendente: só vale quando houver bucket de produção).
+- [x] 51.2 **Membro desde**: `createdAt` em `/users/me` (`User.createdAt`, coluna só de leitura na entidade).
+- [x] 51.3 **Preferências do usuário** (`GET/PUT /v1/users/me/preferences`, tabela `user_profile` 1:1 com `V50`, tudo opcional): `language`, `theme`, `homeAirport`, `country`, `currency`, `cabinClass`, `seatPreference`, `dateFormat`, `distanceUnit`; valor fora da lista é `400`; o `PUT` substitui o conjunto. Aceitas e guardadas já, mesmo sem uso no app (decisão do dono, 2026-10-10). **Simplificação:** `homeAirport` valida só o formato (3 letras), não a existência no catálogo, para o módulo de identidade não depender do catálogo.
+- [x] 51.4 **Trocar senha logado**: `POST /v1/users/me/password` reaproveita o `ChangePasswordUseCase` (política do cliente, encerra as sessões, conta no limite de login).
+- [x] 51.5 **Sessões ativas**: `GET /v1/users/me/sessions` e `DELETE /v1/users/me/sessions/{id}` (uma sessão = a família de refresh token; `V51` guarda `created_at` do token, que vira `lastActiveAt`); sessão alheia é `404`.
+- [x] 51.6 Testes de integração (`TheOwnPreferencesAvatarAndPasswordAreKeptAndValidatedTest`), `endpoints.md`, Swagger nas operações; **privacidade:** a anonimização apaga `user_profile` (`CustomerErasureAdapter`). A exportação (`GET /users/me/export`) leva `createdAt`, `avatarUrl` e as preferências.
+
+**Regra de entrega (atualizada em 2026-10-10):** o dono autorizou o assistente a implementar o M50 e o M51 direto; avisa quando concluir. Commit só a pedido.
+
 **Checklist de fechamento — vale para TODO marco acima (além do checklist padrão abaixo):**
 - [ ] Itens do marco revisados; **decisões registradas em ADR** quando arquiteturais
 - [ ] **Permissão** declarada em todo endpoint admin novo e **teste de `403`** por permissão faltante
