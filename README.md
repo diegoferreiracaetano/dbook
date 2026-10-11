@@ -19,7 +19,7 @@ Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas �
 - AWS Bedrock (sugestões de voo por IA) + Bucket4j (rate limiting)
 - Observabilidade: Actuator + Micrometer (Prometheus), logs JSON (Logback), OpenTelemetry (Jaeger), Grafana + Loki — ver [docs/observabilidade.md](docs/observabilidade.md)
 
-M1-M8 e M10 completos. Ideias registradas pra depois: script de seed de dados, integração com API real de voos — ver "Ideias futuras" no [CHECKLIST.md](CHECKLIST.md).
+M1-M51 completos (ver o roadmap abaixo). Ideias registradas pra depois: integração com API real de voos — ver "Ideias futuras" no [CHECKLIST.md](CHECKLIST.md).
 
 ## Arquitetura
 
@@ -70,6 +70,16 @@ Pra popular o banco com voos de teste (útil pra demo e pra dar contexto real à
 ```
 
 Cria um usuário admin (`seed-admin@example.com`), promove via SQL direto (só funciona local — não existe endpoint de auto-promoção, por decisão de segurança) e cadastra voos com companhia/rotas/preços/datas variados entre as 6 companhias e os 9 aeroportos seedados via `POST /v1/admin/flights` — os mesmos endpoints já cobertos pelos testes, não é INSERT direto no banco.
+
+Outros seeds, todos só para desenvolvimento local (escrevem direto no banco do `docker compose`):
+
+```bash
+./scripts/seed-hotels.sh          # 2 hotéis por aeroporto, com fotos e 3 tipos de quarto (idempotente)
+./scripts/seed-airline-logos.sh   # logo das companhias que ainda não têm
+./scripts/seed-customers.sh 50000 # 50 mil clientes com reservas, pagamentos e avaliações
+```
+
+Sem credenciais AWS, a IA responde com o provedor local: `AI_PROVIDER=local ./gradlew bootRun` (ver [docs/ia.md](docs/ia.md)).
 
 ## Documentação da API (Swagger)
 
@@ -122,7 +132,7 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M6 — Nuvem** (Terraform: VPC/ECR/RDS/ElastiCache/Secrets Manager/ECS Fargate, LocalStack por padrão, validado contra AWS real)
 - ✅ **M7 — IA** (sugestões via Bedrock, sempre auditadas, rate limit dedicado — validação real do model-id pendente de sessão AWS ativa)
 - ✅ **M8 — CI/CD completo** (build/push automático via OIDC, deploy auto em dev, gate de aprovação pra prod — pipeline nunca rodou de ponta a ponta, precisa de conta AWS persistente)
-- 💡 M9 — Hotéis + microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo — ver CHECKLIST.md)
+- 💡 M9 — Microsserviços + Kubernetes (rebaixado a ideia futura, não é o próximo passo; os hotéis saíram dele e foram entregues no M42 — ver CHECKLIST.md)
 - ✅ **M10 — Marcação de assentos** (`Seat` com lock otimista próprio, geração automática do mapa ao cadastrar o voo, `availableCapacity` derivado da contagem de assentos `AVAILABLE`, `GET /v1/bookables/{id}/seats`, `seatId` obrigatório em `POST /v1/bookings`)
 - ✅ **M19 — Avaliação de reserva** (`Review`, `POST /v1/reviews` autenticado — nota 1-5 + comentário obrigatório de uma reserva `CONFIRMED`, só o dono, só uma vez; `GET /v1/bookings` devolve a review de cada reserva; addendum corrigiu um 401 falso sistêmico em qualquer corpo JSON malformado, não só no Review)
 - ✅ **M20 — Expiração de reservas pendentes** (fila SQS com atraso de 15 min no LocalStack, consumidor idempotente com DLQ, lock otimista na `Booking` contra a corrida pagar × expirar — Terraform da SQS e outbox ficaram como evolução)
@@ -164,5 +174,8 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 - ✅ **M47 — Desempenho e resiliência** (k6 com a corrida do assento, pool do Hikari, N+1 como teste, cache da busca de voos, disjuntor e anteparo do Bedrock, pool próprio dos jobs agendados — ver [docs/desempenho.md](docs/desempenho.md))
 - ✅ **M29 — Segundo fator (TOTP) para a equipe** (RFC 6238, segredo cifrado, códigos de recuperação, obrigatório por papel, reset auditado; fechou também o login do cliente como porta em volta e o token de renovação como acesso — ver [docs/autenticacao.md](docs/autenticacao.md))
 - ✅ **M49 — Recuperação de conta** (e-mail confirmado no cadastro e "esqueci minha senha", por link de uso único; reservar e pagar esperam o e-mail confirmado — ver [docs/autenticacao.md](docs/autenticacao.md))
+
+- ✅ **M50 — Logo da companhia** (`airline.logo_url`, só `https`; o voo devolve `airlineLogoUrl`; o cadastro da companhia no portal o mantém — ver [docs/catalogo-admin.md](docs/catalogo-admin.md))
+- ✅ **M51 — Perfil do cliente** (foto por URL, "membro desde", preferências de idioma/tema/aeroporto/moeda/classe/assento, trocar senha logado e dispositivos conectados; a exportação e a anonimização cobrem o perfil — ver [docs/autenticacao.md](docs/autenticacao.md))
 
 Checklist item a item (o que exatamente foi feito em cada marco, e o que falta): [CHECKLIST.md](CHECKLIST.md).

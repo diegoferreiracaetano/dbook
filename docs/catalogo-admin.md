@@ -1,6 +1,6 @@
 # Catálogo administrativo
 
-Até aqui só se **criava** voo. O portal precisa listar, editar, cancelar, manter companhias e aeroportos e carregar voos em lote, sem quebrar o que já foi reservado. Os endpoints estão em [Endpoints](endpoints.md#catálogo-administrativo-v1adminflights-airlines-airports-aircraft-models).
+Até aqui só se **criava** voo. O portal precisa listar, editar, cancelar, manter companhias e aeroportos e carregar voos em lote, sem quebrar o que já foi reservado. A companhia tem **logo opcional** (`logoUrl`, só `https`, até 500 caracteres; vazio limpa), exibido pelo app ao lado do voo (`airlineLogoUrl` em `FlightResponse`). Os endpoints estão em [Endpoints](endpoints.md#catálogo-administrativo-v1adminflights-airlines-airports-aircraft-models).
 
 ## Voos
 

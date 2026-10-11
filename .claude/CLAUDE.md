@@ -23,7 +23,7 @@ Idioma: docs (`README.md`, `docs/*.md`, `CHECKLIST.md`, este arquivo) e commits 
 | Fila | AWS SQS via SDK direto (`sqs` 2.28.29, mesma versão do Bedrock; sem Spring Cloud AWS) — expiração de reservas `PENDING` (M20); LocalStack local |
 | Auth | JWT (jjwt 0.12.6) stateless, refresh token rotativo, BCrypt. Papéis com **permissões** (`Role.permissions`, só no domínio), conta bloqueável, limite de tentativas de login em Redis, política de senha, sessão do portal admin em cookie `httpOnly`, **segundo fator TOTP** da equipe, **recuperação de conta** (e-mail confirmado e senha esquecida, por link de uso único) e tipo no token (`use`: só `access` abre endpoint) (ver `docs/autenticacao.md`) |
 | Resiliência | resilience4j 2.2.0 (só os módulos `circuitbreaker` e `bulkhead`, sem starter) na frente do Bedrock; tempo-limite no cliente do SDK; pool próprio de threads para os `@Scheduled` (`SchedulingConfig`); k6 em `loadtest/` (ver `docs/desempenho.md`) |
-| IA | AWS Bedrock (`bedrockruntime` 2.28.29) + rate limit com bucket4j 8.10.1 |
+| IA | AWS Bedrock (`bedrockruntime` 2.28.29) + rate limit com bucket4j 8.10.1; `ai.provider=local` troca o modelo por regras simples para desenvolvimento (`LocalAiSuggestionService`) |
 | Docs da API | springdoc-openapi 2.6.0 (Swagger UI) |
 | Lint / estática | ktlint (plugin 12.1.1), detekt 1.23.8 (`config/detekt/detekt.yml`, `maxIssues: 0`) |
 | Cobertura | JaCoCo 0.8.12, mínimo **75%** de linha |
@@ -98,6 +98,9 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
 docker compose up -d                 # Postgres + Redis (+ LocalStack) p/ rodar localmente
 ./gradlew bootRun                    # sobe em :8080 (Flyway migra sozinho)
 ./scripts/seed-flights.sh 300        # popula voos via POST /v1/admin/flights
+./scripts/seed-hotels.sh             # hotéis (2 por aeroporto) com foto e quartos
+./scripts/seed-airline-logos.sh      # logo das companhias
+AI_PROVIDER=local ./gradlew bootRun  # IA sem credenciais AWS (regras locais; padrão é bedrock)
 
 ./gradlew ktlintCheck detekt         # estilo + análise estática (rápido, rode sempre)
 ./gradlew ktlintFormat               # corrige formatação

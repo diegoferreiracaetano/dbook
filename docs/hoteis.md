@@ -59,3 +59,7 @@ A avaliação é de uma **reserva**, então já valia para qualquer reservável;
 ## Desenho em camadas
 
 `domain/accommodation` (Accommodation, RoomType, `RoomInventory`, a busca e o leitor do admin; depende só de `catalog` e `booking`), `application/accommodation`, `presentation/accommodation`, `infrastructure/persistence/accommodation` (JDBC para os tipos de quarto, o estoque e a busca; a entidade JPA do hotel fica com a do voo, em `persistence/catalog`, porque faz parte da hierarquia `Bookable`). Migration `V45`.
+
+## Cadastro e fotos
+
+O hotel é mantido pelo portal em `/v1/admin/accommodations` (permissão `CATALOG_WRITE`), com `photoUrl`, endereço, estrelas, comodidades e tipos de quarto. Para demonstração local, `scripts/seed-hotels.sh` cria dois hotéis por aeroporto (4 e 5 estrelas, três tipos de quarto, foto em rodízio). O app mostra a foto do hotel na vitrine e nos resultados, e a foto da cidade (a do aeroporto de destino) nos pacotes voo + hotel.

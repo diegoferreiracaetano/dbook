@@ -38,6 +38,20 @@ curl -X PATCH localhost:8080/v1/users/me \
   -d '{"name": "Novo Nome"}'
 ```
 
+## Perfil, preferências e sessões do cliente (M51)
+
+Tudo em `/v1/users/me`, sempre do próprio chamador (`currentUserId()`, nunca um id no corpo):
+
+| Endpoint | O que faz |
+|---|---|
+| `GET` e `PATCH /v1/users/me` | perfil e nome; a resposta traz `createdAt` ("membro desde") e `avatarUrl` |
+| `PUT` e `DELETE /v1/users/me/avatar` | foto por URL `https` (até 500 caracteres) |
+| `GET` e `PUT /v1/users/me/preferences` | idioma, tema, aeroporto de origem, país, moeda, classe, assento, formato de data e unidade; o `PUT` substitui o conjunto, `null` é "sem escolha", valor fora da lista é `400` |
+| `POST /v1/users/me/password` | troca a senha (política do cliente, 8+) e encerra todas as sessões; a senha atual errada conta no limite de login |
+| `GET /v1/users/me/sessions`, `DELETE /v1/users/me/sessions/{id}` | aparelhos com sessão aberta (uma por família de refresh token) e encerramento de um; de outro usuário é `404` |
+
+A foto e as preferências ficam em `user_profile` (1:1, criada na primeira mudança); a anonimização da conta apaga a linha e a exportação dos dados a inclui.
+
 Rotas públicas: `/health`, `/auth/register|login|refresh`, `/admin/auth/login|refresh|logout`, `/admin/invitations/accept`, `/flights/search`, `/flights/lowest-price`, `/destinations`, `/bookables/*/seats`, Swagger. Todo o resto exige `Authorization: Bearer <token>` — inclusive `/users/me` (GET e PATCH).
 
 ## Papéis e permissões
