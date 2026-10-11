@@ -3643,8 +3643,9 @@
     }
   },
   "info" : {
-    "title" : "OpenAPI definition",
-    "version" : "v0"
+    "description" : "Flight and hotel booking API: search, booking, payment, refunds, reviews, favorites, price alerts, notifications, AI suggestions, the customer's own profile, and the administrative API of the portal (`/admin`). Authenticated routes take a Bearer JWT.",
+    "title" : "DBook API",
+    "version" : "1"
   },
   "openapi" : "3.0.1",
   "paths" : {
@@ -18675,9 +18676,6 @@
     "name" : "Promo codes (admin)"
   }, {
     "description" : "The authenticated user's own profile, picture and preferences",
-    "name" : "Users"
-  }, {
-    "description" : "The authenticated user's own profile",
     "name" : "Users"
   }, {
     "description" : "Hotels: search, details, reviews and booking a stay",

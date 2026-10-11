@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 /** The caller's own rights over their data: `GET /users/me/export` and `DELETE /users/me`. */
 @RestController
 @RequestMapping("${ApiPaths.V1}/users/me")
-@Tag(name = "Users", description = "The authenticated user's own profile")
+@Tag(name = "Users", description = "The authenticated user's own profile, picture and preferences")
 @SecurityRequirement(name = "bearerAuth")
 class MyDataController(
     private val exportMyDataUseCase: ExportMyDataUseCase,

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml/badge.svg)](https://github.com/diegoferreiracaetano/dbook/actions/workflows/ci.yml)
 
-Backend de reservas em Kotlin + Spring Boot, começando por passagens aéreas — o domínio (`Bookable`) já foi desenhado pra suportar hotéis como segunda especialização no futuro, se fizer sentido. Projeto pessoal de estudo de backend Kotlin, construído em marcos incrementais.
+Backend de reservas em Kotlin + Spring Boot: **voos** e **hotéis** (duas especializações de `Bookable`), reserva com concorrência real, pagamento idempotente, reembolso, avaliações, favoritos, alertas de preço, notificações, IA e uma API administrativa para o portal (equipe, CRM, catálogo, dashboard, auditoria). O cliente é o app Flutter em [dbook-mobile](https://github.com/diegoferreiracaetano/dbook_mobile). Projeto pessoal de estudo de backend Kotlin, construído em marcos incrementais.
 
 ## Stack
 
@@ -23,32 +23,27 @@ M1-M51 completos (ver o roadmap abaixo). Ideias registradas pra depois: integra�
 
 ## Arquitetura
 
-Clean Architecture, em camadas por pacote, cada camada dividida em **subpacotes por conceito**:
+Clean Architecture, em camadas por pacote, cada camada dividida em **subpacotes por conceito**, e o código separado em **módulos Gradle por responsabilidade** (decisão do [ADR 0001](docs/adr/0001-modulos-gradle-por-responsabilidade.md)):
+
+```
+core  audit  identity  catalog  booking  flight  accommodation  pricing
+favorite  ai  payment  review  trips  notification  admin     (+ o projeto raiz, :app)
+```
+
+Os pacotes não mudam por causa dos módulos: `com.dbook.domain.booking` é o mesmo em qualquer lugar, e o grafo de dependência entre módulos é verificado pelo Gradle e pelo ArchUnit.
 
 ```
 com.dbook
 ├── domain            # Entidades e regras de negócio puras. Zero dependência de Spring/JPA.
-│   ├── catalog/      #   Flight, Airport, Airline, Bookable  (onde entraria Hotel)
-│   ├── seating/      #   Seat, SeatLayout
-│   ├── booking/      #   Booking, expiração, disponibilidade em tempo real
-│   ├── payment/      #   Payment, idempotência
-│   ├── review/       #   Review
-│   ├── identity/     #   User, token, refresh, hash de senha
-│   └── ai/           #   sugestões de voo
-├── application       # Casos de uso — orquestram domínio + portas. Mesmos conceitos
-│                      # (+ common/ com o helper de afterCommit).
-├── infrastructure
-│   ├── persistence/  # Entidades JPA, repositórios Spring Data, adapters e mappers
-│   │                  # domínio <-> JPA — por conceito.
-│   ├── messaging/    # availability/ (Redis + STOMP) e expiration/ (SQS)
-│   └── security/ ai/ web/
-└── presentation      # Controllers REST, DTOs de request/response — por conceito
-                       # (+ common/ com o exception handler).
+├── application       # Casos de uso: orquestram domínio + portas (um @Service por caso).
+├── infrastructure    # Adapters: persistence (JPA/Spring Data/SQL), messaging (Redis, STOMP, SQS,
+│                      # outbox), security (JWT), ai (Bedrock ou local), cache, web.
+└── presentation      # Controllers REST, DTOs e handlers de exceção, sempre sob /v1.
 ```
 
-A camada continua sendo o primeiro nível (a regra de dependência é por camada); o conceito é o segundo. Dentro do `domain/` só existem duas dependências entre conceitos (`booking → catalog` e `ai → catalog`), sem ciclos.
+Cada camada tem os mesmos conceitos como subpacotes: `catalog`, `seating`, `booking`, `payment`, `review`, `identity`, `audit`, `crm`, `dashboard`, `messaging`, `notification`, `favorite`, `promo`, `pricing`, `accommodation` e `ai`. A camada continua sendo o primeiro nível (a regra de dependência é por camada); o conceito é o segundo.
 
-`Bookable` é a abstração central do domínio: `Flight` (e futuramente `Accommodation`, para hotéis) especializa `Bookable`. A persistência usa herança JPA `JOINED` (tabela própria por especialização) para evitar colunas nulas quando o segundo tipo reservável for adicionado.
+`Bookable` é a abstração central do domínio: `Flight` e `Accommodation` (hotel) o especializam. A persistência usa herança JPA `JOINED` (tabela própria por especialização) para evitar colunas nulas. Uma reserva (`Booking`) aponta para um `Bookable` e para **um assento (voo) ou uma estadia (hotel: tipo de quarto, noites, hóspedes)**, nunca os dois.
 
 ## Rodando localmente
 
@@ -114,12 +109,13 @@ O README é a porta de entrada. Cada assunto tem seu documento em [`docs/`](docs
 | [Observabilidade](docs/observabilidade.md) | **o conceito, o que foi usado, como foi implementado, onde acessar** e roteiros para investigar problemas (métricas, logs, tracing) |
 | [Expiração de reservas (SQS)](docs/expiracao-de-reservas.md) | como uma reserva pendente é cancelada sozinha, com diagrama |
 | [Tempo real](docs/tempo-real.md) | disponibilidade de assentos por WebSocket + Redis |
-| [IA](docs/ia.md) | sugestões de voo com AWS Bedrock |
+| [IA](docs/ia.md) | sugestões de voo com AWS Bedrock, e o provedor local para desenvolvimento |
 | [Nuvem e CI/CD](docs/nuvem-e-cicd.md) | Terraform + AWS e os pipelines |
 | [Desempenho](docs/desempenho.md) | carga com k6, pool, N+1, cache da busca, disjuntor da IA, threads dos jobs |
 | [Segurança](docs/seguranca.md) | o modelo de ameaças consolidado e onde cada defesa é testada |
 | [Custos](docs/custos.md) | quanto a infraestrutura custa por mês e o que o CI prova dela |
 | [Testes e qualidade](docs/testes-e-qualidade.md) | estratégia de testes e verificações automáticas |
+| [Modularização](docs/plano-modularizacao.md) | como e por que o código foi dividido em módulos Gradle (e o [ADR](docs/adr/0001-modulos-gradle-por-responsabilidade.md)) |
 | [CHECKLIST](CHECKLIST.md) | o que exatamente foi feito em cada marco, e o que falta |
 
 ## Status do roadmap
