@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.core.exception.SdkException
@@ -17,6 +18,7 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest
 
 @Component
+@ConditionalOnProperty(name = ["ai.provider"], havingValue = "bedrock", matchIfMissing = true)
 class BedrockAiSuggestionService(
     private val bedrockRuntimeClient: BedrockRuntimeClient,
     private val objectMapper: ObjectMapper,

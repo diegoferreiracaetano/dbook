@@ -106,6 +106,8 @@ email:
   # the app refuses to start with it on under the json (production) profile
   log-body: ${EMAIL_LOG_BODY:false}
 ai:
+  # bedrock (default: the model on AWS) | local (plain rules over the real flights, no credentials: development and demos)
+  provider: ${AI_PROVIDER:bedrock}
   bedrock:
     region: us-east-1
     # NOTE (2026-09-09): Bedrock model IDs retire over time — every dated Claude 3.x

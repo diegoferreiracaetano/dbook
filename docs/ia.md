@@ -16,3 +16,14 @@ curl -X POST localhost:8080/v1/ai/suggestions \
 - Cada chamada é auditada em `ai_suggestion_log` (sucesso **ou** falha — decisão fechada do M7 é "sempre auditada").
 - Rate limit de 5 requisições/minuto por usuário (`AiRateLimitInterceptor`, Bucket4j), só em `/ai/**` — protege contra custo descontrolado de chamadas a um modelo pago, não é rate limit geral da API.
 - `ai.bedrock.model-id` em `application.yml` **precisa ser verificado** antes de usar contra uma conta real — modelos do Bedrock são descontinuados com o tempo; confirme o catálogo atual com `aws bedrock list-foundation-models` ou o console AWS.
+
+## Provedor local (desenvolvimento e demonstração)
+
+`ai.provider` escolhe quem responde ao `POST /v1/ai/suggestions`:
+
+| Valor | Quem responde | Quando usar |
+|---|---|---|
+| `bedrock` (padrão) | o modelo na AWS | produção; exige credenciais AWS válidas |
+| `local` | `LocalAiSuggestionService`: regras simples sobre os mesmos voos reais | desenvolvimento e demonstração, sem AWS |
+
+Ligar com `AI_PROVIDER=local ./gradlew bootRun`. O provedor local casa o pedido com cidade, aeroporto e classe de cada voo, ordena por preço quando o pedido fala em "barato", nunca sugere voo sem assento e responde em português. **Não é um modelo de linguagem**: serve para o fluxo funcionar sem rede. Sem ele, com credencial AWS inválida, a API responde `503` com `code: AI_UNAVAILABLE` (foi o que aconteceu na máquina de desenvolvimento: `403` do Bedrock).
