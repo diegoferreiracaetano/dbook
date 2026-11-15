@@ -1,5 +1,5 @@
 # --- build stage: full JDK + Gradle, discarded after the jar is produced ---
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 COPY gradlew build.gradle.kts settings.gradle.kts ./
@@ -25,7 +25,7 @@ COPY admin ./admin
 RUN ./gradlew bootJar --no-daemon -x test -x ktlintCheck -x detekt
 
 # --- runtime stage: just the JRE + the jar, nothing else from the build ---
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S dbook && adduser -S dbook -G dbook
